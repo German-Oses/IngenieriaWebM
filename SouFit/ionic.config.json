@@ -1,0 +1,7 @@
+{
+  "name": "SouFit",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
