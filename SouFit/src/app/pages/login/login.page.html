@@ -1,0 +1,91 @@
+<ion-content class="ion-padding" color="light">
+
+  <div class="ion-text-center ion-padding-vertical">
+    <img src="assets\icon\SouFitLogo.png" alt="Logo" style="width: 117px; height: 115px;">
+  </div>
+
+  
+  <ion-grid class="ion-justify-content-center">
+    <ion-row class="ion-justify-content-center">
+      <ion-col size="12" size-md="8" size-lg="6" size-xl="4">
+                <ion-text class="ion-text-center">
+          <h2 style="font-weight: 600; margin-bottom: 8px;">Inicia sesión con tu cuenta</h2>
+          <p style="color: var(--ion-color-medium); margin: 0;">
+            Ingresa tu correo electrónico para iniciar sesión en esta aplicación
+          </p>
+        </ion-text>
+
+       
+        <div style="height: 24px;"></div>
+
+      
+        <ion-list>
+          
+          <ion-item>
+            <ion-input 
+              label="Correo electrónico" 
+              label-placement="floating"
+              type="email" 
+              placeholder="tu@email.com">
+            </ion-input>
+          </ion-item>
+
+        
+          <ion-item>
+            <ion-input 
+              label="Contraseña" 
+              label-placement="floating"
+              type="password" 
+              placeholder="••••••">
+            </ion-input>
+          </ion-item>
+        </ion-list>
+
+      
+        <ion-button 
+          expand="block" 
+          color="danger" 
+          style="margin: 16px 0;"
+          (click)="login()">
+          Iniciar sesión
+        </ion-button>
+
+       
+        <ion-button 
+          expand="block" 
+          fill="clear" 
+          color="medium"
+          size="small"
+          (click)="forgotPassword()">
+          He olvidado mi contraseña
+        </ion-button>
+
+        <div class="ion-text-center ion-padding-vertical">
+          <ion-text color="medium" style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+            <ion-row style="width: 100%; align-items: center;">
+              <ion-col>
+                <hr style="border: 0.5px solid var(--ion-color-medium);">
+              </ion-col>
+              <ion-col size="auto">
+                o
+              </ion-col>
+              <ion-col>
+                <hr style="border: 0.5px solid var(--ion-color-medium);">
+              </ion-col>
+            </ion-row>
+          </ion-text>
+        </div>
+
+        
+        <ion-button 
+          expand="block" 
+          fill="outline" 
+          color="dark"
+          (click)="goToRegister()">
+          Crear cuenta
+        </ion-button>
+
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>
