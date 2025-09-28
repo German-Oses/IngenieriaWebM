@@ -1,13 +1,171 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Home</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="ion-no-padding">
+  
+  <ion-grid style="height: 100vh;">
+    <ion-row style="height: 100%;">
+      
+    
+      <ion-col size="auto" class="menu-lateral">
+        
+        <div class="logo">
+          <img src="assets/icon/SouFitLogo.png" alt="Logo" style="width: 32px; height: 32px;">
+        </div>
+   
+        <div class="boton-menu activo">
+          <ion-icon name="home-outline"></ion-icon>
+          <p>Inicio</p>
+        </div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Home</ion-title>
-    </ion-toolbar>
-  </ion-header>
+        <div class="boton-menu">
+          <ion-icon name="search-outline"></ion-icon>
+          <p>Buscar</p>
+        </div>
+
+        <div class="boton-menu">
+          <ion-icon name="barbell-outline"></ion-icon>
+          <p>Ejercicios</p>
+        </div>
+                
+        <div class="boton-menu" (click)="mensajeria()">
+          <ion-icon name="barbell-outline"> </ion-icon>
+          <p>Mensajeria</p>
+        </div>
+
+
+        <div class="boton-menu">
+          <ion-icon name="person-outline"></ion-icon>
+          <p>Perfil</p>
+        </div>
+
+      </ion-col>
+
+      <ion-col class="feed-centro">
+        
+        <div class="titulo-feed">
+          <h1>SouFit</h1>
+        </div>
+
+        <div class="posts-contenedor">
+          
+        
+          <div class="post">
+            <div class="post-usuario">
+              <ion-avatar>
+                <img src="https://ionicframework.com/docs/img/demos/avatar.svg">
+              </ion-avatar>
+              <div>
+                <h3>Sebastian</h3>
+                <p>Hace 2 horas</p>
+              </div>
+            </div>
+            <div class="post-imagen">
+              <p>🏋️ Terminé mi rutina de piernas!</p>
+            </div>
+            <div class="post-acciones">
+              <ion-icon name="heart-outline"></ion-icon>
+              <ion-icon name="chatbubble-outline"></ion-icon>
+              <ion-icon name="share-outline"></ion-icon>
+            </div>
+          </div>
+
+      
+          <div class="post">
+            <div class="post-usuario">
+              <ion-avatar>
+                <img src="https://ionicframework.com/docs/img/demos/avatar.svg">
+              </ion-avatar>
+              <div>
+                <h3>Maria</h3>
+                <p>Hace 1 día</p>
+              </div>
+            </div>
+            <div class="post-imagen">
+              <p>🧘‍♀️ Yoga matutino completado</p>
+            </div>
+            <div class="post-acciones">
+              <ion-icon name="heart-outline"></ion-icon>
+              <ion-icon name="chatbubble-outline"></ion-icon>
+              <ion-icon name="share-outline"></ion-icon>
+            </div>
+          </div>
+
+    
+          <div class="post">
+            <div class="post-usuario">
+              <ion-avatar>
+                <img src="https://ionicframework.com/docs/img/demos/avatar.svg">
+              </ion-avatar>
+              <div>
+                <h3>Carlos</h3>
+                <p>Hace 2 días</p>
+              </div>
+            </div>
+            <div class="post-imagen">
+              <p>🚴‍♂️ 25km en bicicleta!</p>
+            </div>
+            <div class="post-acciones">
+              <ion-icon name="heart-outline"></ion-icon>
+              <ion-icon name="chatbubble-outline"></ion-icon>
+              <ion-icon name="share-outline"></ion-icon>
+            </div>
+          </div>
+
+        </div>
+      </ion-col>
+
+      
+      <ion-col size="3" class="ejercicios-lateral">
+        
+        <h2>Ejercicios Recomendados</h2>
+        
+      
+        <div class="ejercicio">
+          <div class="ejercicio-icono">
+            <ion-icon name="barbell-outline"></ion-icon>
+          </div>
+          <div class="ejercicio-info">
+            <h3>Sentadillas</h3>
+            <p>15 min • Piernas</p>
+          </div>
+          <button class="ejercicio-boton">Empezar</button>
+        </div>
+
+     
+        <div class="ejercicio">
+          <div class="ejercicio-icono">
+            <ion-icon name="fitness-outline"></ion-icon>
+          </div>
+          <div class="ejercicio-info">
+            <h3>Push-ups</h3>
+            <p>10 min • Pecho</p>
+          </div>
+          <button class="ejercicio-boton">Empezar</button>
+        </div>
+
+  
+        <div class="ejercicio">
+          <div class="ejercicio-icono">
+            <ion-icon name="body-outline"></ion-icon>
+          </div>
+          <div class="ejercicio-info">
+            <h3>Plancha</h3>
+            <p>8 min • Core</p>
+          </div>
+          <button class="ejercicio-boton">Empezar</button>
+        </div>
+
+        <div class="ejercicio">
+          <div class="ejercicio-icono">
+            <ion-icon name="walk-outline"></ion-icon>
+          </div>
+          <div class="ejercicio-info">
+            <h3>Cardio</h3>
+            <p>20 min • Resistencia</p>
+          </div>
+          <button class="ejercicio-boton">Empezar</button>
+        </div>
+
+      </ion-col>
+
+    </ion-row>
+  </ion-grid>
 </ion-content>

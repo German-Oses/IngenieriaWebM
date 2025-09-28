@@ -1,13 +1,224 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Mensajeria</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="ion-no-padding">
+  
+  <ion-grid style="height: 100vh;">
+    <ion-row style="height: 100%;">
+      
+    
+      <ion-col size="auto" class="menu-lateral">
+        
+        <div class="logo">
+          <div class="logo-circle">S</div>
+        </div>
+   
+        <div class="boton-menu">
+          <ion-icon name="home-outline"></ion-icon>
+          <p>Inicio</p>
+        </div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Mensajeria</ion-title>
-    </ion-toolbar>
-  </ion-header>
+        <div class="boton-menu">
+          <ion-icon name="search-outline"></ion-icon>
+          <p>Buscar</p>
+        </div>
+
+        <div class="boton-menu">
+          <ion-icon name="barbell-outline"></ion-icon>
+          <p>Rutinas</p>
+        </div>
+
+        <div class="boton-menu activo">
+          <ion-icon name="chatbubbles-outline"></ion-icon>
+          <p>Mensajes</p>
+        </div>
+
+        <div class="boton-menu">
+          <ion-icon name="person-outline"></ion-icon>
+          <p>Perfil</p>
+        </div>
+
+      </ion-col>
+
+
+      <ion-col size="4" class="lista-chats">
+        
+        <div class="header-chats">
+          <h1>Freire 1</h1>
+          <p>EN LINEA</p>
+        </div>
+
+        <div class="chats-contenedor">
+          
+       
+          <div class="chat-item activo">
+            <ion-avatar>
+              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="René">
+            </ion-avatar>
+            <div class="chat-info">
+              <h3>René Puente</h3>
+              <p>Keri too</p>
+            </div>
+            <div class="chat-hora">
+              <span>14:30</span>
+            </div>
+          </div>
+
+         
+      
+          <div class="chat-item">
+            <ion-avatar>
+              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
+            </ion-avatar>
+            <div class="chat-info">
+              <h3>Usuario</h3>
+              <p>Mandame un audio</p>
+            </div>
+            <div class="chat-hora">
+              <span>12:15</span>
+            </div>
+          </div>
+
+      
+          <div class="chat-item">
+            <ion-avatar>
+              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
+            </ion-avatar>
+            <div class="chat-info">
+              <h3>Usuario</h3>
+              <p>No se leer</p>
+            </div>
+            <div class="chat-hora">
+              <span>11:45</span>
+            </div>
+          </div>
+
+     
+          <div class="chat-item">
+            <ion-avatar>
+              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
+            </ion-avatar>
+            <div class="chat-info">
+              <h3>Usuario</h3>
+              <p>Creo que entendí</p>
+            </div>
+            <div class="chat-hora">
+              <span>10:30</span>
+            </div>
+          </div>
+
+    
+          <div class="chat-item">
+            <ion-avatar>
+              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
+            </ion-avatar>
+            <div class="chat-info">
+              <h3>Usuario</h3>
+              <p>Mmm</p>
+            </div>
+            <div class="chat-hora">
+              <span>09:20</span>
+            </div>
+          </div>
+
+      
+          <div class="chat-item">
+            <ion-avatar>
+              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
+            </ion-avatar>
+            <div class="chat-info">
+              <h3>Usuario</h3>
+              <p>Oye René mandame un saludo</p>
+            </div>
+            <div class="chat-hora">
+              <span>Ayer</span>
+            </div>
+          </div>
+
+        </div>
+      </ion-col>
+
+      <ion-col class="chat-conversacion">
+        
+        <div class="header-conversacion">
+          <ion-avatar>
+            <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="René Puente">
+          </ion-avatar>
+          <div class="info-contacto">
+            <h2>René Puente</h2>
+          </div>
+        </div>
+
+   
+        <div class="mensajes-area">
+          
+          <!-- Mensaje recibido -->
+          <div class="mensaje recibido">
+            <div class="mensaje-contenido">
+              <p>Mandame un audio</p>
+            </div>
+          </div>
+
+          <div class="mensaje recibido">
+            <div class="mensaje-contenido">
+              <p>No se leer</p>
+            </div>
+          </div>
+
+          <div class="mensaje recibido">
+            <div class="mensaje-contenido">
+              <p>Keri too</p>
+            </div>
+          </div>
+
+         
+          <div class="mensaje enviado">
+            <div class="mensaje-contenido">
+              <p>Oye rene mandame un saludo</p>
+            </div>
+          </div>
+
+      
+          <div class="mensaje recibido">
+            <div class="mensaje-contenido">
+              <p>Le poni color con un saluo cabezon cabeza de yunque</p>
+            </div>
+          </div>
+
+          <div class="mensaje recibido">
+            <div class="mensaje-contenido">
+              <p>keri too</p>
+            </div>
+          </div>
+
+          <div class="mensaje recibido">
+            <div class="mensaje-contenido">
+              <p>Mmm</p>
+            </div>
+          </div>
+
+          <div class="mensaje recibido">
+            <div class="mensaje-contenido">
+              <p>Creo que entendí</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="area-escribir">
+          <div class="input-mensaje">
+            <input type="text" placeholder="Mensaje..." />
+            <button class="btn-micro">
+              <ion-icon name="mic-outline"></ion-icon>
+            </button>
+            <button class="btn-emoji">
+              <ion-icon name="happy-outline"></ion-icon>
+            </button>
+            <button class="btn-archivo">
+              <ion-icon name="image-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+      </ion-col>
+
+    </ion-row>
+  </ion-grid>
 </ion-content>
