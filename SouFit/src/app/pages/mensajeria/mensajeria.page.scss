@@ -1,8 +1,3 @@
-/* =====================================================
-   CSS MENSAJERÍA - EXPLICADO PASO A PASO
-   ===================================================== */
-
-/* PASO 1: Quitar padding del ion-content */
 ion-content {
   --padding-start: 0;
   --padding-end: 0;
@@ -11,21 +6,13 @@ ion-content {
   --background: #f0f0f0;
 }
 
-/* =====================================================
-   COLUMNA IZQUIERDA: MENÚ (80px de ancho fijo)
-   ===================================================== */
-
 .menu-lateral {
-  /* ANCHO FIJO - igual que antes */
   width: 80px !important;
   max-width: 80px !important;
   min-width: 80px !important;
-  
   background-color: white;
   padding: 20px 0;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  
-  /* Organizar verticalmente */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,7 +26,7 @@ ion-content {
   width: 40px;
   height: 40px;
   background-color: #333;
-  border-radius: 50%;           /* Círculo perfecto */
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,285 +41,249 @@ ion-content {
   align-items: center;
   margin-bottom: 20px;
   cursor: pointer;
-  
-  ion-icon {
-    font-size: 24px;
-    color: #666;
-    margin-bottom: 5px;
-  }
-  
-  p {
-    font-size: 11px;
-    color: #666;
-    margin: 0;
-  }
-  
-  /* Botón activo (Mensajes está seleccionado) */
-  &.activo {
-    ion-icon { color: #3880ff; }
-    p { color: #3880ff; }
-  }
 }
 
-/* =====================================================
-   COLUMNA CENTRO: LISTA DE CHATS (33% del ancho)
-   ===================================================== */
+.boton-menu ion-icon {
+  font-size: 24px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.boton-menu p {
+  font-size: 11px;
+  color: #666;
+  margin: 0;
+}
+
+.boton-menu.activo ion-icon {
+  color: #3880ff;
+}
+
+.boton-menu.activo p {
+  color: #3880ff;
+}
 
 .lista-chats {
-  /* ANCHO FIJO para la lista de chats */
   width: 350px !important;
   max-width: 350px !important;
   min-width: 350px !important;
-  
   background-color: white;
   border-right: 1px solid #e0e0e0;
-  
-  /* Organizar: header arriba, chats abajo */
   display: flex;
   flex-direction: column;
 }
 
-/* Header de la lista de chats */
 .header-chats {
   padding: 20px;
   border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0;               /* No se encoge */
-  
-  h1 {
-    margin: 0 0 5px 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: #333;
-  }
-  
-  p {
-    margin: 0;
-    font-size: 14px;
-    color: #666;
-  }
+  flex-shrink: 0;
 }
 
-/* Contenedor scrolleable de chats */
+.header-chats h1 {
+  margin: 0 0 5px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.header-chats p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
 .chats-contenedor {
-  flex: 1;                      /* Toma el espacio restante */
-  overflow-y: auto;             /* Scroll cuando sea necesario */
+  flex: 1;
+  overflow-y: auto;
 }
 
-/* Cada item de chat individual */
 .chat-item {
-  display: flex;                /* Usuario + info + hora en línea */
+  display: flex;
   align-items: center;
   padding: 15px 20px;
   cursor: pointer;
   border-bottom: 1px solid #f5f5f5;
-  
-  /* Efecto hover */
-  &:hover {
-    background-color: #f9f9f9;
-  }
-  
-  /* Chat activo (seleccionado) */
-  &.activo {
-    background-color: #e3f2fd;
-    border-right: 3px solid #2196f3;
-  }
+}
+
+.chat-item:hover {
+  background-color: #f9f9f9;
+}
+
+.chat-item.activo {
+  background-color: #e3f2fd;
+  border-right: 3px solid #2196f3;
 }
 
 .chat-item ion-avatar {
   width: 48px !important;
   height: 48px !important;
   margin-right: 12px;
-  flex-shrink: 0;               /* No se encoge */
+  flex-shrink: 0;
 }
 
 .chat-info {
-  flex: 1;                      /* Toma el espacio disponible */
-  min-width: 0;                 /* Para que el texto se corte bien */
-  
-  h3 {
-    margin: 0 0 4px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-  }
-  
-  p {
-    margin: 0;
-    font-size: 13px;
-    color: #666;
-    /* Cortar texto largo con ... */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.chat-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-hora {
-  flex-shrink: 0;               /* No se encoge */
-  
-  span {
-    font-size: 11px;
-    color: #999;
-  }
+  flex-shrink: 0;
 }
 
-/* =====================================================
-   COLUMNA DERECHA: CONVERSACIÓN (Todo el espacio restante)
-   ===================================================== */
+.chat-hora span {
+  font-size: 11px;
+  color: #999;
+}
 
 .chat-conversacion {
-  /* Sin ancho fijo - toma todo el espacio restante */
   display: flex;
-  flex-direction: column;       /* Header + mensajes + escribir */
+  flex-direction: column;
   background-color: #fafafa;
 }
 
-/* Header de la conversación activa */
 .header-conversacion {
   background-color: white;
   padding: 15px 20px;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   align-items: center;
-  flex-shrink: 0;               /* No se encoge */
-  
-  ion-avatar {
-    width: 40px !important;
-    height: 40px !important;
-    margin-right: 12px;
-  }
-  
-  h2 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-  }
+  flex-shrink: 0;
 }
 
-/* Área donde van los mensajes */
+.header-conversacion ion-avatar {
+  width: 40px !important;
+  height: 40px !important;
+  margin-right: 12px;
+}
+
+.header-conversacion h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
 .mensajes-area {
-  flex: 1;                      /* Toma todo el espacio restante */
-  overflow-y: auto;             /* Scroll cuando sea necesario */
+  flex: 1;
+  overflow-y: auto;
   padding: 20px;
   display: flex;
-  flex-direction: column;       /* Mensajes uno abajo del otro */
-  gap: 10px;                    /* Espacio entre mensajes */
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* Cada mensaje individual */
 .mensaje {
   display: flex;
   margin-bottom: 10px;
-  
-  /* Mensaje recibido (izquierda) */
-  &.recibido {
-    justify-content: flex-start;
-    
-    .mensaje-contenido {
-      background-color: white;
-      color: #333;
-      border-radius: 18px 18px 18px 4px;
-      max-width: 70%;
-    }
-  }
-  
-  /* Mensaje enviado (derecha) */
-  &.enviado {
-    justify-content: flex-end;
-    
-    .mensaje-contenido {
-      background-color: #2196f3;
-      color: white;
-      border-radius: 18px 18px 4px 18px;
-      max-width: 70%;
-    }
-  }
+}
+
+.mensaje.recibido {
+  justify-content: flex-start;
+}
+
+.mensaje.recibido .mensaje-contenido {
+  background-color: white;
+  color: #333;
+  border-radius: 18px 18px 18px 4px;
+  max-width: 70%;
+}
+
+.mensaje.enviado {
+  justify-content: flex-end;
+}
+
+.mensaje.enviado .mensaje-contenido {
+  background-color: #2196f3;
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+  max-width: 70%;
 }
 
 .mensaje-contenido {
   padding: 10px 15px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  
-  p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.4;
-  }
 }
 
-/* =====================================================
-   ÁREA PARA ESCRIBIR MENSAJES (Parte inferior fija)
-   ===================================================== */
+.mensaje-contenido p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
 
 .area-escribir {
   background-color: white;
   padding: 15px 20px;
   border-top: 1px solid #e0e0e0;
-  flex-shrink: 0;               /* No se encoge */
+  flex-shrink: 0;
 }
 
 .input-mensaje {
-  display: flex;                /* Input + botones en línea */
+  display: flex;
   align-items: center;
   background-color: #f5f5f5;
   border-radius: 25px;
   padding: 8px 15px;
-  
-  input {
-    flex: 1;                    /* Toma todo el espacio disponible */
-    border: none;
-    background: transparent;
-    outline: none;
-    font-size: 14px;
-    padding: 5px 0;
-    
-    &::placeholder {
-      color: #999;
-    }
-  }
-  
-  /* Botones del input */
-  button {
-    background: none;
-    border: none;
-    margin-left: 10px;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    ion-icon {
-      font-size: 20px;
-      color: #666;
-    }
-    
-    &:hover {
-      background-color: #e0e0e0;
-    }
-  }
 }
 
-/* =====================================================
-   RESPONSIVE: Adaptar a pantallas pequeñas
-   ===================================================== */
+.input-mensaje input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  padding: 5px 0;
+}
+
+.input-mensaje input::placeholder {
+  color: #999;
+}
+
+.input-mensaje button {
+  background: none;
+  border: none;
+  margin-left: 10px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-mensaje button ion-icon {
+  font-size: 20px;
+  color: #666;
+}
+
+.input-mensaje button:hover {
+  background-color: #e0e0e0;
+}
 
 @media (max-width: 768px) {
-  /* En móviles: ocultar menú lateral */
   .menu-lateral {
     display: none !important;
   }
-  
-  /* Lista de chats más angosta */
   .lista-chats {
     width: 280px !important;
     max-width: 280px !important;
     min-width: 280px !important;
   }
-  
-  /* Mensajes más pequeños */
   .mensaje-contenido {
     max-width: 85%;
     font-size: 13px;
@@ -340,11 +291,9 @@ ion-content {
 }
 
 @media (max-width: 480px) {
-  /* En pantallas muy pequeñas: solo conversación */
   .lista-chats {
     display: none !important;
   }
-  
   .chat-conversacion {
     width: 100% !important;
   }
