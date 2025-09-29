@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonAvatar, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonRow, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-mensajeria',
@@ -13,9 +14,15 @@ import { IonAvatar, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonRow, Ion
 })
 export class MensajeriaPage implements OnInit {
 
-  constructor() { }
+  constructor(private router :Router) { }
 
-  ngOnInit() {
+  volverHome()
+  {
+    this.router.navigate(['/home'])
   }
 
+  ngOnInit()
+  {
+    
+  }
 }
