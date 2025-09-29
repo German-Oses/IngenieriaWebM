@@ -55,12 +55,12 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 
 ### RNF-01: Rendimiento y Concurrencia
 - El sistema debe soportar que múltiples usuarios envíen mensajes simultáneamente.
-- Los mensajes entre usuarios deben entregarse con un tiempo de retardo máximo de 2 segundos.
+- El sistema debe manejar los mensajes entre usuarios de tal manera en que se entreguen con un tiempo de retardo máximo de 2 segundos.
 
 ### RNF-02: Usabilidad
-- La interfaz debe ser intuitiva, utilizando iconografía reconocible para cada funcionalidad.
-- Debe contar con modo oscuro y modo claro intercambiables.
-- La interfaz debe adaptarse automáticamente a dispositivos móviles, tablets y escritorio (diseño responsivo).
+- La interfaz del sistema debe ser intuitiva, utilizando iconografía reconocible para cada funcionalidad.
+- El sistema debe contar con modo oscuro y modo claro intercambiables.
+- La interfaz del sistema debe adaptarse automáticamente a dispositivos móviles, tablets y escritorio (diseño responsivo).
 
 ### RNF-03: Multimedia
 - El sistema debe permitir subir fotos y videos en alta definición (HD).
@@ -69,7 +69,7 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 - El sistema debe estar disponible las 24 horas del día, 7 días a la semana.
 
 ### RNF-05: Compatibilidad
-- Compatible con navegadores modernos y dispositivos iOS/Android a través de Ionic.
+- El sistema debe ser compatible con navegadores modernos y dispositivos iOS/Android a través de Ionic.
 
 ---
 
