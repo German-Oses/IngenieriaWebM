@@ -4,7 +4,8 @@
 - Joshua Villavicencio
 
 # SouFit - Plataforma Fitness Social
-
+#Prototipo 
+**https://www.figma.com/proto/9t08ubjNySuxTx8rygZNhD/SouFit?node-id=105-2&t=KKxqOlVgdH00sgOZ-1**
 ## Índice
 1. [Resumen del Proyecto](#resumen-del-proyecto)
 2. [Requerimientos](#requerimientos)
