@@ -1,13 +1,42 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>rutinas</ion-title>
+    <ion-title>Mis rutinas</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">rutinas</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+
+  <ion-accordion-group>
+
+    <ion-accordion *ngFor="let rutina of rutinas" value="{{ rutina.nombre }}">
+
+      <ion-item slot="header">
+        <ion-label>{{ rutina.nombre }}</ion-label>
+      </ion-item>
+
+      <ion-list slot="content">
+        <ion-accordion-group>
+          <ion-accordion *ngFor="let dia of rutina.dias" [value]="dia.nombre">
+            <ion-item slot="header">
+              <ion-label>{{ dia.nombre }}</ion-label>
+            </ion-item>
+            
+            <div slot="content" class="ion-padding-start">
+              <ion-item
+                *ngFor="let ejercicio of dia.ejercicios"
+                (click)="verEjercicio(ejercicio)"
+                button>
+                <ion-label>
+                  {{ ejercicio.nombre }} - {{ ejercicio.series }}x{{ ejercicio.repeticiones }}
+                </ion-label>
+              </ion-item>
+            </div>
+          </ion-accordion>
+        </ion-accordion-group>
+      </ion-list>
+
+    </ion-accordion>
+
+  </ion-accordion-group>
+
 </ion-content>
