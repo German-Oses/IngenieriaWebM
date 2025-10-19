@@ -21,7 +21,8 @@ export const routes: Routes = [
   {
     path: 'mensajeria',
     loadComponent: () => import('./pages/mensajeria/mensajeria.page').then( m => m.MensajeriaPage)
-  },  {
+  },
+  {
     path: 'rutinas',
     loadComponent: () => import('./pages/rutinas/rutinas.page').then( m => m.RutinasPage)
   },

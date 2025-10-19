@@ -3,6 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonContent,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonBackButton,
   IonHeader,
   IonTitle,
   IonToolbar,
@@ -23,6 +27,10 @@ import {
     IonHeader,
     IonTitle,
     IonToolbar,
+    IonButtons,    
+    IonButton,      
+    IonIcon,        
+    IonBackButton,
     IonList,
     IonItem,
     IonLabel,

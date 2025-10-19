@@ -20,9 +20,10 @@ export class MensajeriaPage implements OnInit {
   {
     this.router.navigate(['/home'])
   }
-
-  ngOnInit()
+  rutinas()
   {
-    
+    this.router.navigate(['/rutinas']);
   }
+  
+  ngOnInit() {}
 }

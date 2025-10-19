@@ -11,13 +11,13 @@ import { Router } from '@angular/router';
   templateUrl: './home.page.html',
   styleUrls: ['./home.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule, IonGrid, IonRow, IonCol, IonList, IonIcon, IonButton, IonAccordion,
-     IonItemOption, IonItem, IonImg, IonChip, IonAvatar, IonLabel ,IonCard,IonCardTitle,IonCardContent,IonCardHeader]
+  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule, IonGrid, IonRow, IonCol, IonList, IonIcon, IonButton, IonAccordion,IonItemOption, IonItem, IonImg,
+  IonChip, IonAvatar, IonLabel ,IonCard,IonCardTitle,IonCardContent,IonCardHeader]
 })
 export class HomePage {
 
   constructor(private router: Router){}
-
+  
   mensajeria()
   {
     console.log("Moviendose a Mensajeria");
