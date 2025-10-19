@@ -20,14 +20,16 @@ export class HomePage {
   
   mensajeria()
   {
-    console.log("Moviendose a Mensajeria");
     this.router.navigate(['/mensajeria']);
   }
 
   rutinas()
   {
-    console.log("Moviendose a Rutinas");
     this.router.navigate(['/rutinas']);
+  }
+  perfil()
+  {
+    this.router.navigate(['/perfil']);
   }
 
 }

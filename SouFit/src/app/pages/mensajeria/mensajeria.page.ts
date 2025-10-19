@@ -24,6 +24,10 @@ export class MensajeriaPage implements OnInit {
   {
     this.router.navigate(['/rutinas']);
   }
+  perfil()
+  {
+    this.router.navigate(['/perfil']);
+  }
   
   ngOnInit() {}
 }
