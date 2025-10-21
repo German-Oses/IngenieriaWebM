@@ -1,3 +1,32 @@
-<p>
-  menu works!
-</p>
+<div class="menu-lateral">
+  
+  <div class="logo">
+    <img src="assets/icon/SouFitLogo.png" alt="Logo" style="width: 32px; height: 32px;">
+  </div>
+
+  <div class="boton-menu" (click)="volverHome()">
+    <ion-icon name="home-outline"></ion-icon>
+    <p>Inicio</p>
+  </div>
+
+  <div class="boton-menu" (click)="buscar()">
+    <ion-icon name="search-outline"></ion-icon>
+    <p>Buscar</p>
+  </div>
+
+  <div class="boton-menu" (click)="rutinas()">
+    <ion-icon name="barbell-outline"></ion-icon>
+    <p>Rutinas</p>
+  </div>
+
+  <div class="boton-menu" (click)="mensajeria()">
+    <ion-icon name="chatbubbles-outline"></ion-icon>
+    <p>Mensajes</p>
+  </div>
+
+  <div class="boton-menu" (click)="perfil()">
+    <ion-icon name="person-outline"></ion-icon>
+    <p>Perfil</p>
+  </div>     
+</div>
+      

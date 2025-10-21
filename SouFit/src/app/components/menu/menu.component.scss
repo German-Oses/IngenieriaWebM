@@ -1,0 +1,43 @@
+.menu-lateral {
+  width: 80px !important;
+  max-width: 80px !important;
+  min-width: 80px !important;
+  background-color: white;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo {
+  margin-bottom: 30px;
+}
+
+.boton-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.boton-menu ion-icon {
+  font-size: 24px;
+  color: #666;
+  margin-bottom: 5px;
+  padding: 15px;
+}
+
+.boton-menu p {
+  font-size: 11px;
+  color: #666;
+  margin: 0;
+}
+
+.boton-menu.activo ion-icon {
+  color: #3880ff;
+}
+
+.boton-menu.activo p {
+  color: #3880ff;
+}
