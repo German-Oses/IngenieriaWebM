@@ -1,61 +1,53 @@
 <ion-content class="ion-no-padding">
-  
   <ion-grid style="height: 100vh;">
     <ion-row style="height: 100%;">
       
-    
       <ion-col size="auto" class="menu-lateral">
-        
         <div class="ion-text-center ion-padding-vertical">
-          <img src="assets\icon\SouFitLogo.png" alt="Logo" style="width: 32; height: 32;">
+          <img src="assets/icon/SouFitLogo.png" alt="Logo" style="width: 32px; height: 32px;">
         </div>
-
         <div class="boton-menu" (click)="volverHome()">
           <ion-icon name="home-outline"></ion-icon>
           <p>Inicio</p>
         </div>
-
         <div class="boton-menu">
           <ion-icon name="search-outline"></ion-icon>
           <p>Buscar</p>
         </div>
-
         <div class="boton-menu" (click)="rutinas()">
           <ion-icon name="barbell-outline"></ion-icon>
           <p>Rutinas</p>
         </div>
-
         <div class="boton-menu" (click)="mensajeria()">
           <ion-icon name="chatbubbles-outline"></ion-icon>
           <p>Mensajes</p>
         </div>
-
         <div class="boton-menu activo">
           <ion-icon name="person-outline"></ion-icon>
           <p>Perfil</p>
-        </div>     
+        </div>
       </ion-col>
       
-      <ion-col class="perfil-centro">        
+      <ion-col class="perfil-centro">
         <div class="titulo-perfil">
           <h1>Perfil de Usuario</h1>
         </div>
-        <div class="perfil-contenedor">
+
+        <div class="perfil-contenedor" *ngIf="userProfile">
           <div class="perfil-avatar">
-            <img src="assets/Avatar/22-Alexis.jpg" alt="Avatar de Alexis Sanchez">
+            <img src="assets/icon/SouFitLogo.png" alt="Avatar de usuario">
           </div>
-          <p><strong>Nombre:</strong> Alexis Sanchez.</p>
-          <p><strong>Edad:</strong> 36 años.</p>
-          <p><strong>Altura:</strong> 169 cm.</p>
-          <p><strong>Peso:</strong> 64 kg.</p>
+          <h2>Bienvenido, {{ userProfile.username }}</h2>
+          <p>{{ userProfile.email }}</p>
         </div>
-          <ion-col>
-            <div class = "boton-editar-perfil">
-              <ion-button>
-                <h1>Editar Perfil</h1>
-              </ion-button>
-            </div>
-          </ion-col>
+        
+        <ion-col>
+          <div class="ion-padding">
+            <ion-button expand="block" color="danger" (click)="cerrarSesion()">
+              Cerrar Sesión
+            </ion-button>
+          </div>
+        </ion-col>
       </ion-col>
     </ion-row>
   </ion-grid>

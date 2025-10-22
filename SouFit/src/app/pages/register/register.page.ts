@@ -1,71 +1,68 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { 
-  IonContent, 
-  IonHeader, 
-  IonTitle, 
-  IonToolbar, 
-  IonItem, 
-  IonLabel, 
-  IonInput, 
-  IonButton, 
-  IonText, 
-  IonImg, 
-  IonCheckbox 
-} from '@ionic/angular/standalone';
+import { IonicModule } from '@ionic/angular';
+import { AlertController } from '@ionic/angular'; 
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.page.html',
-  styleUrls: ['./register.page.scss'],
+  selector: 'app-registro',
   standalone: true,
-  imports: [
-    IonContent,
-    IonHeader,
-    IonTitle,
-    IonToolbar,
-    IonItem,
-    IonLabel,
-    IonInput,
-    IonButton,
-    IonText,
-    IonImg,
-    IonCheckbox,
-    CommonModule,
-    FormsModule
-  ]
+  templateUrl: './register.page.html',
+  imports: [IonicModule, FormsModule], 
 })
-export class RegisterPage implements OnInit {
+export class RegisterPage {
+  username = '';
+  email = '';
+  region = '';
+  comuna = '';
+  password = '';
+  confirmPassword = '';
+  acceptTerms = false;
 
-  // Variables para el formulario
-  username: string = '';
-  email: string = '';
-  region: string = '';
-  comuna: string = '';
-  password: string = '';
-  confirmPassword: string = '';
-  acceptTerms: boolean = false;
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private alertController: AlertController
+  ) {}
 
-  constructor() { }
-
-  ngOnInit() { }
-
-  // Función para crear cuenta
   createAccount() {
     if (!this.acceptTerms) {
-
+      this.presentAlert('Atención', 'Debes aceptar los términos y condiciones.');
       return;
     }
 
-    console.log({
+    if (this.password !== this.confirmPassword) {
+      this.presentAlert('Error', 'Las contraseñas no coinciden.');
+      return;
+    }
+
+    const userData = {
       username: this.username,
       email: this.email,
+      password: this.password,
       region: this.region,
       comuna: this.comuna,
-      password: this.password,
-      confirmPassword: this.confirmPassword
+    };
+
+    this.authService.register(userData).subscribe({
+      next: () => {
+        this.presentAlert('¡Éxito!', 'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.');
+        this.router.navigate(['/login']);
+      },
+      error: (err) => {
+        const errorMsg = err.error?.msg || 'No se pudo completar el registro.';
+        this.presentAlert('Error de Registro', errorMsg);
+      },
     });
   }
 
+  async presentAlert(header: string, message: string) {
+    const alert = await this.alertController.create({
+      header,
+      message,
+      buttons: ['OK'],
+    });
+    await alert.present();
+  }
 }

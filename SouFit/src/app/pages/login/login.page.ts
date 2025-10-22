@@ -1,61 +1,52 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { 
-  IonContent, 
-  IonHeader, 
-  IonTitle, 
-  IonToolbar, 
-  IonButton,
-  IonInput,
-  IonItem,
-  IonList,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonText
-} from '@ionic/angular/standalone';
+import { IonicModule } from '@ionic/angular';          
+import { AlertController } from '@ionic/angular';      
 import { Router } from '@angular/router';
-
+import { AuthService } from '../../services/auth.service'; 
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
-  styleUrls: ['./login.page.scss'],
   standalone: true,
-  imports: [
-    IonContent, 
-    IonHeader, 
-    IonTitle, 
-    IonToolbar, 
-    IonButton,
-    IonInput,
-    IonItem,
-    IonList,
-    IonGrid,
-    IonRow,
-    IonCol,
-    IonText,
-    CommonModule, 
-    FormsModule
-  ]
+  imports: [IonicModule, FormsModule],
 })
 export class LoginPage {
+  email = '';
+  password = '';
 
-  constructor(private router: Router) { }
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private alertController: AlertController
+  ) {}
 
   login() {
-   
-    console.log('Iniciando sesión...');
-    this.router.navigate(['/home']);
-  }
-
-  forgotPassword() {
-    console.log('Olvidé mi contraseña');
-    
+    const credentials = { email: this.email, password: this.password };
+    this.authService.login(credentials).subscribe({
+      next: () => {
+        this.router.navigate(['/home'], { replaceUrl: true });
+      },
+      error: (err) => {
+        const errorMsg = err.error?.msg || 'Credenciales inválidas.';
+        this.presentAlert('Error', errorMsg);
+      },
+    });
   }
 
   goToRegister() {
-    console.log('Ir a registro');
     this.router.navigate(['/register']);
+  }
+
+  async presentAlert(header: string, message: string) {
+    const alert = await this.alertController.create({
+      header,
+      message,
+      buttons: ['OK'],
+    });
+    await alert.present();
+  }
+
+  forgotPassword() {
+    this.presentAlert('Info', 'Función no implementada.');
   }
 }

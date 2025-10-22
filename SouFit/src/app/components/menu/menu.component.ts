@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { IonIcon } from "@ionic/angular/standalone";
 
 @Component({
   selector: 'app-menu',
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.scss'],
+  imports: [IonIcon],
 })
 export class MenuComponent  implements OnInit {
   router: any;
