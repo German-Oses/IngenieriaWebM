@@ -1,10 +1,10 @@
-// src/app/pages/perfil/perfil.page.ts
+
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
-// --- 1. IMPORTA LOS COMPONENTES ESPECÍFICOS QUE USAS EN TU HTML ---
+
 import { 
   IonContent,
   IonGrid,
@@ -14,14 +14,14 @@ import {
   IonButton,
   AlertController 
 } from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons'; // Necesario para los iconos
+import { addIcons } from 'ionicons'; 
 import { homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline } from 'ionicons/icons'; // Los iconos que usas
 
 @Component({
   selector: 'app-perfil',
   templateUrl: './perfil.page.html',
   standalone: true,
-  // --- 2. AÑADE LOS COMPONENTES AL ARRAY 'imports' ---
+
   imports: [
     CommonModule,
     IonContent,

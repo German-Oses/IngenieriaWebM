@@ -27,19 +27,20 @@
     <ion-input type="email" [(ngModel)]="email"></ion-input>
   </ion-item>
 
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-    <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Región
-    </ion-label>
-    <ion-input [(ngModel)]="region"></ion-input>
-  </ion-item>
+    <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+      <ion-select label="Región" label-placement="floating" [(ngModel)]="id_region" (ionChange)="onRegionChange()">
+        <ion-select-option *ngFor="let region of regiones" [value]="region.id_region">
+          {{ region.nombre_region }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
 
-
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-    <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Comuna
-    </ion-label>
-    <ion-input [(ngModel)]="comuna"></ion-input>
+    <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+      <ion-select label="Comuna" label-placement="floating" [(ngModel)]="id_comuna" [disabled]="!id_region">
+        <ion-select-option *ngFor="let comuna of comunas" [value]="comuna.id_comuna">
+          {{ comuna.nombre_comuna }}
+        </ion-select-option>
+      </ion-select>
   </ion-item>
 
 

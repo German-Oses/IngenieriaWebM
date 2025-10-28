@@ -12,6 +12,8 @@ app.use(express.json());
 
 // Definir y usar las rutas
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/ubicacion', require('./routes/ubicacion'));
+app.use('/api/profile', require('./routes/profile'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

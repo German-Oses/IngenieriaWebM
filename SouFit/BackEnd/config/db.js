@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Carga el archivo .env desde la carpeta BackEnd
+
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const pool = new Pool({

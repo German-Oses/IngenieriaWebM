@@ -1,32 +1,58 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
-import { AlertController } from '@ionic/angular'; 
+import { IonicModule, AlertController } from '@ionic/angular'; 
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { UbicacionService } from '../../services/ubicacion.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-registro',
-  standalone: true,
   templateUrl: './register.page.html',
-  imports: [IonicModule, FormsModule], 
+  standalone: true,
+  imports: [IonicModule, FormsModule, CommonModule]
 })
-export class RegisterPage {
+export class RegistroPage implements OnInit {
   username = '';
   email = '';
-  region = '';
-  comuna = '';
   password = '';
   confirmPassword = '';
   acceptTerms = false;
 
+  // IDs seleccionados
+  id_region: number | null = null;
+  id_comuna: number | null = null;
+
+  // Listas para los dropdowns
+  regiones: any[] = [];
+  comunas: any[] = [];
+
   constructor(
     private authService: AuthService,
+    private ubicacionService: UbicacionService,
     private router: Router,
     private alertController: AlertController
-  ) {}
+  ) { }
 
-  createAccount() {
+  ngOnInit(): void {
+    this.ubicacionService.getRegiones().subscribe({
+      next: (data) => { this.regiones = data; },
+      error: (err) => { console.error('Error cargando regiones', err); }
+    });
+  }
+
+  onRegionChange(): void {
+    this.comunas = [];
+    this.id_comuna = null;
+    if (this.id_region != null) {
+      this.ubicacionService.getComunas(this.id_region).subscribe({
+        next: (data) => { this.comunas = data; },
+        error: (err) => { console.error('Error cargando comunas', err); }
+      });
+    }
+  }
+
+  createAccount(): void {
     if (!this.acceptTerms) {
       this.presentAlert('Atención', 'Debes aceptar los términos y condiciones.');
       return;
@@ -37,12 +63,17 @@ export class RegisterPage {
       return;
     }
 
+    if (!this.id_region || !this.id_comuna) {
+      this.presentAlert('Error', 'Debes seleccionar región y comuna.');
+      return;
+    }
+
     const userData = {
       username: this.username,
       email: this.email,
       password: this.password,
-      region: this.region,
-      comuna: this.comuna,
+      id_region: this.id_region,
+      id_comuna: this.id_comuna
     };
 
     this.authService.register(userData).subscribe({
@@ -51,9 +82,9 @@ export class RegisterPage {
         this.router.navigate(['/login']);
       },
       error: (err) => {
-        const errorMsg = err.error?.msg || 'No se pudo completar el registro.';
+        const errorMsg = err?.error?.msg || 'No se pudo completar el registro.';
         this.presentAlert('Error de Registro', errorMsg);
-      },
+      }
     });
   }
 
