@@ -12,7 +12,5 @@ router.post('/register', registerRules(), validate, authController.register);
 // POST /api/auth/login (Público)
 router.post('/login', authController.login);
 
-// GET /api/auth (Privado, requiere token)
-router.get('/', authMiddleware, authController.getAuthenticatedUser);
 
 module.exports = router;

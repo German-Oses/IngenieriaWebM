@@ -1,0 +1,55 @@
+# ===============================
+# 🌐 SouFit - Git Ignore General
+# Ignora archivos y carpetas globales del proyecto completo
+# ===============================
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos de entorno globales
+.env
+.env.local
+.env.*.local
+variables_entorno.txt
+
+# Archivos de dependencias (para seguridad)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Archivos de build generales
+dist/
+build/
+coverage/
+out/
+
+# Archivos temporales
+*.log
+*.tmp
+*.temp
+*.bak
+*.old
+
+# Archivos de IDE y configuración
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Archivos comprimidos o de respaldo
+*.zip
+*.rar
+*.tar
+*.gz
+
+# Archivos del proyecto que no deben subirse
+/Otros/Mockups/
+/Otros/Informe entrega parcial Soufit.pdf
+
+# Carpeta de sistema de macOS
+__MACOSX/
