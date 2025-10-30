@@ -108,9 +108,16 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 ## Tecnologías Implementadas
 
 ### Framework Principal
+
+### Front-end
 - **Ionic Framework** (v7+)
 - **Angular** (v15+)
 - **TypeScript**
+- 
+### Back-end
+- **Node.js
+- **Express
+- **PostgreSQL
 
 ### Librerías y Herramientas
 - **Ionic Components** (UI library nativa)
@@ -130,5 +137,5 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 
 **Carrera**: Ingeniería en Informática  
 **Asignatura**: Ingeniería web y móvil  
-**Fecha de entrega**: 28 de septiembre  
+**Fecha de entrega**: 02 de noviembre  
 **Ubicación**: Valparaíso, Chile
