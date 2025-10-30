@@ -113,11 +113,11 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 - **Ionic Framework** (v7+)
 - **Angular** (v15+)
 - **TypeScript**
-- 
+
 ### Back-end
-- **Node.js
-- **Express
-- **PostgreSQL
+- **Node.js**
+- **Express**
+- **PostgreSQL**
 
 ### Librerías y Herramientas
 - **Ionic Components** (UI library nativa)
