@@ -1,0 +1,147 @@
+const express = require('express');
+const pool = require('../config/db');
+const auth = require('../middleware/authmiddleware');
+const router = express.Router();
+
+// Obtener lista de chats del usuario actual
+router.get('/chats', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Obtener todos los usuarios con los que el usuario actual ha tenido conversaciones
+        const query = `
+            SELECT DISTINCT 
+                CASE 
+                    WHEN m.id_remitente = $1 THEN m.id_destinatario
+                    ELSE m.id_remitente
+                END as id_usuario,
+                u.nombre,
+                u.apellido,
+                u.avatar,
+                MAX(m.fecha_envio) as fecha_ultimo_mensaje,
+                (
+                    SELECT contenido 
+                    FROM mensaje m2 
+                    WHERE (m2.id_remitente = $1 AND m2.id_destinatario = 
+                        CASE 
+                            WHEN m.id_remitente = $1 THEN m.id_destinatario
+                            ELSE m.id_remitente
+                        END)
+                    OR (m2.id_destinatario = $1 AND m2.id_remitente = 
+                        CASE 
+                            WHEN m.id_remitente = $1 THEN m.id_destinatario
+                            ELSE m.id_remitente
+                        END)
+                    ORDER BY m2.fecha_envio DESC 
+                    LIMIT 1
+                ) as ultimo_mensaje
+            FROM mensaje m
+            JOIN usuario u ON u.id = CASE 
+                WHEN m.id_remitente = $1 THEN m.id_destinatario
+                ELSE m.id_remitente
+            END
+            WHERE m.id_remitente = $1 OR m.id_destinatario = $1
+            GROUP BY 
+                CASE 
+                    WHEN m.id_remitente = $1 THEN m.id_destinatario
+                    ELSE m.id_remitente
+                END, u.nombre, u.apellido, u.avatar
+            ORDER BY MAX(m.fecha_envio) DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        
+        // Formatear los resultados
+        const chats = result.rows.map(row => ({
+            id_usuario: row.id_usuario,
+            nombre: `${row.nombre} ${row.apellido}`,
+            ultimo_mensaje: row.ultimo_mensaje,
+            fecha_ultimo_mensaje: row.fecha_ultimo_mensaje,
+            avatar: row.avatar,
+            en_linea: false // Esto se puede implementar más adelante con Socket.IO
+        }));
+        
+        res.json(chats);
+    } catch (error) {
+        console.error('Error al obtener chats:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener historial de mensajes con un usuario específico
+router.get('/mensajes/:otroUsuarioId', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const otroUsuarioId = req.params.otroUsuarioId;
+        
+        const query = `
+            SELECT 
+                id,
+                id_remitente,
+                id_destinatario,
+                contenido,
+                fecha_envio,
+                leido
+            FROM mensaje 
+            WHERE (id_remitente = $1 AND id_destinatario = $2) 
+               OR (id_remitente = $2 AND id_destinatario = $1)
+            ORDER BY fecha_envio ASC
+        `;
+        
+        const result = await pool.query(query, [userId, otroUsuarioId]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener mensajes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Marcar mensajes como leídos
+router.put('/mensajes/marcar-leidos/:otroUsuarioId', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const otroUsuarioId = req.params.otroUsuarioId;
+        
+        const query = `
+            UPDATE mensaje 
+            SET leido = true 
+            WHERE id_remitente = $1 AND id_destinatario = $2 AND leido = false
+        `;
+        
+        await pool.query(query, [otroUsuarioId, userId]);
+        res.json({ message: 'Mensajes marcados como leídos' });
+    } catch (error) {
+        console.error('Error al marcar mensajes como leídos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener todos los usuarios disponibles para chatear
+router.get('/usuarios-disponibles', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const query = `
+            SELECT id, nombre, apellido, email, avatar
+            FROM usuario 
+            WHERE id != $1
+            ORDER BY nombre, apellido
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        
+        const usuarios = result.rows.map(row => ({
+            id_usuario: row.id,
+            nombre: `${row.nombre} ${row.apellido}`,
+            email: row.email,
+            avatar: row.avatar
+        }));
+        
+        res.json(usuarios);
+    } catch (error) {
+        console.error('Error al obtener usuarios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+module.exports = router;

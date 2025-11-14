@@ -35,6 +35,17 @@ CREATE TABLE ejercicio (
     url_media TEXT,
     fecha_publicacion TIMESTAMP DEFAULT NOW()
 );
+-- 5. Tabla de mensajes
+
+CREATE TABLE mensaje (
+    id_mensaje SERIAL PRIMARY KEY,
+    id_remitente INT NOT NULL REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    id_destinatario INT NOT NULL REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    contenido TEXT NOT NULL,
+    leido BOOLEAN DEFAULT FALSE,
+    fecha_envio TIMESTAMP DEFAULT NOW()
+);
+
 
 INSERT INTO region (nombre_region) VALUES
 ('Tarapacá'),

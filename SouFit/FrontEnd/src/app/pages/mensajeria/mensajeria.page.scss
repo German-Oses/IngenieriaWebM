@@ -276,6 +276,81 @@ ion-content {
   background-color: #e0e0e0;
 }
 
+// Estilos adicionales para el chat dinámico
+.no-chats, .no-mensajes, .no-chat-seleccionado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #999;
+  padding: 20px;
+}
+
+.no-chat-seleccionado {
+  background-color: #f8f8f8;
+  border-left: 1px solid #e0e0e0;
+}
+
+.no-chat-seleccionado ion-icon {
+  font-size: 64px;
+  color: #ddd;
+  margin-bottom: 20px;
+}
+
+.no-chat-seleccionado h3 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.no-chat-seleccionado p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.mensaje-hora {
+  font-size: 11px !important;
+  color: #999 !important;
+  margin-top: 5px;
+  display: block;
+}
+
+.estado-online {
+  color: #4caf50 !important;
+  font-size: 12px !important;
+  margin: 0 !important;
+}
+
+.btn-enviar {
+  background-color: #007bff !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 35px;
+  height: 35px;
+  margin-right: 5px;
+}
+
+.btn-enviar:disabled {
+  background-color: #ccc !important;
+  cursor: not-allowed !important;
+}
+
+.btn-enviar:hover:not(:disabled) {
+  background-color: #0056b3 !important;
+}
+
+.chat-item.activo {
+  background-color: #e3f2fd !important;
+  border-left: 4px solid #2196f3;
+}
+
+.chat-item:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .menu-lateral {
     display: none !important;
