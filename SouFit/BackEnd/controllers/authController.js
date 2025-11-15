@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 // FUNCIÓN DE REGISTRO 
 exports.register = async (req, res) => {
     
-    const { username, email, password, id_region, id_comuna } = req.body;
+    const { username, email, password, nombre, apellido, id_region, id_comuna } = req.body;
 
     try {
      
@@ -25,14 +25,25 @@ exports.register = async (req, res) => {
 
 
         const newUser = await db.query(
-            'INSERT INTO usuario (username, email, password_hash, id_region, id_comuna) VALUES ($1, $2, $3, $4, $5) RETURNING id_usuario',
-            [username, email, hashedPassword, id_region, id_comuna]
+            'INSERT INTO usuario (username, email, password_hash, nombre, apellido, id_region, id_comuna) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_usuario, username, nombre, apellido, email',
+            [username, email, hashedPassword, nombre, apellido, id_region, id_comuna]
         );
 
-        const payload = { user: { id: newUser.rows[0].id_usuario } };
+        const userData = {
+            id: newUser.rows[0].id_usuario,
+            username: newUser.rows[0].username,
+            nombre: newUser.rows[0].nombre,
+            apellido: newUser.rows[0].apellido,
+            email: newUser.rows[0].email
+        };
+
+        const payload = { user: userData };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
             if (err) throw err;
-            res.status(201).json({ token });
+            res.status(201).json({ 
+                token,
+                user: userData
+            });
         });
 
     } catch (error) {
@@ -47,7 +58,7 @@ exports.login = async (req, res) => {
     try {
         
         
-            const user = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
+            const user = await db.query('SELECT id_usuario, username, email, password_hash, nombre, apellido FROM usuario WHERE email = $1', [email]);
             if (user.rows.length === 0) {
                 return res.status(400).json({ msg: 'Credenciales inválidas' }); // <--- PROBABLEMENTE ESTO
             }
@@ -59,10 +70,22 @@ exports.login = async (req, res) => {
             }
 
       
-        const payload = { user: { id: user.rows[0].id_usuario } };
+        const userData = {
+            id: user.rows[0].id_usuario,
+            username: user.rows[0].username,
+            nombre: user.rows[0].nombre,
+            apellido: user.rows[0].apellido,
+            email: user.rows[0].email
+        };
+
+        const payload = { user: userData };
+
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
             if (err) throw err;
-            res.json({ token });
+            res.json({ 
+                token,
+                user: userData
+            });
         });
 
     } catch (error) {

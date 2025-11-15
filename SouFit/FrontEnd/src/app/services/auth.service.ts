@@ -45,11 +45,14 @@ export class AuthService {
   }
 
   login(credentials: any): Observable<any> {
-    return this.http.post<{token: string}>(`${this.apiUrl}/login`, credentials).pipe(
+    return this.http.post<{token: string, user: any}>(`${this.apiUrl}/login`, credentials).pipe(
       tap(async (res) => {
         if (res.token) {
-         
+          // Guardar token y usuario
           await this.storage.set('token', res.token);
+          if (res.user) {
+            await this.saveUser(res.user);
+          }
           this.isAuthenticated.next(true);
         }
       })
