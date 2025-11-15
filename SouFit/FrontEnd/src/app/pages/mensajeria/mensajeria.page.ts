@@ -24,6 +24,10 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   usuarioActual: any = null;
   nuevoMensaje: string = '';
   
+  // Variables para nueva conversación
+  mostrarUsuariosDisponibles: boolean = false;
+  usuariosDisponibles: any[] = [];
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -68,8 +72,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
         })
       );
       
-      // Cargar chats iniciales
-      this.cargarChats();
+      // Los chats se cargan automáticamente cuando se inicializa el servicio
     }
   }
 
@@ -80,17 +83,8 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
 
   cargarChats() {
-    this.chatService.cargarChats().subscribe({
-      next: (chats) => {
-        this.chats = chats;
-        if (chats.length > 0 && !this.chatActivo) {
-          this.seleccionarChat(chats[0]);
-        }
-      },
-      error: (error) => {
-        console.error('Error al cargar chats:', error);
-      }
-    });
+    // Recargar chats usando el método público del servicio
+    this.chatService.recargarChats();
   }
 
   seleccionarChat(chat: Chat) {
@@ -167,5 +161,47 @@ export class MensajeriaPage implements OnInit, OnDestroy {
 
   perfil() {
     this.router.navigate(['/perfil']);
+  }
+
+  // Métodos para nueva conversación
+  toggleUsuariosDisponibles() {
+    this.mostrarUsuariosDisponibles = !this.mostrarUsuariosDisponibles;
+    if (this.mostrarUsuariosDisponibles) {
+      this.cargarUsuariosDisponibles();
+    }
+  }
+
+  cerrarUsuariosDisponibles() {
+    this.mostrarUsuariosDisponibles = false;
+  }
+
+  cargarUsuariosDisponibles() {
+    this.chatService.cargarUsuariosDisponibles().subscribe({
+      next: (usuarios) => {
+        this.usuariosDisponibles = usuarios;
+      },
+      error: (error) => {
+        console.error('Error al cargar usuarios:', error);
+      }
+    });
+  }
+
+  iniciarConversacion(usuario: any) {
+    // Crear un objeto Chat temporal para el usuario seleccionado
+    const nuevoChat: Chat = {
+      id_usuario: usuario.id_usuario,
+      nombre: usuario.nombre,
+      avatar: usuario.avatar,
+      en_linea: false
+    };
+
+    // Seleccionar el nuevo chat
+    this.seleccionarChat(nuevoChat);
+    
+    // Cerrar la lista de usuarios
+    this.cerrarUsuariosDisponibles();
+    
+    // Limpiar mensajes (nueva conversación)
+    this.chatService.limpiarMensajes();
   }
 }

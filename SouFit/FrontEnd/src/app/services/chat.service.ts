@@ -72,7 +72,17 @@ export class ChatService {
   inicializarChat(usuario: any) {
     this.usuarioActual = usuario;
     this.entrarChat(usuario.id);
-    this.cargarChats();
+    
+    // Cargar chats y actualizar el subject
+    this.cargarChats().subscribe({
+      next: (chats) => {
+        this.chatsSubject.next(chats);
+      },
+      error: (error) => {
+        console.error('Error al cargar chats:', error);
+        this.chatsSubject.next([]); // Array vacío si hay error
+      }
+    });
   }
 
   // Entrar al chat del usuario
@@ -112,6 +122,11 @@ export class ChatService {
     return this.http.get<Chat[]>(`${this.apiUrl}/chats`);
   }
 
+  // Cargar usuarios disponibles para nueva conversación
+  cargarUsuariosDisponibles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/usuarios-disponibles`);
+  }
+
   // Seleccionar un chat activo
   seleccionarChat(chat: Chat) {
     this.chatActivoSubject.next(chat);
@@ -139,6 +154,11 @@ export class ChatService {
         console.error('Error al actualizar chats:', error);
       }
     });
+  }
+
+  // Método público para recargar chats
+  recargarChats() {
+    this.actualizarListaChats();
   }
 
   // Obtener el usuario actual

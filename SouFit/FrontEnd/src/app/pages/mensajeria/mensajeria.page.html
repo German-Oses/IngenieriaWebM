@@ -43,32 +43,63 @@
         <div class="header-chats">
           <h1>{{ usuarioActual?.nombre || 'Usuario' }}</h1>
           <p>EN LINEA</p>
+          <button class="btn-nuevo-chat" (click)="toggleUsuariosDisponibles()">
+            <ion-icon name="add-outline"></ion-icon>
+            Nueva conversación
+          </button>
         </div>
 
         <div class="chats-contenedor">
           
-          <!-- Lista dinámica de chats -->
-          <div 
-            *ngFor="let chat of chats" 
-            class="chat-item" 
-            [class.activo]="chatActivo?.id_usuario === chat.id_usuario"
-            (click)="seleccionarChat(chat)">
-            <ion-avatar>
-              <img [src]="chat.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="chat.nombre">
-            </ion-avatar>
-            <div class="chat-info">
-              <h3>{{ chat.nombre }}</h3>
-              <p>{{ chat.ultimo_mensaje || 'No hay mensajes' }}</p>
+          <!-- Lista de usuarios disponibles para nueva conversación -->
+          <div *ngIf="mostrarUsuariosDisponibles" class="usuarios-disponibles">
+            <div class="usuarios-header">
+              <h3>Usuarios disponibles</h3>
+              <button class="btn-cerrar" (click)="cerrarUsuariosDisponibles()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
             </div>
-            <div class="chat-hora">
-              <span>{{ chat.fecha_ultimo_mensaje ? formatearFechaUltimoMensaje(chat.fecha_ultimo_mensaje) : '' }}</span>
+            <div 
+              *ngFor="let usuario of usuariosDisponibles" 
+              class="usuario-item"
+              (click)="iniciarConversacion(usuario)">
+              <ion-avatar>
+                <img [src]="usuario.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="usuario.nombre">
+              </ion-avatar>
+              <div class="usuario-info">
+                <h4>{{ usuario.nombre }}</h4>
+                <p>{{ usuario.email }}</p>
+              </div>
+            </div>
+            <div *ngIf="usuariosDisponibles.length === 0" class="no-usuarios">
+              <p>No hay usuarios disponibles</p>
             </div>
           </div>
 
-          <!-- Mensaje cuando no hay chats -->
-          <div *ngIf="chats.length === 0" class="no-chats">
-            <p>No tienes conversaciones aún</p>
-            <small>Empieza una nueva conversación</small>
+          <!-- Lista dinámica de chats existentes -->
+          <div *ngIf="!mostrarUsuariosDisponibles">
+            <div 
+              *ngFor="let chat of chats" 
+              class="chat-item" 
+              [class.activo]="chatActivo?.id_usuario === chat.id_usuario"
+              (click)="seleccionarChat(chat)">
+              <ion-avatar>
+                <img [src]="chat.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="chat.nombre">
+              </ion-avatar>
+              <div class="chat-info">
+                <h3>{{ chat.nombre }}</h3>
+                <p>{{ chat.ultimo_mensaje || 'No hay mensajes' }}</p>
+              </div>
+              <div class="chat-hora">
+                <span>{{ chat.fecha_ultimo_mensaje ? formatearFechaUltimoMensaje(chat.fecha_ultimo_mensaje) : '' }}</span>
+              </div>
+            </div>
+
+            <!-- Mensaje cuando no hay chats -->
+            <div *ngIf="chats.length === 0" class="no-chats">
+              <p>No tienes conversaciones aún</p>
+              <small>Haz clic en "Nueva conversación" para empezar</small>
+            </div>
           </div>
 
         </div>
