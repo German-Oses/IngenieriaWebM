@@ -8,45 +8,40 @@ router.get('/chats', auth, async (req, res) => {
     try {
         const userId = req.user.id;
         
-        // Obtener todos los usuarios con los que el usuario actual ha tenido conversaciones
         const query = `
-            SELECT DISTINCT 
-                CASE 
-                    WHEN m.id_remitente = $1 THEN m.id_destinatario
-                    ELSE m.id_remitente
-                END as id_usuario,
+            SELECT 
+                t.id_usuario,
                 u.nombre,
                 u.apellido,
                 u.avatar,
-                MAX(m.fecha_envio) as fecha_ultimo_mensaje,
+                MAX(t.fecha_envio) as fecha_ultimo_mensaje,
                 (
+                    -- Subconsulta para obtener el último mensaje para este chat_id
                     SELECT contenido 
                     FROM mensaje m2 
-                    WHERE (m2.id_remitente = $1 AND m2.id_destinatario = 
-                        CASE 
-                            WHEN m.id_remitente = $1 THEN m.id_destinatario
-                            ELSE m.id_remitente
-                        END)
-                    OR (m2.id_destinatario = $1 AND m2.id_remitente = 
-                        CASE 
-                            WHEN m.id_remitente = $1 THEN m.id_destinatario
-                            ELSE m.id_remitente
-                        END)
+                    WHERE 
+                        (m2.id_remitente = $1 AND m2.id_destinatario = t.id_usuario)
+                        OR (m2.id_destinatario = $1 AND m2.id_remitente = t.id_usuario)
                     ORDER BY m2.fecha_envio DESC 
                     LIMIT 1
                 ) as ultimo_mensaje
-            FROM mensaje m
-            JOIN usuario u ON u.id = CASE 
-                WHEN m.id_remitente = $1 THEN m.id_destinatario
-                ELSE m.id_remitente
-            END
-            WHERE m.id_remitente = $1 OR m.id_destinatario = $1
+            FROM (
+                -- Subconsulta (t) para identificar el ID del "otro usuario" (id_usuario)
+                SELECT 
+                    id_remitente,
+                    id_destinatario,
+                    fecha_envio,
+                    CASE 
+                        WHEN id_remitente = $1 THEN id_destinatario
+                        ELSE id_remitente
+                    END as id_usuario
+                FROM mensaje 
+                WHERE id_remitente = $1 OR id_destinatario = $1
+            ) t
+            JOIN usuario u ON u.id_usuario = t.id_usuario
             GROUP BY 
-                CASE 
-                    WHEN m.id_remitente = $1 THEN m.id_destinatario
-                    ELSE m.id_remitente
-                END, u.nombre, u.apellido, u.avatar
-            ORDER BY MAX(m.fecha_envio) DESC
+                t.id_usuario, u.nombre, u.apellido, u.avatar
+            ORDER BY MAX(t.fecha_envio) DESC
         `;
         
         const result = await pool.query(query, [userId]);
@@ -58,7 +53,7 @@ router.get('/chats', auth, async (req, res) => {
             ultimo_mensaje: row.ultimo_mensaje,
             fecha_ultimo_mensaje: row.fecha_ultimo_mensaje,
             avatar: row.avatar,
-            en_linea: false // Esto se puede implementar más adelante con Socket.IO
+            en_linea: false 
         }));
         
         res.json(chats);
@@ -76,7 +71,7 @@ router.get('/mensajes/:otroUsuarioId', auth, async (req, res) => {
         
         const query = `
             SELECT 
-                id,
+                id_mensaje,
                 id_remitente,
                 id_destinatario,
                 contenido,
@@ -84,7 +79,7 @@ router.get('/mensajes/:otroUsuarioId', auth, async (req, res) => {
                 leido
             FROM mensaje 
             WHERE (id_remitente = $1 AND id_destinatario = $2) 
-               OR (id_remitente = $2 AND id_destinatario = $1)
+                OR (id_remitente = $2 AND id_destinatario = $1)
             ORDER BY fecha_envio ASC
         `;
         
@@ -122,16 +117,16 @@ router.get('/usuarios-disponibles', auth, async (req, res) => {
         const userId = req.user.id;
         
         const query = `
-            SELECT id, nombre, apellido, email, avatar, username
+            SELECT id_usuario, nombre, apellido, email, avatar, username
             FROM usuario 
-            WHERE id != $1
+            WHERE id_usuario != $1
             ORDER BY nombre, apellido
         `;
         
         const result = await pool.query(query, [userId]);
         
         const usuarios = result.rows.map(row => ({
-            id_usuario: row.id,
+            id_usuario: row.id_usuario,
             nombre: `${row.nombre} ${row.apellido}`,
             username: row.username,
             email: row.email,
@@ -153,7 +148,7 @@ router.get('/buscar-usuario/:username', auth, async (req, res) => {
         
         const query = `
             SELECT 
-                u.id, 
+                u.id_usuario, 
                 u.nombre, 
                 u.apellido, 
                 u.email, 
@@ -161,8 +156,10 @@ router.get('/buscar-usuario/:username', auth, async (req, res) => {
                 u.username,
                 CASE WHEN s.id_seguido IS NOT NULL THEN true ELSE false END as siguiendo
             FROM usuario u
-            LEFT JOIN seguimiento s ON u.id = s.id_seguido AND s.id_seguidor = $1
-            WHERE LOWER(u.username) LIKE $2 AND u.id != $1
+            -- CORRECCIÓN 1: u.id -> u.id_usuario
+            LEFT JOIN seguimiento s ON u.id_usuario = s.id_seguido AND s.id_seguidor = $1
+            -- CORRECCIÓN 2: u.id -> u.id_usuario
+            WHERE LOWER(u.username) LIKE $2 AND u.id_usuario != $1
             ORDER BY u.username
             LIMIT 20
         `;
@@ -170,7 +167,7 @@ router.get('/buscar-usuario/:username', auth, async (req, res) => {
         const result = await pool.query(query, [userId, `%${username}%`]);
         
         const usuarios = result.rows.map(row => ({
-            id_usuario: row.id,
+            id_usuario: row.id_usuario,
             nombre: `${row.nombre} ${row.apellido}`,
             username: row.username,
             email: row.email,
@@ -196,7 +193,7 @@ router.post('/seguir/:userId', auth, async (req, res) => {
         }
         
         // Verificar que el usuario a seguir existe
-        const userExists = await pool.query('SELECT id FROM usuario WHERE id = $1', [seguidoId]);
+        const userExists = await pool.query('SELECT id_usuario FROM usuario WHERE id_usuario = $1', [seguidoId]);
         if (userExists.rows.length === 0) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
@@ -241,18 +238,20 @@ router.delete('/seguir/:userId', auth, async (req, res) => {
 // Obtener usuarios que sigo
 router.get('/siguiendo', auth, async (req, res) => {
     try {
-        const userId = req.user.id;
+        // CORRECCIÓN 3: req.user.id_usuario -> req.user.id
+        const userId = req.user.id; 
         
         const query = `
             SELECT 
-                u.id,
+                u.id_usuario,
                 u.nombre,
                 u.apellido, 
                 u.username,
                 u.avatar,
                 s.fecha_seguimiento
             FROM seguimiento s
-            JOIN usuario u ON s.id_seguido = u.id
+            -- CORRECCIÓN 4: u.id -> u.id_usuario
+            JOIN usuario u ON s.id_seguido = u.id_usuario 
             WHERE s.id_seguidor = $1
             ORDER BY s.fecha_seguimiento DESC
         `;
@@ -260,7 +259,7 @@ router.get('/siguiendo', auth, async (req, res) => {
         const result = await pool.query(query, [userId]);
         
         const siguiendo = result.rows.map(row => ({
-            id_usuario: row.id,
+            id_usuario: row.id_usuario,
             nombre: `${row.nombre} ${row.apellido}`,
             username: row.username,
             avatar: row.avatar,
