@@ -1,18 +1,19 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonAvatar, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonRow, IonTitle, IonToolbar, IonButton, IonInput } from '@ionic/angular/standalone';
+import { IonAvatar, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonRow, IonTitle, IonToolbar, IonButton, IonInput, IonModal } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { ChatService, Chat, Mensaje } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
+import { BuscarUsuariosComponent, UsuarioBusqueda } from '../../components/buscar-usuarios/buscar-usuarios.component';
 
 @Component({
   selector: 'app-mensajeria',
   templateUrl: './mensajeria.page.html',
   styleUrls: ['./mensajeria.page.scss'],
   standalone: true,
-  imports: [IonInput, IonButton, IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule,IonIcon,IonCol,IonRow,IonGrid,IonAvatar
+  imports: [IonModal, IonInput, IonButton, IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule,IonIcon,IonCol,IonRow,IonGrid,IonAvatar, BuscarUsuariosComponent
     ]
 })
 export class MensajeriaPage implements OnInit, OnDestroy {
@@ -27,6 +28,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   // Variables para nueva conversación
   mostrarUsuariosDisponibles: boolean = false;
   usuariosDisponibles: any[] = [];
+  mostrarBusquedaAvanzada: boolean = false;
   
   private subscriptions: Subscription[] = [];
 
@@ -169,6 +171,33 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     if (this.mostrarUsuariosDisponibles) {
       this.cargarUsuariosDisponibles();
     }
+  }
+
+  abrirBusquedaAvanzada() {
+    this.mostrarBusquedaAvanzada = true;
+  }
+
+  cerrarBusquedaAvanzada() {
+    this.mostrarBusquedaAvanzada = false;
+  }
+
+  onUsuarioSeleccionado(usuario: UsuarioBusqueda) {
+    // Crear un objeto Chat para el usuario seleccionado
+    const nuevoChat: Chat = {
+      id_usuario: usuario.id_usuario,
+      nombre: usuario.nombre,
+      avatar: usuario.avatar,
+      en_linea: false
+    };
+
+    // Seleccionar el nuevo chat
+    this.seleccionarChat(nuevoChat);
+    
+    // Cerrar la búsqueda
+    this.cerrarBusquedaAvanzada();
+    
+    // Limpiar mensajes (nueva conversación)
+    this.chatService.limpiarMensajes();
   }
 
   cerrarUsuariosDisponibles() {

@@ -43,10 +43,16 @@
         <div class="header-chats">
           <h1>{{ usuarioActual?.nombre || 'Usuario' }}</h1>
           <p>EN LINEA</p>
-          <button class="btn-nuevo-chat" (click)="toggleUsuariosDisponibles()">
-            <ion-icon name="add-outline"></ion-icon>
-            Nueva conversación
-          </button>
+          <div class="botones-chat">
+            <button class="btn-nuevo-chat" (click)="toggleUsuariosDisponibles()">
+              <ion-icon name="add-outline"></ion-icon>
+              Nueva conversación
+            </button>
+            <button class="btn-buscar-avanzado" (click)="abrirBusquedaAvanzada()">
+              <ion-icon name="search-outline"></ion-icon>
+              Buscar usuarios
+            </button>
+          </div>
         </div>
 
         <div class="chats-contenedor">
@@ -177,4 +183,17 @@
 
     </ion-row>
   </ion-grid>
+
+  <!-- Modal de búsqueda avanzada -->
+  <ion-modal [isOpen]="mostrarBusquedaAvanzada" (didDismiss)="cerrarBusquedaAvanzada()">
+    <ng-template>
+      <div class="modal-backdrop">
+        <app-buscar-usuarios
+          (usuarioSeleccionado)="onUsuarioSeleccionado($event)"
+          (cerrar)="cerrarBusquedaAvanzada()">
+        </app-buscar-usuarios>
+      </div>
+    </ng-template>
+  </ion-modal>
+
 </ion-content>

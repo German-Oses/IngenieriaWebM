@@ -1,0 +1,178 @@
+<div class="buscar-usuarios-container">
+  
+  <!-- Header -->
+  <div class="header">
+    <h2>Buscar Usuarios</h2>
+    <button class="btn-cerrar" (click)="cerrarComponente()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Pestañas -->
+  <div class="pestanas">
+    <button 
+      class="pestana" 
+      [class.activa]="pestanaActiva === 'buscar'"
+      (click)="cambiarPestana('buscar')">
+      <ion-icon name="search-outline"></ion-icon>
+      Buscar
+    </button>
+    <button 
+      class="pestana" 
+      [class.activa]="pestanaActiva === 'siguiendo'"
+      (click)="cambiarPestana('siguiendo')">
+      <ion-icon name="people-outline"></ion-icon>
+      Siguiendo ({{ usuariosSiguiendo.length }})
+    </button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="contenido">
+
+    <!-- Pestaña de búsqueda -->
+    <div *ngIf="pestanaActiva === 'buscar'">
+      
+      <!-- Campo de búsqueda -->
+      <div class="busqueda-container">
+        <div class="campo-busqueda">
+          <ion-icon name="search-outline"></ion-icon>
+          <input 
+            #searchInput
+            type="text" 
+            placeholder="Buscar por @username..."
+            [(ngModel)]="terminoBusqueda"
+            (input)="onBusquedaChange()"
+            (keydown)="onEnterPressed($event)"
+            maxlength="50">
+          <button 
+            *ngIf="terminoBusqueda" 
+            class="btn-limpiar"
+            (click)="limpiarBusqueda()">
+            <ion-icon name="close-circle-outline"></ion-icon>
+          </button>
+        </div>
+        
+        <button 
+          class="btn-buscar" 
+          (click)="buscarUsuarios()"
+          [disabled]="terminoBusqueda.length < 2">
+          <ion-icon name="search-outline"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="cargando" class="loading">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Buscando usuarios...</p>
+      </div>
+
+      <!-- Resultados de búsqueda -->
+      <div *ngIf="mostrarResultados && !cargando">
+        <div class="seccion-titulo">
+          <h3>Resultados ({{ usuariosEncontrados.length }})</h3>
+        </div>
+        
+        <div *ngIf="usuariosEncontrados.length === 0" class="sin-resultados">
+          <ion-icon name="search-outline"></ion-icon>
+          <p>No se encontraron usuarios con "@{{ terminoBusqueda }}"</p>
+          <small>Prueba con otro término de búsqueda</small>
+        </div>
+
+        <div class="lista-usuarios">
+          <div 
+            *ngFor="let usuario of usuariosEncontrados" 
+            class="usuario-item">
+            
+            <div class="usuario-info" (click)="seleccionarUsuario(usuario)">
+              <ion-avatar>
+                <img [src]="usuario.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="usuario.nombre">
+              </ion-avatar>
+              <div class="info-texto">
+                <h4>{{ usuario.nombre }}</h4>
+                <p class="username">@{{ usuario.username }}</p>
+              </div>
+            </div>
+
+            <div class="acciones">
+              <button 
+                class="btn-chat"
+                (click)="seleccionarUsuario(usuario)"
+                title="Enviar mensaje">
+                <ion-icon name="chatbubble-outline"></ion-icon>
+              </button>
+              
+              <button 
+                *ngIf="!usuario.siguiendo"
+                class="btn-seguir"
+                (click)="seguirUsuario(usuario)"
+                title="Seguir usuario">
+                <ion-icon name="person-add-outline"></ion-icon>
+              </button>
+              
+              <button 
+                *ngIf="usuario.siguiendo"
+                class="btn-siguiendo"
+                (click)="dejarDeSeguir(usuario)"
+                title="Dejar de seguir">
+                <ion-icon name="checkmark-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje inicial -->
+      <div *ngIf="!mostrarResultados && !cargando" class="mensaje-inicial">
+        <ion-icon name="search-outline"></ion-icon>
+        <h3>Buscar usuarios</h3>
+        <p>Escribe el nombre de usuario para encontrar personas</p>
+        <small>Ejemplo: @juan_perez</small>
+      </div>
+    </div>
+
+    <!-- Pestaña de siguiendo -->
+    <div *ngIf="pestanaActiva === 'siguiendo'">
+      
+      <div *ngIf="usuariosSiguiendo.length === 0" class="sin-resultados">
+        <ion-icon name="people-outline"></ion-icon>
+        <p>No sigues a ningún usuario aún</p>
+        <small>Busca usuarios para empezar a seguirlos</small>
+      </div>
+
+      <div class="lista-usuarios">
+        <div 
+          *ngFor="let usuario of usuariosSiguiendo" 
+          class="usuario-item">
+          
+          <div class="usuario-info" (click)="seleccionarUsuario(usuario)">
+            <ion-avatar>
+              <img [src]="usuario.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="usuario.nombre">
+            </ion-avatar>
+            <div class="info-texto">
+              <h4>{{ usuario.nombre }}</h4>
+              <p class="username">@{{ usuario.username }}</p>
+            </div>
+          </div>
+
+          <div class="acciones">
+            <button 
+              class="btn-chat"
+              (click)="seleccionarUsuario(usuario)"
+              title="Enviar mensaje">
+              <ion-icon name="chatbubble-outline"></ion-icon>
+            </button>
+            
+            <button 
+              class="btn-siguiendo"
+              (click)="dejarDeSeguir(usuario)"
+              title="Dejar de seguir">
+              <ion-icon name="checkmark-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

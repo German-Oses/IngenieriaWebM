@@ -93,9 +93,13 @@ ion-content {
   color: #666;
 }
 
-.btn-nuevo-chat {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
+.botones-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-nuevo-chat, .btn-buscar-avanzado {
   border: none;
   border-radius: 8px;
   padding: 10px 15px;
@@ -108,13 +112,30 @@ ion-content {
   width: 100%;
   transition: all 0.3s ease;
 
-  &:hover {
-    background: linear-gradient(135deg, #0056b3, #004085);
-    transform: translateY(-1px);
-  }
-
   ion-icon {
     font-size: 16px;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.btn-nuevo-chat {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+  }
+}
+
+.btn-buscar-avanzado {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #1e7e34, #155724);
   }
 }
 
@@ -467,6 +488,16 @@ ion-content {
   font-size: 14px;
 }
 
+// Estilos para modal de búsqueda
+.modal-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
 @media (max-width: 768px) {
   .menu-lateral {
     display: none !important;
@@ -479,6 +510,10 @@ ion-content {
   .mensaje-contenido {
     max-width: 85%;
     font-size: 13px;
+  }
+  
+  .modal-backdrop {
+    padding: 10px;
   }
 }
 

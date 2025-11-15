@@ -122,7 +122,7 @@ router.get('/usuarios-disponibles', auth, async (req, res) => {
         const userId = req.user.id;
         
         const query = `
-            SELECT id, nombre, apellido, email, avatar
+            SELECT id, nombre, apellido, email, avatar, username
             FROM usuario 
             WHERE id != $1
             ORDER BY nombre, apellido
@@ -133,6 +133,7 @@ router.get('/usuarios-disponibles', auth, async (req, res) => {
         const usuarios = result.rows.map(row => ({
             id_usuario: row.id,
             nombre: `${row.nombre} ${row.apellido}`,
+            username: row.username,
             email: row.email,
             avatar: row.avatar
         }));
@@ -140,6 +141,136 @@ router.get('/usuarios-disponibles', auth, async (req, res) => {
         res.json(usuarios);
     } catch (error) {
         console.error('Error al obtener usuarios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Buscar usuarios por username
+router.get('/buscar-usuario/:username', auth, async (req, res) => {
+    try {
+        const username = req.params.username.toLowerCase();
+        const userId = req.user.id;
+        
+        const query = `
+            SELECT 
+                u.id, 
+                u.nombre, 
+                u.apellido, 
+                u.email, 
+                u.avatar, 
+                u.username,
+                CASE WHEN s.id_seguido IS NOT NULL THEN true ELSE false END as siguiendo
+            FROM usuario u
+            LEFT JOIN seguimiento s ON u.id = s.id_seguido AND s.id_seguidor = $1
+            WHERE LOWER(u.username) LIKE $2 AND u.id != $1
+            ORDER BY u.username
+            LIMIT 20
+        `;
+        
+        const result = await pool.query(query, [userId, `%${username}%`]);
+        
+        const usuarios = result.rows.map(row => ({
+            id_usuario: row.id,
+            nombre: `${row.nombre} ${row.apellido}`,
+            username: row.username,
+            email: row.email,
+            avatar: row.avatar,
+            siguiendo: row.siguiendo
+        }));
+        
+        res.json(usuarios);
+    } catch (error) {
+        console.error('Error al buscar usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Seguir a un usuario
+router.post('/seguir/:userId', auth, async (req, res) => {
+    try {
+        const seguidorId = req.user.id;
+        const seguidoId = req.params.userId;
+        
+        if (seguidorId == seguidoId) {
+            return res.status(400).json({ error: 'No puedes seguirte a ti mismo' });
+        }
+        
+        // Verificar que el usuario a seguir existe
+        const userExists = await pool.query('SELECT id FROM usuario WHERE id = $1', [seguidoId]);
+        if (userExists.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        
+        // Insertar el seguimiento
+        const query = `
+            INSERT INTO seguimiento (id_seguidor, id_seguido) 
+            VALUES ($1, $2) 
+            ON CONFLICT (id_seguidor, id_seguido) DO NOTHING
+            RETURNING *
+        `;
+        
+        const result = await pool.query(query, [seguidorId, seguidoId]);
+        
+        if (result.rows.length > 0) {
+            res.json({ message: 'Usuario seguido correctamente', siguiendo: true });
+        } else {
+            res.json({ message: 'Ya sigues a este usuario', siguiendo: true });
+        }
+    } catch (error) {
+        console.error('Error al seguir usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Dejar de seguir a un usuario
+router.delete('/seguir/:userId', auth, async (req, res) => {
+    try {
+        const seguidorId = req.user.id;
+        const seguidoId = req.params.userId;
+        
+        const query = 'DELETE FROM seguimiento WHERE id_seguidor = $1 AND id_seguido = $2';
+        await pool.query(query, [seguidorId, seguidoId]);
+        
+        res.json({ message: 'Has dejado de seguir a este usuario', siguiendo: false });
+    } catch (error) {
+        console.error('Error al dejar de seguir:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener usuarios que sigo
+router.get('/siguiendo', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const query = `
+            SELECT 
+                u.id,
+                u.nombre,
+                u.apellido, 
+                u.username,
+                u.avatar,
+                s.fecha_seguimiento
+            FROM seguimiento s
+            JOIN usuario u ON s.id_seguido = u.id
+            WHERE s.id_seguidor = $1
+            ORDER BY s.fecha_seguimiento DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        
+        const siguiendo = result.rows.map(row => ({
+            id_usuario: row.id,
+            nombre: `${row.nombre} ${row.apellido}`,
+            username: row.username,
+            avatar: row.avatar,
+            fecha_seguimiento: row.fecha_seguimiento,
+            siguiendo: true
+        }));
+        
+        res.json(siguiendo);
+    } catch (error) {
+        console.error('Error al obtener usuarios seguidos:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

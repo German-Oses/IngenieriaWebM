@@ -127,6 +127,26 @@ export class ChatService {
     return this.http.get<any[]>(`${this.apiUrl}/usuarios-disponibles`);
   }
 
+  // Buscar usuarios por username
+  buscarUsuarioPorUsername(username: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/buscar-usuario/${username}`);
+  }
+
+  // Seguir a un usuario
+  seguirUsuario(userId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/seguir/${userId}`, {});
+  }
+
+  // Dejar de seguir a un usuario
+  dejarDeSeguir(userId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/seguir/${userId}`);
+  }
+
+  // Obtener usuarios que sigo
+  obtenerUsuariosSiguiendo(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/siguiendo`);
+  }
+
   // Seleccionar un chat activo
   seleccionarChat(chat: Chat) {
     this.chatActivoSubject.next(chat);
