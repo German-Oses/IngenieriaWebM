@@ -159,6 +159,37 @@ exports.register = async (req, res) => {
     }
 };
 
+// Verificar disponibilidad de username
+exports.checkUsername = async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        if (!username || !username.trim()) {
+            return res.status(400).json({ available: false, message: 'El nombre de usuario es requerido' });
+        }
+        
+        // Validar formato de username (solo letras, números, guiones y guiones bajos, 3-20 caracteres)
+        const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+        if (!usernameRegex.test(username.trim())) {
+            return res.status(400).json({ 
+                available: false, 
+                message: 'El nombre de usuario debe tener entre 3 y 20 caracteres y solo puede contener letras, números, guiones y guiones bajos' 
+            });
+        }
+        
+        const usernameExists = await db.query('SELECT id_usuario FROM usuario WHERE LOWER(username) = LOWER($1)', [username.trim()]);
+        
+        if (usernameExists.rows.length > 0) {
+            return res.json({ available: false, message: 'Este nombre de usuario ya está en uso' });
+        }
+        
+        res.json({ available: true, message: 'Nombre de usuario disponible' });
+    } catch (error) {
+        logger.error('Error al verificar username', error);
+        res.status(500).json({ available: false, message: 'Error al verificar disponibilidad' });
+    }
+};
+
 //FUNCIÓN DE LOGIN 
 exports.login = async (req, res) => {
     const { email, password } = req.body;

@@ -8,87 +8,297 @@
 
 <ion-content class="ion-padding" style="background: #ffffff;">
 
-
   <ion-img src="/assets/icon/SouFitLogo.png" style="width: 80px; height: 80px; display: block; margin: 24px auto;"></ion-img>
 
   <!-- Nombre -->
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+  <ion-item 
+    [class.valid]="nombreValido === true" 
+    [class.invalid]="nombreValido === false"
+    style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px; transition: all 0.3s ease;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Nombre
+      Nombre <span style="color: red;">*</span>
     </ion-label>
-    <ion-input [(ngModel)]="nombre"></ion-input>
+    <ion-input 
+      [(ngModel)]="nombre" 
+      (ionInput)="onNombreChange()"
+      placeholder="Ingresa tu nombre"
+      maxlength="50">
+    </ion-input>
+    <ion-icon 
+      *ngIf="nombreValido === true" 
+      slot="end" 
+      name="checkmark-circle" 
+      color="success" 
+      style="font-size: 24px;">
+    </ion-icon>
+    <ion-icon 
+      *ngIf="nombreValido === false && nombre.length > 0" 
+      slot="end" 
+      name="close-circle" 
+      color="danger" 
+      style="font-size: 24px;">
+    </ion-icon>
   </ion-item>
+  <ion-text *ngIf="nombreValido === false && nombre.length > 0" color="danger" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    El nombre debe tener al menos 2 caracteres y solo letras
+  </ion-text>
 
   <!-- Apellido -->
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+  <ion-item 
+    [class.valid]="apellidoValido === true" 
+    [class.invalid]="apellidoValido === false"
+    style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px; transition: all 0.3s ease;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Apellido
+      Apellido <span style="color: red;">*</span>
     </ion-label>
-    <ion-input [(ngModel)]="apellido"></ion-input>
+    <ion-input 
+      [(ngModel)]="apellido" 
+      (ionInput)="onApellidoChange()"
+      placeholder="Ingresa tu apellido"
+      maxlength="50">
+    </ion-input>
+    <ion-icon 
+      *ngIf="apellidoValido === true" 
+      slot="end" 
+      name="checkmark-circle" 
+      color="success" 
+      style="font-size: 24px;">
+    </ion-icon>
+    <ion-icon 
+      *ngIf="apellidoValido === false && apellido.length > 0" 
+      slot="end" 
+      name="close-circle" 
+      color="danger" 
+      style="font-size: 24px;">
+    </ion-icon>
   </ion-item>
+  <ion-text *ngIf="apellidoValido === false && apellido.length > 0" color="danger" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    El apellido debe tener al menos 2 caracteres y solo letras
+  </ion-text>
 
   <!-- Username -->
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+  <ion-item 
+    [class.valid]="usernameValido === true && usernameDisponible === true" 
+    [class.invalid]="usernameValido === false || usernameDisponible === false"
+    style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px; transition: all 0.3s ease;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Nombre de usuario
+      Nombre de usuario <span style="color: red;">*</span>
     </ion-label>
-    <ion-input [(ngModel)]="username" placeholder="@usuario_ejemplo"></ion-input>
+    <ion-input 
+      [(ngModel)]="username" 
+      (ionInput)="onUsernameChange()"
+      placeholder="@usuario_ejemplo"
+      maxlength="20"
+      [style.text-transform]="'lowercase'">
+    </ion-input>
+    <ion-spinner 
+      *ngIf="usernameVerificando" 
+      slot="end" 
+      name="crescent" 
+      style="width: 20px; height: 20px;">
+    </ion-spinner>
+    <ion-icon 
+      *ngIf="!usernameVerificando && usernameValido === true && usernameDisponible === true" 
+      slot="end" 
+      name="checkmark-circle" 
+      color="success" 
+      style="font-size: 24px;">
+    </ion-icon>
+    <ion-icon 
+      *ngIf="!usernameVerificando && (usernameValido === false || usernameDisponible === false) && username.length > 0" 
+      slot="end" 
+      name="close-circle" 
+      color="danger" 
+      style="font-size: 24px;">
+    </ion-icon>
   </ion-item>
+  <ion-text *ngIf="usernameValido === false && username.length > 0" color="danger" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    El nombre de usuario debe tener entre 3 y 20 caracteres (solo letras, números, guiones y guiones bajos)
+  </ion-text>
+  <ion-text *ngIf="usernameValido === true && usernameDisponible === false" color="danger" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    Este nombre de usuario ya está en uso
+  </ion-text>
+  <ion-text *ngIf="usernameValido === true && usernameDisponible === true" color="success" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    ✓ Nombre de usuario disponible
+  </ion-text>
 
-
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+  <!-- Email -->
+  <ion-item 
+    [class.valid]="emailValido === true" 
+    [class.invalid]="emailValido === false"
+    style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px; transition: all 0.3s ease;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Correo electrónico
+      Correo electrónico <span style="color: red;">*</span>
     </ion-label>
-    <ion-input type="email" [(ngModel)]="email"></ion-input>
+    <ion-input 
+      type="email" 
+      [(ngModel)]="email" 
+      (ionInput)="onEmailChange()"
+      placeholder="correo@ejemplo.com"
+      maxlength="100">
+    </ion-input>
+    <ion-icon 
+      *ngIf="emailValido === true" 
+      slot="end" 
+      name="checkmark-circle" 
+      color="success" 
+      style="font-size: 24px;">
+    </ion-icon>
+    <ion-icon 
+      *ngIf="emailValido === false && email.length > 0" 
+      slot="end" 
+      name="close-circle" 
+      color="danger" 
+      style="font-size: 24px;">
+    </ion-icon>
   </ion-item>
+  <ion-text *ngIf="emailValido === false && email.length > 0" color="danger" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    Ingresa un correo electrónico válido
+  </ion-text>
 
-    <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-      <ion-select label="Región" label-placement="floating" [(ngModel)]="id_region" (ionChange)="onRegionChange()">
-        <ion-select-option *ngFor="let region of regiones" [value]="region.id_region">
-          {{ region.nombre_region }}
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
-
-    <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-      <ion-select label="Comuna" label-placement="floating" [(ngModel)]="id_comuna" [disabled]="!id_region">
-        <ion-select-option *ngFor="let comuna of comunas" [value]="comuna.id_comuna">
-          {{ comuna.nombre_comuna }}
-        </ion-select-option>
-      </ion-select>
-  </ion-item>
-
-  <!-- Fecha de nacimiento con input nativo -->
+  <!-- Región -->
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+    <ion-select label="Región" label-placement="floating" [(ngModel)]="id_region" (ionChange)="onRegionChange()">
+      <ion-select-option value="">Selecciona una región</ion-select-option>
+      <ion-select-option *ngFor="let region of regiones" [value]="region.id_region">
+        {{ region.nombre_region }}
+      </ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <!-- Comuna -->
+  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+    <ion-select label="Comuna" label-placement="floating" [(ngModel)]="id_comuna" [disabled]="!id_region">
+      <ion-select-option value="">Selecciona una comuna</ion-select-option>
+      <ion-select-option *ngFor="let comuna of comunas" [value]="comuna.id_comuna">
+        {{ comuna.nombre_comuna }}
+      </ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <!-- Fecha de nacimiento -->
+  <ion-item 
+    [class.valid]="fechaValida === true" 
+    [class.invalid]="fechaValida === false"
+    style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px; transition: all 0.3s ease;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
       Fecha de nacimiento <span style="color: red;">*</span>
     </ion-label>
     <ion-input
       type="date"
       [(ngModel)]="fecha_nacimiento"
+      (ionChange)="onFechaChange()"
       [max]="fechaMaxima"
       [min]="fechaMinima"
       placeholder="Selecciona tu fecha de nacimiento"
-      style="font-family: Inter; font-size: 16px; padding: 12px 0;"
-    ></ion-input>
+      style="font-family: Inter; font-size: 16px; padding: 12px 0;">
+    </ion-input>
+    <ion-icon 
+      *ngIf="fechaValida === true" 
+      slot="end" 
+      name="checkmark-circle" 
+      color="success" 
+      style="font-size: 24px;">
+    </ion-icon>
+    <ion-icon 
+      *ngIf="fechaValida === false && fecha_nacimiento" 
+      slot="end" 
+      name="close-circle" 
+      color="danger" 
+      style="font-size: 24px;">
+    </ion-icon>
   </ion-item>
+  <ion-text *ngIf="fechaValida === false && fecha_nacimiento" color="danger" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    Debes tener al menos 13 años para registrarte
+  </ion-text>
 
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+  <!-- Contraseña -->
+  <ion-item 
+    [class.valid]="passwordValida === true" 
+    [class.invalid]="passwordValida === false"
+    style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 8px; transition: all 0.3s ease;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Contraseña
+      Contraseña <span style="color: red;">*</span>
     </ion-label>
-    <ion-input type="password" [(ngModel)]="password"></ion-input>
+    <ion-input 
+      [type]="mostrarPassword ? 'text' : 'password'" 
+      [(ngModel)]="password" 
+      (ionInput)="onPasswordChange()"
+      placeholder="Mínimo 6 caracteres"
+      maxlength="100">
+    </ion-input>
+    <ion-button 
+      *ngIf="password.length > 0"
+      slot="end" 
+      fill="clear" 
+      (click)="togglePasswordVisibility()"
+      style="--padding-start: 8px; --padding-end: 8px;">
+      <ion-icon [name]="mostrarPassword ? 'eye-off' : 'eye'" style="font-size: 20px;"></ion-icon>
+    </ion-button>
   </ion-item>
+  
+  <!-- Indicador de fortaleza de contraseña -->
+  <div *ngIf="password.length > 0" style="margin-left: 16px; margin-right: 16px; margin-bottom: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <div style="flex: 1; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+        <div 
+          [style.width.%]="passwordFuerza === 'débil' ? 33 : passwordFuerza === 'media' ? 66 : passwordFuerza === 'fuerte' ? 100 : 0"
+          [style.background-color]="getPasswordStrengthColor()"
+          style="height: 100%; transition: all 0.3s ease;">
+        </div>
+      </div>
+      <span *ngIf="passwordFuerza" [style.color]="getPasswordStrengthColor()" style="font-size: 12px; font-weight: 600;">
+        {{ getPasswordStrengthText() }}
+      </span>
+    </div>
+    <ion-text color="medium" style="font-size: 11px;">
+      La contraseña debe contener al menos una mayúscula, una minúscula y un número
+    </ion-text>
+  </div>
 
-  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 24px;">
+  <!-- Confirmar contraseña -->
+  <ion-item 
+    [class.valid]="confirmPasswordValida === true" 
+    [class.invalid]="confirmPasswordValida === false"
+    style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px; transition: all 0.3s ease;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Confirmar contraseña
+      Confirmar contraseña <span style="color: red;">*</span>
     </ion-label>
-    <ion-input type="password" [(ngModel)]="confirmPassword"></ion-input>
+    <ion-input 
+      [type]="mostrarConfirmPassword ? 'text' : 'password'" 
+      [(ngModel)]="confirmPassword" 
+      (ionInput)="onConfirmPasswordChange()"
+      placeholder="Repite tu contraseña"
+      maxlength="100">
+    </ion-input>
+    <ion-button 
+      *ngIf="confirmPassword.length > 0"
+      slot="end" 
+      fill="clear" 
+      (click)="toggleConfirmPasswordVisibility()"
+      style="--padding-start: 8px; --padding-end: 8px;">
+      <ion-icon [name]="mostrarConfirmPassword ? 'eye-off' : 'eye'" style="font-size: 20px;"></ion-icon>
+    </ion-button>
+    <ion-icon 
+      *ngIf="confirmPasswordValida === true" 
+      slot="end" 
+      name="checkmark-circle" 
+      color="success" 
+      style="font-size: 24px; margin-right: 40px;">
+    </ion-icon>
+    <ion-icon 
+      *ngIf="confirmPasswordValida === false && confirmPassword.length > 0" 
+      slot="end" 
+      name="close-circle" 
+      color="danger" 
+      style="font-size: 24px; margin-right: 40px;">
+    </ion-icon>
   </ion-item>
+  <ion-text *ngIf="confirmPasswordValida === false && confirmPassword.length > 0" color="danger" style="font-size: 12px; margin-left: 16px; display: block; margin-top: -12px; margin-bottom: 8px;">
+    Las contraseñas no coinciden
+  </ion-text>
 
-
+  <!-- Términos y condiciones -->
   <ion-item lines="none" style="margin-bottom: 24px;">
     <ion-checkbox slot="start" [(ngModel)]="acceptTerms"></ion-checkbox>
     <ion-text style="font-family: Inter; font-size: 14px; color: #333;">
@@ -96,11 +306,14 @@
     </ion-text>
   </ion-item>
 
-  
-  <ion-button expand="block" style="background-color: #8B0000; border-radius: 12px; height: 50px; font-family: Inter; font-size: 16px; font-weight: 600;" (click)="createAccount()" [disabled]="creando">
+  <!-- Botón de registro -->
+  <ion-button 
+    expand="block" 
+    style="background-color: #8B0000; border-radius: 12px; height: 50px; font-family: Inter; font-size: 16px; font-weight: 600; transition: all 0.3s ease;" 
+    (click)="createAccount()" 
+    [disabled]="creando || !isFormValid()">
     <span *ngIf="!creando">Crear cuenta</span>
     <span *ngIf="creando">Creando cuenta...</span>
   </ion-button>
 
 </ion-content>
-

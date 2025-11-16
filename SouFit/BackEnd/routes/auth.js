@@ -20,6 +20,9 @@ router.post('/register', authLimiter, registerRules(), validate, (req, res, next
 // POST /api/auth/login (Público)
 router.post('/login', authLimiter, authController.login);
 
+// GET /api/auth/check-username/:username (Público) - Verificar disponibilidad de username
+router.get('/check-username/:username', authLimiter, authController.checkUsername);
+
 // POST /api/auth/solicitar-recuperacion (Público)
 router.post('/solicitar-recuperacion', authLimiter, authController.solicitarRecuperacionPassword);
 
@@ -31,6 +34,7 @@ logger.info('✅ Rutas de autenticación configuradas:', {
     routes: [
         'POST /register',
         'POST /login',
+        'GET /check-username/:username',
         'POST /solicitar-recuperacion',
         'POST /resetear-password'
     ]

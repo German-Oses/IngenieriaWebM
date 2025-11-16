@@ -168,4 +168,9 @@ export class AuthService {
     });
   }
   
+  // Verificar disponibilidad de username
+  checkUsername(username: string): Observable<{available: boolean, message: string}> {
+    return this.http.get<{available: boolean, message: string}>(`${this.apiUrl}/check-username/${encodeURIComponent(username)}`);
+  }
+  
 }
