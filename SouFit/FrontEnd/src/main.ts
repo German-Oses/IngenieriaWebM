@@ -27,10 +27,12 @@ bootstrapApplication(AppComponent, {
     
     importProvidersFrom(
       IonicStorageModule.forRoot(),
-      ServiceWorkerModule.register('ngsw-worker.js', {
-        enabled: environment.production,
-        registrationStrategy: 'registerWhenStable:30000'
-      })
+      ...(environment.production ? [
+        ServiceWorkerModule.register('ngsw-worker.js', {
+          enabled: true,
+          registrationStrategy: 'registerWhenStable:30000'
+        })
+      ] : [])
     ), 
     provideHttpClient(withInterceptors([jwtInterceptor])), 
   ],
