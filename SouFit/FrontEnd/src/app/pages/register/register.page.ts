@@ -13,6 +13,8 @@ import { CommonModule } from '@angular/common';
   imports: [IonicModule, FormsModule, CommonModule]
 })
 export class RegistroPage implements OnInit {
+  nombre = '';
+  apellido = '';
   username = '';
   email = '';
   password = '';
@@ -58,6 +60,11 @@ export class RegistroPage implements OnInit {
       return;
     }
 
+    if (!this.nombre.trim() || !this.apellido.trim()) {
+      this.presentAlert('Error', 'Nombre y apellido son obligatorios.');
+      return;
+    }
+
     if (this.password !== this.confirmPassword) {
       this.presentAlert('Error', 'Las contraseñas no coinciden.');
       return;
@@ -69,7 +76,9 @@ export class RegistroPage implements OnInit {
     }
 
     const userData = {
-      username: this.username,
+      nombre: this.nombre.trim(),
+      apellido: this.apellido.trim(),
+      username: this.username.trim(),
       email: this.email,
       password: this.password,
       id_region: this.id_region,
@@ -77,7 +86,11 @@ export class RegistroPage implements OnInit {
     };
 
     this.authService.register(userData).subscribe({
-      next: () => {
+      next: (response) => {
+        // Guardar el usuario en el storage
+        if (response.user) {
+          this.authService.saveUser(response.user);
+        }
         this.presentAlert('¡Éxito!', 'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.');
         this.router.navigate(['/login']);
       },

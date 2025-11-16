@@ -41,93 +41,66 @@
       <ion-col size="4" class="lista-chats">
         
         <div class="header-chats">
-          <h1>Alexis Sanchez</h1>
+          <h1>{{ usuarioActual?.nombre || 'Usuario' }}</h1>
           <p>EN LINEA</p>
+          <div class="botones-chat">
+            <button class="btn-nuevo-chat" (click)="toggleUsuariosDisponibles()">
+              <ion-icon name="add-outline"></ion-icon>
+              Nueva conversación
+            </button>
+          </div>
         </div>
 
         <div class="chats-contenedor">
           
-          <div class="chat-item activo">
-            <ion-avatar>
-              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="René">
-            </ion-avatar>
-            <div class="chat-info">
-              <h3>René Puente</h3>
-              <p>Keri too</p>
+          <!-- Lista de usuarios disponibles para nueva conversación -->
+          <div *ngIf="mostrarUsuariosDisponibles" class="usuarios-disponibles">
+            <div class="usuarios-header">
+              <h3>Usuarios disponibles</h3>
+              <button class="btn-cerrar" (click)="cerrarUsuariosDisponibles()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
             </div>
-            <div class="chat-hora">
-              <span>14:30</span>
+            <div 
+              *ngFor="let usuario of usuariosDisponibles" 
+              class="usuario-item"
+              (click)="iniciarConversacion(usuario)">
+              <ion-avatar>
+                <img [src]="usuario.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="usuario.nombre">
+              </ion-avatar>
+              <div class="usuario-info">
+                <h4>{{ usuario.nombre }}</h4>
+                <p>@{{ usuario.username }}</p>
+              </div>
             </div>
-          </div>
-
-         
-      
-          <div class="chat-item">
-            <ion-avatar>
-              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
-            </ion-avatar>
-            <div class="chat-info">
-              <h3>Usuario</h3>
-              <p>Mandame un audio</p>
-            </div>
-            <div class="chat-hora">
-              <span>12:15</span>
+            <div *ngIf="usuariosDisponibles.length === 0" class="no-usuarios">
+              <p>No hay usuarios disponibles</p>
             </div>
           </div>
 
-      
-          <div class="chat-item">
-            <ion-avatar>
-              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
-            </ion-avatar>
-            <div class="chat-info">
-              <h3>Usuario</h3>
-              <p>No se leer</p>
+          <!-- Lista dinámica de chats existentes -->
+          <div *ngIf="!mostrarUsuariosDisponibles">
+            <div 
+              *ngFor="let chat of chats" 
+              class="chat-item" 
+              [class.activo]="chatActivo?.id_usuario === chat.id_usuario"
+              (click)="seleccionarChat(chat)">
+              <ion-avatar>
+                <img [src]="chat.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="chat.nombre">
+              </ion-avatar>
+              <div class="chat-info">
+                <h3>{{ chat.nombre }}</h3>
+                <p>{{ chat.ultimo_mensaje || 'No hay mensajes' }}</p>
+              </div>
+              <div class="chat-hora">
+                <span>{{ chat.fecha_ultimo_mensaje ? formatearFechaUltimoMensaje(chat.fecha_ultimo_mensaje) : '' }}</span>
+              </div>
             </div>
-            <div class="chat-hora">
-              <span>11:45</span>
-            </div>
-          </div>
 
-     
-          <div class="chat-item">
-            <ion-avatar>
-              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
-            </ion-avatar>
-            <div class="chat-info">
-              <h3>Usuario</h3>
-              <p>Creo que entendí</p>
-            </div>
-            <div class="chat-hora">
-              <span>10:30</span>
-            </div>
-          </div>
-
-    
-          <div class="chat-item">
-            <ion-avatar>
-              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
-            </ion-avatar>
-            <div class="chat-info">
-              <h3>Usuario</h3>
-              <p>Mmm</p>
-            </div>
-            <div class="chat-hora">
-              <span>09:20</span>
-            </div>
-          </div>
-
-      
-          <div class="chat-item">
-            <ion-avatar>
-              <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="Usuario">
-            </ion-avatar>
-            <div class="chat-info">
-              <h3>Usuario</h3>
-              <p>Oye René mandame un saludo</p>
-            </div>
-            <div class="chat-hora">
-              <span>Ayer</span>
+            <!-- Mensaje cuando no hay chats -->
+            <div *ngIf="chats.length === 0" class="no-chats">
+              <p>No tienes conversaciones aún</p>
+              <small>Haz clic en "Nueva conversación" para empezar</small>
             </div>
           </div>
 
@@ -136,81 +109,105 @@
 
       <ion-col class="chat-conversacion">
         
-        <div class="header-conversacion">
+        <!-- Header de la conversación actual -->
+        <div class="header-conversacion" *ngIf="chatActivo">
           <ion-avatar>
-            <img src="https://ionicframework.com/docs/img/demos/avatar.svg" alt="René Puente">
+            <img [src]="chatActivo.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="chatActivo.nombre">
           </ion-avatar>
           <div class="info-contacto">
-            <h2>René Puente</h2>
+            <h2>{{ chatActivo.nombre }}</h2>
+            <p *ngIf="chatActivo.en_linea" class="estado-online">En línea</p>
           </div>
         </div>
 
    
-        <div class="mensajes-area">
+        <!-- Área de mensajes -->
+        <div class="mensajes-area" #mensajesContainer *ngIf="chatActivo">
           
-          <!-- Mensaje recibido -->
-          <div class="mensaje recibido">
+          <!-- Lista dinámica de mensajes -->
+          <div 
+            *ngFor="let mensaje of mensajes" 
+            class="mensaje"
+            [class.enviado]="esMensajePropio(mensaje)"
+            [class.recibido]="!esMensajePropio(mensaje)">
             <div class="mensaje-contenido">
-              <p>Mandame un audio</p>
+              <!-- Imagen -->
+              <div *ngIf="mensaje.tipo_archivo === 'imagen' && mensaje.url_archivo" class="mensaje-imagen">
+                <img [src]="obtenerUrlArchivo(mensaje.url_archivo)" [alt]="mensaje.nombre_archivo || 'Imagen'" (error)="$event.target.style.display='none'">
+              </div>
+              
+              <!-- Audio -->
+              <div *ngIf="mensaje.tipo_archivo === 'audio' && mensaje.url_archivo" class="mensaje-audio">
+                <audio controls>
+                  <source [src]="obtenerUrlArchivo(mensaje.url_archivo)" [type]="'audio/' + mensaje.url_archivo.split('.').pop()">
+                  Tu navegador no soporta el elemento de audio.
+                </audio>
+                <p class="nombre-archivo" *ngIf="mensaje.nombre_archivo">{{ mensaje.nombre_archivo }}</p>
+              </div>
+              
+              <!-- Contenido de texto -->
+              <p *ngIf="mensaje.contenido">{{ mensaje.contenido }}</p>
+              
+              <small class="mensaje-hora">{{ formatearHora(mensaje.fecha_envio!) }}</small>
             </div>
           </div>
 
-          <div class="mensaje recibido">
-            <div class="mensaje-contenido">
-              <p>No se leer</p>
-            </div>
-          </div>
-
-          <div class="mensaje recibido">
-            <div class="mensaje-contenido">
-              <p>Keri too</p>
-            </div>
-          </div>
-
-         
-          <div class="mensaje enviado">
-            <div class="mensaje-contenido">
-              <p>Oye rene mandame un saludo</p>
-            </div>
-          </div>
-
-      
-          <div class="mensaje recibido">
-            <div class="mensaje-contenido">
-              <p>Le poni color con un saluo cabezon cabeza de yunque</p>
-            </div>
-          </div>
-
-          <div class="mensaje recibido">
-            <div class="mensaje-contenido">
-              <p>keri too</p>
-            </div>
-          </div>
-
-          <div class="mensaje recibido">
-            <div class="mensaje-contenido">
-              <p>Mmm</p>
-            </div>
-          </div>
-
-          <div class="mensaje recibido">
-            <div class="mensaje-contenido">
-              <p>Creo que entendí</p>
-            </div>
+          <!-- Mensaje cuando no hay mensajes en el chat actual -->
+          <div *ngIf="mensajes.length === 0" class="no-mensajes">
+            <p>No hay mensajes en esta conversación</p>
+            <small>Escribe algo para empezar</small>
           </div>
 
         </div>
 
-        <div class="area-escribir">
+        <!-- Mensaje cuando no hay chat seleccionado -->
+        <div *ngIf="!chatActivo" class="no-chat-seleccionado">
+          <ion-icon name="chatbubbles-outline"></ion-icon>
+          <h3>Selecciona una conversación</h3>
+          <p>Elige una conversación de la lista para empezar a chatear</p>
+        </div>
+
+        <!-- Área de escritura -->
+        <div class="area-escribir" *ngIf="chatActivo">
+          <!-- Preview de archivo seleccionado -->
+          <div *ngIf="archivoSeleccionado" class="preview-archivo">
+            <div *ngIf="tipoArchivo === 'imagen' && previewArchivo" class="preview-imagen">
+              <img [src]="previewArchivo" alt="Preview">
+              <button class="btn-cerrar-preview" (click)="limpiarArchivo()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </div>
+            <div *ngIf="tipoArchivo === 'audio'" class="preview-audio">
+              <ion-icon name="musical-notes-outline"></ion-icon>
+              <span>{{ archivoSeleccionado.name }}</span>
+              <button class="btn-cerrar-preview" (click)="limpiarArchivo()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+          
           <div class="input-mensaje">
-            <input type="text" placeholder="Mensaje..." />
-            <button class="btn-micro">
+            <!-- Input file oculto -->
+            <input 
+              type="file" 
+              id="input-archivo"
+              accept="image/*,audio/*"
+              (change)="seleccionarArchivo($event)"
+              style="display: none;" />
+            
+            <input 
+              type="text" 
+              placeholder="Escribe un mensaje..."
+              [(ngModel)]="nuevoMensaje"
+              (keydown)="onEnterPressed($event)"
+              #inputMensaje />
+            <button class="btn-enviar" (click)="enviarMensaje()" [disabled]="!nuevoMensaje.trim() && !archivoSeleccionado">
+              <ion-icon name="send-outline"></ion-icon>
+            </button>
+            <button class="btn-micro" title="Grabar audio">
               <ion-icon name="mic-outline"></ion-icon>
             </button>
-            <button class="btn-emoji">
-              <ion-icon name="happy-outline"></ion-icon>
-            </button>
-            <button class="btn-archivo">
+            <button class="btn-archivo" (click)="abrirSelectorArchivo()" title="Enviar imagen o audio">
               <ion-icon name="image-outline"></ion-icon>
             </button>
           </div>
@@ -220,4 +217,6 @@
 
     </ion-row>
   </ion-grid>
+
+
 </ion-content>

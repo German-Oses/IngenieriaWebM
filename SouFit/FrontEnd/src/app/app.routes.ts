@@ -30,6 +30,8 @@ export const routes: Routes = [
     path: 'perfil',
     loadComponent: () => import('./pages/perfil/perfil.page').then( m => m.PerfilPage)
   },
-
-
+  {
+    path: 'buscar',
+    loadComponent: () => import('./pages/buscar/buscar.page').then( m => m.BuscarPage)
+  },
 ];

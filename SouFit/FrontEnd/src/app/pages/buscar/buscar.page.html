@@ -1,0 +1,141 @@
+<ion-content class="ion-no-padding">
+  <ion-grid style="height: 100vh;">
+    <ion-row style="height: 100%;">
+      
+      <ion-col size="auto" class="menu-lateral">
+        <div class="logo">
+          <img src="assets/icon/SouFitLogo.png" alt="Logo" style="width: 32px; height: 32px;">
+        </div>
+   
+        <div class="boton-menu" (click)="volverHome()">
+          <ion-icon name="home-outline"></ion-icon>
+          <p>Inicio</p>
+        </div>
+
+        <div class="boton-menu activo">
+          <ion-icon name="search-outline"></ion-icon>
+          <p>Buscar</p>
+        </div>
+
+        <div class="boton-menu" (click)="rutinas()">
+          <ion-icon name="barbell-outline"></ion-icon>
+          <p>Rutinas</p>
+        </div>
+                      
+        <div class="boton-menu" (click)="mensajeria()">
+          <ion-icon name="chatbubbles-outline"></ion-icon>
+          <p>Mensajeria</p>
+        </div>
+
+        <div class="boton-menu" (click)="perfil()">
+          <ion-icon name="person-outline"></ion-icon>
+          <p>Perfil</p>
+        </div>
+      </ion-col>
+
+      <ion-col class="buscar-centro">
+        <div class="titulo-buscar">
+          <h1>Buscar</h1>
+        </div>
+
+        <div class="buscar-contenedor">
+          <!-- Selector de tipo de búsqueda -->
+          <div class="selector-tipo">
+            <button 
+              class="btn-tipo" 
+              [class.activo]="tipoBusqueda === 'usuarios'"
+              (click)="cambiarTipoBusqueda('usuarios')">
+              <ion-icon name="person-outline"></ion-icon>
+              Usuarios
+            </button>
+            <button 
+              class="btn-tipo" 
+              [class.activo]="tipoBusqueda === 'ejercicios'"
+              (click)="cambiarTipoBusqueda('ejercicios')">
+              <ion-icon name="barbell-outline"></ion-icon>
+              Ejercicios
+            </button>
+          </div>
+
+          <!-- Campo de búsqueda -->
+          <div class="campo-busqueda">
+            <ion-input
+              [(ngModel)]="terminoBusqueda"
+              placeholder="Buscar {{ tipoBusqueda === 'usuarios' ? 'usuarios' : 'ejercicios' }}..."
+              (ionInput)="buscar()"
+              (keydown.enter)="buscar()">
+            </ion-input>
+            <ion-button (click)="buscar()" [disabled]="terminoBusqueda.length < 2">
+              <ion-icon name="search-outline"></ion-icon>
+            </ion-button>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="cargando" class="loading-container">
+            <ion-spinner></ion-spinner>
+            <p>Buscando...</p>
+          </div>
+
+          <!-- Resultados Usuarios -->
+          <div *ngIf="!cargando && mostrarResultados && tipoBusqueda === 'usuarios'">
+            <div *ngIf="usuariosEncontrados.length === 0" class="sin-resultados">
+              <p>No se encontraron usuarios</p>
+            </div>
+            
+            <ion-list *ngIf="usuariosEncontrados.length > 0">
+              <ion-item *ngFor="let usuario of usuariosEncontrados" class="resultado-item">
+                <ion-avatar slot="start">
+                  <img [src]="usuario.avatar || 'assets/icon/SouFitLogo.png'" [alt]="usuario.username">
+                </ion-avatar>
+                <ion-label>
+                  <h2>{{ usuario.nombre }}</h2>
+                  <p>@{{ usuario.username }}</p>
+                </ion-label>
+                <ion-button 
+                  slot="end" 
+                  fill="outline" 
+                  size="small"
+                  (click)="usuario.siguiendo ? dejarDeSeguir(usuario) : seguirUsuario(usuario)">
+                  {{ usuario.siguiendo ? 'Siguiendo' : 'Seguir' }}
+                </ion-button>
+              </ion-item>
+            </ion-list>
+          </div>
+
+          <!-- Resultados Ejercicios -->
+          <div *ngIf="!cargando && mostrarResultados && tipoBusqueda === 'ejercicios'">
+            <div *ngIf="ejerciciosEncontrados.length === 0" class="sin-resultados">
+              <p>No se encontraron ejercicios</p>
+            </div>
+            
+            <div *ngIf="ejerciciosEncontrados.length > 0" class="ejercicios-grid">
+              <div *ngFor="let ejercicio of ejerciciosEncontrados" class="ejercicio-card" (click)="verEjercicio(ejercicio.id_ejercicio!)">
+                <div class="ejercicio-header">
+                  <ion-icon name="barbell-outline"></ion-icon>
+                  <h3>{{ ejercicio.nombre_ejercicio }}</h3>
+                </div>
+                <p class="ejercicio-descripcion">{{ ejercicio.descripcion || 'Sin descripción' }}</p>
+                <div class="ejercicio-tags">
+                  <ion-chip *ngIf="ejercicio.tipo" color="primary" size="small">
+                    <ion-label>{{ ejercicio.tipo }}</ion-label>
+                  </ion-chip>
+                  <ion-chip *ngIf="ejercicio.grupo_muscular" color="secondary" size="small">
+                    <ion-label>{{ ejercicio.grupo_muscular }}</ion-label>
+                  </ion-chip>
+                  <ion-chip *ngIf="ejercicio.dificultad" color="tertiary" size="small">
+                    <ion-label>{{ ejercicio.dificultad }}</ion-label>
+                  </ion-chip>
+                </div>
+                <div class="ejercicio-stats">
+                  <span *ngIf="ejercicio.duracion_minutos">⏱️ {{ ejercicio.duracion_minutos }} min</span>
+                  <span *ngIf="ejercicio.total_likes">❤️ {{ ejercicio.total_likes }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>
+

@@ -15,7 +15,7 @@
           <p>Inicio</p>
         </div>
 
-        <div class="boton-menu">
+        <div class="boton-menu" (click)="buscar()">
           <ion-icon name="search-outline"></ion-icon>
           <p>Buscar</p>
         </div>
@@ -42,73 +42,111 @@
         
         <div class="titulo-feed">
           <h1>SouFit</h1>
+          <button class="btn-crear-post" (click)="abrirModalCrearPost()">
+            <ion-icon name="add-outline"></ion-icon>
+            Crear Post
+          </button>
         </div>
 
         <div class="posts-contenedor">
-          
-        
-          <div class="post">
-            <div class="post-usuario">
-              <ion-avatar>
-                <img src="https://ionicframework.com/docs/img/demos/avatar.svg">
-              </ion-avatar>
-              <div>
-                <h3>Sebastian</h3>
-                <p>Hace 2 horas</p>
-              </div>
-            </div>
-            <div class="post-imagen">
-              <p>🏋️ Terminé mi rutina de piernas!</p>
-            </div>
-            <div class="post-acciones">
-              <ion-icon name="heart-outline"></ion-icon>
-              <ion-icon name="chatbubble-outline"></ion-icon>
-              <ion-icon name="share-outline"></ion-icon>
-            </div>
+          <!-- Loading -->
+          <div *ngIf="cargando" class="loading-container">
+            <ion-spinner></ion-spinner>
+            <p>Cargando feed...</p>
           </div>
 
-      
-          <div class="post">
-            <div class="post-usuario">
-              <ion-avatar>
-                <img src="https://ionicframework.com/docs/img/demos/avatar.svg">
-              </ion-avatar>
-              <div>
-                <h3>Maria</h3>
-                <p>Hace 1 día</p>
-              </div>
-            </div>
-            <div class="post-imagen">
-              <p>🧘‍♀️ Yoga matutino completado</p>
-            </div>
-            <div class="post-acciones">
-              <ion-icon name="heart-outline"></ion-icon>
-              <ion-icon name="chatbubble-outline"></ion-icon>
-              <ion-icon name="share-outline"></ion-icon>
-            </div>
+          <!-- Posts -->
+          <div *ngIf="!cargando && posts.length === 0" class="sin-posts">
+            <p>No hay publicaciones aún. ¡Sé el primero en publicar!</p>
           </div>
 
-    
-          <div class="post">
-            <div class="post-usuario">
-              <ion-avatar>
-                <img src="https://ionicframework.com/docs/img/demos/avatar.svg">
-              </ion-avatar>
-              <div>
-                <h3>Carlos</h3>
-                <p>Hace 2 días</p>
+          <div *ngFor="let post of posts" class="post">
+            <div class="post-header">
+              <div class="post-usuario" (click)="verPerfil(post.autor_id || post.id_usuario)">
+                <ion-avatar>
+                  <img [src]="post.autor_avatar || 'assets/icon/SouFitLogo.png'" [alt]="post.autor_username">
+                </ion-avatar>
+                <div>
+                  <h3>{{ post.autor_nombre || post.autor_username }}</h3>
+                  <p>{{ post.fecha_publicacion ? formatearFecha(post.fecha_publicacion) : 'Ahora' }}</p>
+                </div>
+              </div>
+              <button 
+                *ngIf="(post.autor_id || post.id_usuario) !== usuarioActual?.id && !post.sigo_autor" 
+                class="btn-seguir-post"
+                (click)="seguirUsuarioDesdePost(post.autor_id || post.id_usuario, post)">
+                Seguir
+              </button>
+              <button 
+                *ngIf="(post.autor_id || post.id_usuario) !== usuarioActual?.id && post.sigo_autor" 
+                class="btn-siguiendo-post"
+                (click)="dejarDeSeguirDesdePost(post.autor_id || post.id_usuario, post)">
+                Siguiendo
+              </button>
+            </div>
+            
+            <div class="post-contenido">
+              <p *ngIf="post.contenido" class="post-texto">{{ post.contenido }}</p>
+              <div *ngIf="post.url_media" class="post-media">
+                <img [src]="post.url_media" alt="Media del post" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+              </div>
+              <div *ngIf="post.nombre_ejercicio" class="post-ejercicio">
+                <ion-chip color="primary">
+                  <ion-icon name="barbell-outline"></ion-icon>
+                  <ion-label>{{ post.nombre_ejercicio }}</ion-label>
+                </ion-chip>
+              </div>
+              <div *ngIf="post.nombre_rutina" class="post-rutina">
+                <ion-chip color="secondary">
+                  <ion-icon name="fitness-outline"></ion-icon>
+                  <ion-label>{{ post.nombre_rutina }}</ion-label>
+                </ion-chip>
               </div>
             </div>
-            <div class="post-imagen">
-              <p>🚴‍♂️ 25km en bicicleta!</p>
-            </div>
+            
             <div class="post-acciones">
-              <ion-icon name="heart-outline"></ion-icon>
-              <ion-icon name="chatbubble-outline"></ion-icon>
-              <ion-icon name="share-outline"></ion-icon>
+              <button class="btn-accion" (click)="reaccionarPost(post)" [class.activo]="post.me_gusta">
+                <ion-icon [name]="post.me_gusta ? 'heart' : 'heart-outline'"></ion-icon>
+                <span>{{ toNumber(post.total_likes) }}</span>
+              </button>
+              <button class="btn-accion" (click)="toggleComentarios(post.id_post!)">
+                <ion-icon name="chatbubble-outline"></ion-icon>
+                <span>{{ toNumber(post.total_comentarios) }}</span>
+              </button>
+              <button class="btn-accion" (click)="compartirPost(post)">
+                <ion-icon name="share-outline"></ion-icon>
+                <span>{{ toNumber(post.total_compartidos) }}</span>
+              </button>
+            </div>
+
+            <!-- Comentarios -->
+            <div *ngIf="mostrandoComentarios[post.id_post!]" class="comentarios-container">
+              <div *ngFor="let comentario of comentarios[post.id_post!]" class="comentario">
+                <ion-avatar class="avatar-comentario">
+                  <img [src]="comentario.autor_avatar || 'assets/icon/SouFitLogo.png'" [alt]="comentario.autor_username">
+                </ion-avatar>
+                <div class="comentario-contenido">
+                  <strong>{{ comentario.autor_nombre || comentario.autor_username }}</strong>
+                  <p>{{ comentario.contenido }}</p>
+                </div>
+              </div>
+              
+              <div class="nuevo-comentario">
+                <ion-avatar class="avatar-comentario">
+                  <img [src]="usuarioActual?.avatar || 'assets/icon/SouFitLogo.png'" [alt]="usuarioActual?.username">
+                </ion-avatar>
+                <input 
+                  type="text" 
+                  placeholder="Escribe un comentario..."
+                  [(ngModel)]="nuevoComentario[post.id_post!]"
+                  (keydown.enter)="comentarPost(post.id_post!)"
+                  class="input-comentario">
+                <button class="btn-enviar-comentario" (click)="comentarPost(post.id_post!)" [disabled]="!nuevoComentario[post.id_post!]?.trim()">
+                  <ion-icon name="send-outline"></ion-icon>
+                </button>
+              </div>
             </div>
           </div>
-
         </div>
       </ion-col>
 
@@ -118,54 +156,88 @@
         <h2>Ejercicios Recomendados</h2>
         
       
-        <div class="ejercicio">
+          <div *ngFor="let ejercicio of ejercicios" class="ejercicio" (click)="verEjercicio(ejercicio.id_ejercicio!)">
           <div class="ejercicio-icono">
             <ion-icon name="barbell-outline"></ion-icon>
           </div>
           <div class="ejercicio-info">
-            <h3>Sentadillas</h3>
-            <p>15 min • Piernas</p>
+            <h3>{{ ejercicio.nombre_ejercicio }}</h3>
+            <p>{{ ejercicio.duracion_minutos || 15 }} min • {{ ejercicio.grupo_muscular || 'General' }}</p>
           </div>
-          <button class="ejercicio-boton">Empezar</button>
+          <button class="ejercicio-boton" (click)="verEjercicio(ejercicio.id_ejercicio!); $event.stopPropagation()">Ver</button>
         </div>
 
-     
-        <div class="ejercicio">
-          <div class="ejercicio-icono">
-            <ion-icon name="fitness-outline"></ion-icon>
-          </div>
-          <div class="ejercicio-info">
-            <h3>Push-ups</h3>
-            <p>10 min • Pecho</p>
-          </div>
-          <button class="ejercicio-boton">Empezar</button>
-        </div>
-
-  
-        <div class="ejercicio">
-          <div class="ejercicio-icono">
-            <ion-icon name="body-outline"></ion-icon>
-          </div>
-          <div class="ejercicio-info">
-            <h3>Plancha</h3>
-            <p>8 min • Core</p>
-          </div>
-          <button class="ejercicio-boton">Empezar</button>
-        </div>
-
-        <div class="ejercicio">
-          <div class="ejercicio-icono">
-            <ion-icon name="walk-outline"></ion-icon>
-          </div>
-          <div class="ejercicio-info">
-            <h3>Cardio</h3>
-            <p>20 min • Resistencia</p>
-          </div>
-          <button class="ejercicio-boton">Empezar</button>
+        <div *ngIf="ejercicios.length === 0" class="sin-ejercicios">
+          <p>No hay ejercicios recomendados</p>
         </div>
 
       </ion-col>
 
     </ion-row>
   </ion-grid>
+
+  <!-- Modal Crear Post -->
+  <ion-modal [isOpen]="mostrarModalCrearPost" (didDismiss)="cerrarModalCrearPost()">
+    <ng-template>
+      <ion-content class="ion-padding">
+        <div class="modal-header">
+          <h2>Crear Publicación</h2>
+          <button class="btn-cerrar-modal" (click)="cerrarModalCrearPost()">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="tipo-post-selector">
+            <button 
+              class="btn-tipo-post" 
+              [class.activo]="nuevoPost.tipo_post === 'texto'"
+              (click)="nuevoPost.tipo_post = 'texto'">
+              Texto
+            </button>
+            <button 
+              class="btn-tipo-post" 
+              [class.activo]="nuevoPost.tipo_post === 'logro'"
+              (click)="nuevoPost.tipo_post = 'logro'">
+              Logro
+            </button>
+            <button 
+              class="btn-tipo-post" 
+              [class.activo]="nuevoPost.tipo_post === 'ejercicio'"
+              (click)="nuevoPost.tipo_post = 'ejercicio'">
+              Ejercicio
+            </button>
+            <button 
+              class="btn-tipo-post" 
+              [class.activo]="nuevoPost.tipo_post === 'rutina'"
+              (click)="nuevoPost.tipo_post = 'rutina'">
+              Rutina
+            </button>
+          </div>
+
+          <ion-textarea
+            [(ngModel)]="nuevoPost.contenido"
+            placeholder="¿Qué quieres compartir?"
+            rows="6"
+            class="input-post">
+          </ion-textarea>
+
+          <ion-input
+            [(ngModel)]="nuevoPost.url_media"
+            placeholder="URL de imagen o video (opcional)"
+            type="url"
+            class="input-url">
+          </ion-input>
+
+          <div *ngIf="nuevoPost.url_media" class="preview-media">
+            <img [src]="nuevoPost.url_media" alt="Preview" (error)="$event.target.style.display='none'">
+          </div>
+
+          <ion-button expand="block" (click)="crearPost()" [disabled]="!nuevoPost.contenido.trim()">
+            Publicar
+          </ion-button>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

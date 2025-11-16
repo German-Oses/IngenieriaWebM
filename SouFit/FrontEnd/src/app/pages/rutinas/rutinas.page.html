@@ -1,45 +1,177 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Mis rutinas</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="ion-no-padding">
+  <ion-grid style="height: 100vh;">
+    <ion-row style="height: 100%;">
+      
+      <ion-col size="auto" class="menu-lateral">
+        <div class="logo">
+          <img src="assets/icon/SouFitLogo.png" alt="Logo" style="width: 32px; height: 32px;">
+        </div>
+   
+        <div class="boton-menu" (click)="volverHome()">
+          <ion-icon name="home-outline"></ion-icon>
+          <p>Inicio</p>
+        </div>
 
-<ion-content class="ion-padding">
+        <div class="boton-menu" (click)="navegarABuscar()">
+          <ion-icon name="search-outline"></ion-icon>
+          <p>Buscar</p>
+        </div>
 
-  <ion-accordion-group>
+        <div class="boton-menu activo">
+          <ion-icon name="barbell-outline"></ion-icon>
+          <p>Rutinas</p>
+        </div>
+                      
+        <div class="boton-menu" (click)="navegarAMensajeria()">
+          <ion-icon name="chatbubbles-outline"></ion-icon>
+          <p>Mensajeria</p>
+        </div>
 
-    <ion-accordion *ngFor="let rutina of rutinas" value="{{ rutina.nombre }}">
+        <div class="boton-menu" (click)="navegarAPerfil()">
+          <ion-icon name="person-outline"></ion-icon>
+          <p>Perfil</p>
+        </div>
+      </ion-col>
 
-      <ion-item slot="header">
-        <ion-label>{{ rutina.nombre }}</ion-label>
-      </ion-item>
+      <ion-col class="rutinas-centro">
+        <div class="titulo-rutinas">
+          <h1>Mis Rutinas</h1>
+          <button class="btn-crear-rutina" (click)="abrirModalCrearRutina()">
+            <ion-icon name="add-outline"></ion-icon>
+            Crear Rutina
+          </button>
+        </div>
 
-      <ion-list slot="content">
-        <ion-accordion-group>
-          <ion-accordion *ngFor="let dia of rutina.dias" [value]="dia.nombre">
-            <ion-item slot="header">
-              <ion-label>{{ dia.nombre }}</ion-label>
-            </ion-item>
-            
-            <div slot="content" class="ion-padding-start">
-              <ion-item
-                *ngFor="let ejercicio of dia.ejercicios"
-                (click)="verEjercicio(ejercicio)"
-                button>
-                <ion-label>
-                  {{ ejercicio.nombre }} - {{ ejercicio.series }}x{{ ejercicio.repeticiones }}
-                </ion-label>
+        <div class="rutinas-contenedor">
+          <!-- Loading -->
+          <div *ngIf="cargando" class="loading-container">
+            <ion-spinner></ion-spinner>
+            <p>Cargando rutinas...</p>
+          </div>
+
+          <!-- Rutinas -->
+          <div *ngIf="!cargando && rutinas.length === 0" class="sin-rutinas">
+            <p>No tienes rutinas aún. ¡Crea tu primera rutina!</p>
+          </div>
+
+          <ion-accordion-group *ngIf="!cargando && rutinas.length > 0">
+            <ion-accordion *ngFor="let rutina of rutinas" [value]="rutina.id_rutina?.toString()">
+              <ion-item slot="header" class="rutina-header">
+                <div class="rutina-info">
+                  <h3>{{ rutina.nombre_rutina }}</h3>
+                  <p>{{ rutina.descripcion || 'Sin descripción' }}</p>
+                  <div class="rutina-tags">
+                    <span class="tag">{{ rutina.tipo_rutina }}</span>
+                    <span class="tag">{{ rutina.nivel_dificultad }}</span>
+                    <span class="tag" *ngIf="rutina.duracion_semanas">{{ rutina.duracion_semanas }} semanas</span>
+                  </div>
+                </div>
+                <div class="rutina-acciones">
+                  <button class="btn-accion-rutina" (click)="compartirRutina(rutina.id_rutina!); $event.stopPropagation()">
+                    <ion-icon name="share-outline"></ion-icon>
+                  </button>
+                  <button class="btn-accion-rutina" (click)="eliminarRutina(rutina.id_rutina!); $event.stopPropagation()">
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </button>
+                </div>
               </ion-item>
-            </div>
-          </ion-accordion>
-        </ion-accordion-group>
-      </ion-list>
 
-    </ion-accordion>
+              <div slot="content" class="rutina-contenido">
+                <div *ngIf="rutina.dias && rutina.dias.length > 0">
+                  <ion-accordion-group>
+                    <ion-accordion *ngFor="let dia of rutina.dias" [value]="dia.id_dia?.toString()">
+                      <ion-item slot="header">
+                        <ion-label>
+                          <h2>{{ dia.nombre_dia || 'Día ' + dia.numero_dia }}</h2>
+                          <p *ngIf="dia.descripcion">{{ dia.descripcion }}</p>
+                        </ion-label>
+                      </ion-item>
+                      
+                      <div slot="content" class="ion-padding">
+                        <div *ngIf="dia.ejercicios && dia.ejercicios.length > 0">
+                          <ion-item *ngFor="let ejercicio of dia.ejercicios" class="ejercicio-item">
+                            <ion-label>
+                              <h3>{{ ejercicio.nombre_ejercicio }}</h3>
+                              <p *ngIf="ejercicio.series && ejercicio.repeticiones">
+                                {{ ejercicio.series }} series x {{ ejercicio.repeticiones }}
+                              </p>
+                              <p *ngIf="ejercicio.peso_recomendado">Peso: {{ ejercicio.peso_recomendado }} kg</p>
+                              <p *ngIf="ejercicio.descanso_segundos">Descanso: {{ ejercicio.descanso_segundos }}s</p>
+                              <p *ngIf="ejercicio.notas">{{ ejercicio.notas }}</p>
+                            </ion-label>
+                          </ion-item>
+                        </div>
+                        <div *ngIf="!dia.ejercicios || dia.ejercicios.length === 0" class="sin-ejercicios">
+                          <p>No hay ejercicios en este día</p>
+                        </div>
+                      </div>
+                    </ion-accordion>
+                  </ion-accordion-group>
+                </div>
+                <div *ngIf="!rutina.dias || rutina.dias.length === 0" class="sin-dias">
+                  <p>Esta rutina no tiene días configurados</p>
+                </div>
+              </div>
+            </ion-accordion>
+          </ion-accordion-group>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 
-  </ion-accordion-group>
+  <!-- Modal Crear Rutina -->
+  <ion-modal [isOpen]="mostrarModalCrearRutina" (didDismiss)="cerrarModalCrearRutina()">
+    <ng-template>
+      <ion-content class="ion-padding">
+        <div class="modal-header">
+          <h2>Crear Nueva Rutina</h2>
+          <button class="btn-cerrar-modal" (click)="cerrarModalCrearRutina()">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <ion-input
+            [(ngModel)]="nuevaRutina.nombre_rutina"
+            placeholder="Nombre de la rutina *"
+            required>
+          </ion-input>
 
+          <ion-textarea
+            [(ngModel)]="nuevaRutina.descripcion"
+            placeholder="Descripción (opcional)"
+            rows="3">
+          </ion-textarea>
+
+          <ion-select
+            [(ngModel)]="nuevaRutina.tipo_rutina"
+            placeholder="Tipo de rutina">
+            <ion-select-option value="Fuerza">Fuerza</ion-select-option>
+            <ion-select-option value="Cardio">Cardio</ion-select-option>
+            <ion-select-option value="Flexibilidad">Flexibilidad</ion-select-option>
+            <ion-select-option value="Mixta">Mixta</ion-select-option>
+          </ion-select>
+
+          <ion-select
+            [(ngModel)]="nuevaRutina.nivel_dificultad"
+            placeholder="Nivel de dificultad">
+            <ion-select-option value="Principiante">Principiante</ion-select-option>
+            <ion-select-option value="Intermedio">Intermedio</ion-select-option>
+            <ion-select-option value="Avanzado">Avanzado</ion-select-option>
+          </ion-select>
+
+          <ion-input
+            [(ngModel)]="nuevaRutina.duracion_semanas"
+            type="number"
+            placeholder="Duración en semanas"
+            min="1">
+          </ion-input>
+
+          <ion-button expand="block" (click)="crearRutina()" [disabled]="!nuevaRutina.nombre_rutina?.trim()">
+            Crear Rutina
+          </ion-button>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

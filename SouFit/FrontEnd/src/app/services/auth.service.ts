@@ -5,6 +5,7 @@ import { Observable, BehaviorSubject, from, of } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
 import { Storage } from '@ionic/storage-angular';
 import { Router } from '@angular/router';
+import { ChatService } from './chat.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,8 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private storage: Storage,
-    private router: Router
+    private router: Router,
+    private chatService: ChatService
   ) {
 
     this.init();
@@ -45,11 +47,14 @@ export class AuthService {
   }
 
   login(credentials: any): Observable<any> {
-    return this.http.post<{token: string}>(`${this.apiUrl}/login`, credentials).pipe(
+    return this.http.post<{token: string, user: any}>(`${this.apiUrl}/login`, credentials).pipe(
       tap(async (res) => {
         if (res.token) {
-         
+          // Guardar token y usuario
           await this.storage.set('token', res.token);
+          if (res.user) {
+            await this.saveUser(res.user);
+          }
           this.isAuthenticated.next(true);
         }
       })
@@ -71,10 +76,45 @@ export class AuthService {
   );
 }
 
+  // Obtener el usuario actual desde el almacenamiento local
+  async getCurrentUser(): Promise<any> {
+    try {
+      const user = await this.storage.get('user');
+      return user;
+    } catch (error) {
+      console.error('Error al obtener usuario actual:', error);
+      return null;
+    }
+  }
+
+  // Guardar datos del usuario
+  async saveUser(userData: any) {
+    try {
+      await this.storage.set('user', userData);
+    } catch (error) {
+      console.error('Error al guardar usuario:', error);
+    }
+  }
+
 
   async logout() {
-    await this.storage.remove('token');
-    this.isAuthenticated.next(false);
-    this.router.navigate(['/login'], { replaceUrl: true });
+    try {
+      // Limpiar el estado del chat antes de cerrar sesión
+      this.chatService.desconectar();
+      
+      // Limpiar todo el almacenamiento
+      await this.storage.clear();
+      
+      // Limpiar el estado de autenticación
+      this.isAuthenticated.next(false);
+      
+      // Navegar al login y reemplazar el historial
+      this.router.navigate(['/login'], { replaceUrl: true });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Aún así navegar al login
+      this.isAuthenticated.next(false);
+      this.router.navigate(['/login'], { replaceUrl: true });
+    }
   }
 }

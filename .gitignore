@@ -3,53 +3,185 @@
 # Ignora archivos y carpetas globales del proyecto completo
 # ===============================
 
-# Archivos del sistema
+# ============================================
+# Archivos del Sistema Operativo
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
+__MACOSX/
+*.swp
+*.swo
+*~
 
-# Archivos de entorno globales
+# ============================================
+# Archivos de Entorno (¡NO SUBIR DATOS SENSIBLES!)
+# ============================================
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.test
+*.env
 variables_entorno.txt
+secrets.json
+config.local.json
 
-# Archivos de dependencias (para seguridad)
+# ============================================
+# Dependencias (NO subir node_modules)
+# ============================================
 node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+.pnp
+.pnp.js
 
-# Archivos de build generales
+# ============================================
+# Archivos de Build y Compilación
+# ============================================
 dist/
 build/
-coverage/
 out/
+www/
+.angular/
+.ionic/
+platforms/
+plugins/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist/
 
-# Archivos temporales
+# ============================================
+# Testing y Coverage
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+*.test.js.snap
+
+# ============================================
+# Archivos Temporales y Logs
+# ============================================
 *.log
 *.tmp
 *.temp
 *.bak
 *.old
-
-# Archivos de IDE y configuración
-.vscode/
-.idea/
 *.swp
 *.swo
 *.sublime-project
 *.sublime-workspace
+*.code-workspace
 
-# Archivos comprimidos o de respaldo
+# ============================================
+# IDEs y Editores
+# ============================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# ============================================
+# Archivos Comprimidos o de Respaldo
+# ============================================
 *.zip
 *.rar
 *.tar
 *.gz
+*.7z
+*.dmg
+*.iso
 
-# Archivos del proyecto que no deben subirse
+# ============================================
+# Archivos del Proyecto que NO deben subirse
+# ============================================
 /Otros/Mockups/
-/Otros/Informe entrega parcial Soufit.pdf
+*.pdf
+!README.pdf
 
-# Carpeta de sistema de macOS
-__MACOSX/
+# ============================================
+# Base de Datos Local y Backups
+# ============================================
+*.sql.backup
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Scripts SQL de prueba o antiguos (mantener solo Soufit.sql y migraciones)
+datos_prueba_*.sql
+*_antiguo.sql
+*_old.sql
+*_test.sql
+*_backup.sql
+
+# ============================================
+# Archivos Subidos por Usuarios (NO subir a Git)
+# ============================================
+**/uploads/
+**/BackEnd/uploads/
+**/FrontEnd/uploads/
+uploads/
+!uploads/.gitkeep
+
+# ============================================
+# Documentación (solo mantener README.md y DOCUMENTACION_TECNICA.md)
+# ============================================
+GUIA_*.md
+INSTRUCCIONES_*.md
+RESUMEN_*.md
+CUMPLIMIENTO_*.md
+limpiar-git.md
+COMO_LIMPIAR_GIT.md
+*.md
+!README.md
+!DOCUMENTACION_TECNICA.md
+!**/README.md
+
+# ============================================
+# Scripts Temporales de Limpieza
+# ============================================
+limpiar-git.ps1
+limpiar-git.bat
+limpiar-git.sh
+
+# ============================================
+# Docker
+# ============================================
+.dockerignore
+docker-compose.override.yml
+
+# ============================================
+# Otros
+# ============================================
+*.pem
+*.key
+*.cert
+*.crt
+.npm
+.eslintcache
+.stylelintcache

@@ -11,12 +11,28 @@
 
   <ion-img src="/assets/icon/SouFitLogo.png" style="width: 80px; height: 80px; display: block; margin: 24px auto;"></ion-img>
 
+  <!-- Nombre -->
+  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+    <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
+      Nombre
+    </ion-label>
+    <ion-input [(ngModel)]="nombre"></ion-input>
+  </ion-item>
 
+  <!-- Apellido -->
+  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
+    <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
+      Apellido
+    </ion-label>
+    <ion-input [(ngModel)]="apellido"></ion-input>
+  </ion-item>
+
+  <!-- Username -->
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
       Nombre de usuario
     </ion-label>
-    <ion-input [(ngModel)]="username"></ion-input>
+    <ion-input [(ngModel)]="username" placeholder="@usuario_ejemplo"></ion-input>
   </ion-item>
 
 

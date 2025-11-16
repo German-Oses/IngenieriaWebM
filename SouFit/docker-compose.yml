@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: soufit_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-soufit_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-soufit_password}
+      POSTGRES_DB: ${DB_DATABASE:-soufit_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - soufit_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-soufit_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./BackEnd
+      dockerfile: Dockerfile
+    container_name: soufit_backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-soufit_user}
+      DB_PASSWORD: ${DB_PASSWORD:-soufit_password}
+      DB_DATABASE: ${DB_DATABASE:-soufit_db}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - soufit_network
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
+    container_name: soufit_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - soufit_network
+    restart: unless-stopped
+
+networks:
+  soufit_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+

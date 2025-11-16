@@ -1,54 +1,179 @@
 <ion-content class="ion-no-padding">
+  
   <ion-grid style="height: 100vh;">
     <ion-row style="height: 100%;">
-      
-      <ion-col size="auto" class="menu-lateral">
-        <div class="ion-text-center ion-padding-vertical">
-          <img src="assets/icon/SouFitLogo.png" alt="Logo" style="width: 32px; height: 32px;">
-        </div>
-        <div class="boton-menu" (click)="volverHome()">
-          <ion-icon name="home-outline"></ion-icon>
-          <p>Inicio</p>
-        </div>
-        <div class="boton-menu">
-          <ion-icon name="search-outline"></ion-icon>
-          <p>Buscar</p>
-        </div>
-        <div class="boton-menu" (click)="rutinas()">
-          <ion-icon name="barbell-outline"></ion-icon>
-          <p>Rutinas</p>
-        </div>
-        <div class="boton-menu" (click)="mensajeria()">
-          <ion-icon name="chatbubbles-outline"></ion-icon>
-          <p>Mensajes</p>
-        </div>
-        <div class="boton-menu activo">
-          <ion-icon name="person-outline"></ion-icon>
-          <p>Perfil</p>
-        </div>
-      </ion-col>
-      
-      <ion-col class="perfil-centro">
-        <div class="titulo-perfil">
-          <h1>Perfil de Usuario</h1>
-        </div>
-
-        <div class="perfil-contenedor" *ngIf="userProfile">
-          <div class="perfil-avatar">
-            <img src="assets/icon/SouFitLogo.png" alt="Avatar de usuario">
-          </div>
-          <h2>Bienvenido, {{ userProfile.username }}</h2>
-          <p>{{ userProfile.email }}</p>
-        </div>
         
-        <ion-col>
-          <div class="ion-padding">
-            <ion-button expand="block" color="danger" (click)="cerrarSesion()">
-              Cerrar Sesión
-            </ion-button>
+        <!-- 🟦 MENÚ LATERAL -->
+        <ion-col size="auto" class="menu-lateral">
+
+          <div class="logo">
+            <img src="assets/icon/SouFitLogo.png" alt="Logo">
           </div>
+
+          <div class="boton-menu" (click)="volverHome()">
+            <ion-icon name="home-outline"></ion-icon>
+            <p>Inicio</p>
+          </div>
+
+          <div class="boton-menu" (click)="buscar()">
+            <ion-icon name="search-outline"></ion-icon>
+            <p>Buscar</p>
+          </div>
+
+          <div class="boton-menu" (click)="rutinas()">
+            <ion-icon name="barbell-outline"></ion-icon>
+            <p>Rutinas</p>
+          </div>
+                        
+          <div class="boton-menu" (click)="mensajeria()">
+            <ion-icon name="chatbubbles-outline"></ion-icon>
+            <p>Mensajeria</p>
+          </div>
+
+          <div class="boton-menu activo">
+            <ion-icon name="person-outline"></ion-icon>
+            <p>Perfil</p>
+          </div>
+
         </ion-col>
-      </ion-col>
+
+        <!-- 🟩 CONTENIDO CENTRAL -->
+        <ion-col class="feed-centro">
+
+          <!-- Header del perfil -->
+          <div class="titulo-feed" *ngIf="userProfile">
+            <h1>{{ userProfile.nombre || userProfile.username }}</h1>
+
+            <div class="botones-header">
+
+              <button class="btn-crear-post" (click)="toggleEdicion()" *ngIf="!editando">
+                <ion-icon name="create-outline"></ion-icon>
+                Editar perfil
+              </button>
+
+              <button class="btn-crear-post btn-cancelar" (click)="cancelarEdicion()" *ngIf="editando">
+                Cancelar
+              </button>
+
+              <button class="btn-crear-post btn-logout" (click)="confirmarCerrarSesion()" *ngIf="!editando">
+                <ion-icon name="log-out-outline"></ion-icon>
+                Cerrar sesión
+              </button>
+
+            </div>
+          </div>
+
+          <div class="posts-contenedor" *ngIf="userProfile">
+            <div class="posts-contenedor-inner">
+
+              <!-- 🟨 HEADER PERFIL (vista normal) -->
+              <div class="post perfil-header" *ngIf="!editando">
+                <div class="perfil-contenido">
+
+                  <ion-avatar class="perfil-avatar">
+                    <img [src]="userProfile.avatar || 'assets/icon/SouFitLogo.png'" alt="Avatar">
+                  </ion-avatar>
+
+                  <div class="perfil-info">
+
+                    <div class="perfil-nombre-header">
+                      <h2 class="perfil-nombre">{{ userProfile.nombre || userProfile.username }}</h2>
+
+                      <button class="btn-crear-post btn-editar-inline" (click)="toggleEdicion()">
+                        <ion-icon name="create-outline"></ion-icon>
+                        Editar perfil
+                      </button>
+                    </div>
+
+                    <div class="perfil-stats">
+                      <div class="stat-item">
+                        <strong>{{ totalPosts || 0 }}</strong>
+                        <span>publicaciones</span>
+                      </div>
+
+                      <div class="stat-item">
+                        <strong>{{ totalSeguidores || 0 }}</strong>
+                        <span>seguidores</span>
+                      </div>
+
+                      <div class="stat-item">
+                        <strong>{{ totalSiguiendo || 0 }}</strong>
+                        <span>siguiendo</span>
+                      </div>
+                    </div>
+
+                    <div class="perfil-descripcion">
+                      <h3 class="perfil-nombre-completo">{{ userProfile.nombre || userProfile.username }}</h3>
+
+                      <p class="bio-text" *ngIf="userProfile.bio">{{ userProfile.bio }}</p>
+
+                      <p class="ubicacion-text" *ngIf="userProfile.nombre_region">
+                        <ion-icon name="location-outline"></ion-icon>
+                        {{ userProfile.nombre_region }}{{ userProfile.nombre_comuna ? ', ' + userProfile.nombre_comuna : '' }}
+                      </p>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- 🟧 FORMULARIO EDICIÓN -->
+              <div class="post editar-post" *ngIf="editando">
+
+                <div class="post-header">
+                  <h2>Editar Perfil</h2>
+                </div>
+
+                <div class="post-contenido">
+
+                  <ion-input [(ngModel)]="perfilEditado.nombre" placeholder="Nombre" class="input-editar"></ion-input>
+
+                  <ion-input [(ngModel)]="perfilEditado.apellido" placeholder="Apellido" class="input-editar"></ion-input>
+
+                  <ion-input [(ngModel)]="perfilEditado.username" placeholder="Username" class="input-editar"></ion-input>
+
+                  <ion-input [(ngModel)]="perfilEditado.email" type="email" placeholder="Email" class="input-editar"></ion-input>
+
+                  <ion-textarea [(ngModel)]="perfilEditado.bio" placeholder="Biografía" rows="3" class="input-editar textarea-editar"></ion-textarea>
+
+                  <ion-input [(ngModel)]="perfilEditado.avatar" placeholder="URL de avatar" class="input-editar"></ion-input>
+
+                  <ion-button expand="block" (click)="guardarPerfil()" class="btn-guardar">Guardar Cambios</ion-button>
+
+                </div>
+
+              </div>
+
+              <!-- 🟥 GRID DE PUBLICACIONES -->
+              <div class="posts-grid" *ngIf="!editando">
+
+                <div *ngIf="posts.length === 0" class="sin-posts-grid">
+                  <ion-icon name="images-outline"></ion-icon>
+                  <p>No hay publicaciones aún</p>
+                </div>
+
+                <div class="post-grid-item" *ngFor="let post of posts" (click)="verPost(post)">
+
+                  <img *ngIf="post.url_media" [src]="post.url_media" class="post-grid-image">
+
+                  <div *ngIf="!post.url_media" class="post-grid-text">
+                    <ion-icon name="document-text-outline"></ion-icon>
+                    <p>{{ post.contenido?.substring(0, 50) || 'Sin contenido' }}...</p>
+                  </div>
+
+                  <div class="post-overlay-hover">
+                    <span><ion-icon name="heart-outline"></ion-icon> {{ post.total_likes || 0 }}</span>
+                    <span><ion-icon name="chatbubble-outline"></ion-icon> {{ post.total_comentarios || 0 }}</span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+        </ion-col>
+
     </ion-row>
   </ion-grid>
 </ion-content>
