@@ -9,6 +9,7 @@ import { IonInput } from '@ionic/angular/standalone';
 import { LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { mailOutline, refreshOutline, close } from 'ionicons/icons';
+import { ModalVerificacionComponent } from '../../components/modal-verificacion/modal-verificacion.component';
 
 @Component({
   selector: 'app-registro',
@@ -40,11 +41,7 @@ export class RegistroPage implements OnInit {
   fechaMinima: string = '';
 
   // Variables para el modal de verificación
-  mostrarModalVerificacion: boolean = false;
   emailParaVerificar: string = '';
-  codigoVerificacion: string = '';
-  verificando: boolean = false;
-  reenviandoCodigo: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -52,7 +49,8 @@ export class RegistroPage implements OnInit {
     private router: Router,
     private alertController: AlertController,
     private loadingController: LoadingController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private modalController: ModalController
   ) {
     addIcons({ mailOutline, refreshOutline, close });
   }
@@ -212,7 +210,7 @@ export class RegistroPage implements OnInit {
           
           // Mostrar modal de verificación
           console.log('✅ Mostrando modal de verificación');
-          this.mostrarModalVerificacion = true;
+          await this.mostrarModalVerificacion();
         },
         error: async (err) => {
           console.error('❌ Error en registro:', err);
@@ -273,64 +271,28 @@ export class RegistroPage implements OnInit {
     await alert.onDidDismiss();
   }
 
-  // Métodos para el modal de verificación
-  filtrarSoloNumerosCodigo(event: any) {
-    const input = event.target;
-    const value = input.value.replace(/[^0-9]/g, '');
-    this.codigoVerificacion = value;
-    input.value = value;
-  }
-
-  async verificarCodigoModal() {
-    if (!this.codigoVerificacion || this.codigoVerificacion.length !== 6) {
-      await this.presentAlert('Error', 'Por favor, ingresa un código de 6 dígitos');
-      return;
-    }
-
-    this.verificando = true;
-    this.authService.verificarEmail(this.emailParaVerificar, this.codigoVerificacion).subscribe({
-      next: async (response) => {
-        this.verificando = false;
-        await this.presentToast('¡Email verificado exitosamente!');
-        this.mostrarModalVerificacion = false;
-        
-        // Redirigir al home (ya está autenticado)
-        setTimeout(() => {
-          this.router.navigate(['/home'], { replaceUrl: true });
-        }, 1000);
+  // Método para mostrar el modal de verificación
+  async mostrarModalVerificacion() {
+    const modal = await this.modalController.create({
+      component: ModalVerificacionComponent,
+      componentProps: {
+        email: this.emailParaVerificar
       },
-      error: async (err) => {
-        this.verificando = false;
-        const errorMsg = err?.error?.error || err?.error?.msg || 'Código inválido o expirado';
-        await this.presentAlert('Error', errorMsg);
-        this.codigoVerificacion = ''; // Limpiar el código
-      }
+      backdropDismiss: false,
+      cssClass: 'modal-verificacion'
     });
-  }
 
-  async reenviarCodigoModal() {
-    if (!this.emailParaVerificar) {
-      await this.presentAlert('Error', 'No se encontró el email');
-      return;
+    await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+    
+    if (data && data.verificado) {
+      // Email verificado, redirigir al home
+      await this.presentToast('¡Email verificado exitosamente!');
+      setTimeout(() => {
+        this.router.navigate(['/home'], { replaceUrl: true });
+      }, 1000);
     }
-
-    this.reenviandoCodigo = true;
-    this.authService.reenviarCodigoVerificacion(this.emailParaVerificar).subscribe({
-      next: async (response) => {
-        this.reenviandoCodigo = false;
-        await this.presentToast('Código de verificación reenviado. Revisa tu correo.');
-      },
-      error: async (err) => {
-        this.reenviandoCodigo = false;
-        const errorMsg = err?.error?.error || err?.error?.msg || 'Error al reenviar el código';
-        await this.presentAlert('Error', errorMsg);
-      }
-    });
-  }
-
-  cerrarModalVerificacion() {
-    this.mostrarModalVerificacion = false;
-    this.codigoVerificacion = '';
   }
 
   async presentToast(message: string) {

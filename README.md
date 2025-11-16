@@ -27,6 +27,7 @@ https://www.figma.com/proto/9t08ubjNySuxTx8rygZNhD/SouFit?node-id=105-2&t=KKxqOl
 3. [Arquitectura de la Información](#arquitectura-de-la-información)
 4. [Diseño de Prototipos](#diseño-de-prototipos)
 5. [Tecnologías Implementadas](#tecnologías-implementadas)
+6. [Configuración](#configuración)
 
 ## Resumen del Proyecto
 SouFit es una plataforma fitness social desarrollada con Ionic y Angular que permite a los usuarios gestionar sus rutinas de ejercicio, conectar con otros entusiastas del fitness y compartir su progreso. La aplicación incluye funciones de social networking específicas para el ámbito fitness.
@@ -132,6 +133,7 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 - **Node.js**
 - **Express**
 - **PostgreSQL**
+- **Nodemailer** (Email: MailerSend, Gmail, SMTP genérico)
 
 ### Librerías y Herramientas
 - **Ionic Components** (UI library nativa)
@@ -146,6 +148,26 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 - **Guards** para protección de rutas
 - **Interceptors** para manejo de HTTP requests
 - **Storage nativo** para persistencia local
+
+---
+
+## Configuración
+
+### Email Service
+
+El sistema soporta múltiples proveedores de email:
+
+- **MailerSend** (Recomendado): 12,000 correos gratis/mes, sin dominio requerido
+- **Gmail**: 15,000 correos/mes, requiere contraseña de aplicación
+- **SMTP Genérico**: Cualquier proveedor SMTP
+
+**📖 Ver documentación completa:** `SouFit/BackEnd/CONFIGURACION_EMAIL.md`
+
+### Documentación Técnica
+
+Para información detallada sobre la arquitectura, API, base de datos y despliegue, consulta:
+
+**📚 [Documentación Técnica Completa](./DOCUMENTACION_TECNICA.md)**
 
 ---
 

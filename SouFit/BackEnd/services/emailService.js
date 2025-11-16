@@ -40,7 +40,7 @@ const createTransporter = () => {
       });
     }
     
-    return nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
       host: 'smtp.mailersend.com',
       port: 587,
       secure: false,
@@ -52,6 +52,18 @@ const createTransporter = () => {
         rejectUnauthorized: false
       }
     });
+    
+    // Verificar conexión (no bloqueante)
+    transporter.verify().then(() => {
+      logger.info('✅ Conexión SMTP de MailerSend verificada correctamente');
+    }).catch((verifyError) => {
+      logger.warn('⚠️ Advertencia al verificar conexión SMTP de MailerSend (continuará intentando enviar)', {
+        error: verifyError.message,
+        errorCode: verifyError.code
+      });
+    });
+    
+    return transporter;
   }
   
   // PRIORIDAD 2: Gmail (requiere contraseña de aplicación) - RECOMENDADO
@@ -59,13 +71,25 @@ const createTransporter = () => {
     logger.info('✅ Usando Gmail para envío de correos', { 
       user: process.env.GMAIL_USER 
     });
-    return nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD
       }
     });
+    
+    // Verificar conexión (no bloqueante)
+    transporter.verify().then(() => {
+      logger.info('✅ Conexión SMTP de Gmail verificada correctamente');
+    }).catch((verifyError) => {
+      logger.warn('⚠️ Advertencia al verificar conexión SMTP de Gmail (continuará intentando enviar)', {
+        error: verifyError.message,
+        errorCode: verifyError.code
+      });
+    });
+    
+    return transporter;
   }
   
   // PRIORIDAD 3: SMTP Genérico (cualquier proveedor SMTP)
@@ -289,22 +313,39 @@ const getRecoveryEmailTemplate = (nombreUsuario, nombre, codigo) => {
 const sendEmailWithRetry = async (transporter, mailOptions, maxRetries = 3) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      logger.info(`Intento ${attempt}/${maxRetries} de envío de correo`, {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+      });
+      
       const info = await transporter.sendMail(mailOptions);
-      logger.info('Correo enviado exitosamente', {
+      logger.info('✅ Correo enviado exitosamente', {
         messageId: info.messageId,
         to: mailOptions.to,
+        from: mailOptions.from,
         attempt
       });
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      logger.warn(`Intento ${attempt}/${maxRetries} falló al enviar correo`, {
+      logger.error(`❌ Intento ${attempt}/${maxRetries} falló al enviar correo`, {
         error: error.message,
-        to: mailOptions.to
+        errorCode: error.code,
+        errorResponse: error.response,
+        errorResponseCode: error.responseCode,
+        stack: error.stack,
+        to: mailOptions.to,
+        from: mailOptions.from
       });
       
       if (attempt === maxRetries) {
-        logger.error('Todos los intentos de envío de correo fallaron', error);
-        return { success: false, error: error.message };
+        logger.error('❌ Todos los intentos de envío de correo fallaron', {
+          error: error.message,
+          errorCode: error.code,
+          errorResponse: error.response,
+          to: mailOptions.to
+        });
+        return { success: false, error: error.message, errorCode: error.code };
       }
       
       // Esperar antes de reintentar (exponential backoff)

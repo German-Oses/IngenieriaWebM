@@ -66,6 +66,7 @@ PostgreSQL alojada en Render.com (acceso interno)
 - **Validación:** express-validator
 - **Comunicación en Tiempo Real:** Socket.io
 - **Subida de Archivos:** Multer
+- **Email:** Nodemailer (soporta MailerSend, Gmail, SMTP genérico)
 
 #### Infraestructura
 - **Contenedores:** Docker + Docker Compose
@@ -448,7 +449,7 @@ Authorization: Bearer <token>
 ### Endpoints de Autenticación
 
 #### `POST /api/auth/register`
-Registra un nuevo usuario.
+Registra un nuevo usuario. **Requiere verificación de email.**
 
 **Acceso:** Público  
 **Rate Limit:** 5 requests / 15 minutos
@@ -460,25 +461,27 @@ Registra un nuevo usuario.
   "email": "usuario@example.com",
   "password": "password123",
   "nombre": "Juan",
-  "apellido": "Pérez"
+  "apellido": "Pérez",
+  "fecha_nacimiento": "1990-01-01",
+  "id_region": 5,
+  "id_comuna": 1
 }
 ```
 
 **Response 201:**
 ```json
 {
-  "message": "Usuario registrado correctamente",
-  "user": {
-    "id_usuario": 1,
-    "username": "usuario123",
-    "email": "usuario@example.com"
-  }
+  "message": "Cuenta creada exitosamente. Se ha enviado un código de verificación a tu correo electrónico.",
+  "email": "usuario@example.com"
 }
 ```
 
+**Nota:** Después del registro, se envía un código de verificación por email. El usuario debe verificar su email antes de poder iniciar sesión.
+
 **Errores:**
-- `400`: Validación fallida
+- `400`: Validación fallida (fecha de nacimiento obligatoria, formato inválido, etc.)
 - `409`: Usuario o email ya existe
+- `500`: Error del servidor (problema con el servicio de email)
 
 #### `POST /api/auth/login`
 Inicia sesión y devuelve un token JWT.
@@ -563,6 +566,64 @@ Valida el código y restablece la contraseña.
 **Errores:**
 - `400`: Código inválido o expirado
 - `404`: Usuario no encontrado
+
+#### `POST /api/auth/verificar-email`
+Verifica el email del usuario con el código recibido por correo.
+
+**Acceso:** Público  
+**Rate Limit:** 5 requests / 15 minutos
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com",
+  "codigo": "123456"
+}
+```
+
+**Response 200:**
+```json
+{
+  "message": "Email verificado correctamente",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id_usuario": 1,
+    "username": "usuario123",
+    "email": "usuario@example.com",
+    "email_verificado": true
+  }
+}
+```
+
+**Nota:** Después de verificar el email, el usuario es automáticamente autenticado y recibe un token JWT.
+
+**Errores:**
+- `400`: Código inválido, expirado o ya usado
+- `404`: Usuario no encontrado o email ya verificado
+
+#### `POST /api/auth/reenviar-codigo-verificacion`
+Reenvía el código de verificación de email.
+
+**Acceso:** Público  
+**Rate Limit:** 5 requests / 15 minutos
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com"
+}
+```
+
+**Response 200:**
+```json
+{
+  "message": "Código de verificación reenviado"
+}
+```
+
+**Errores:**
+- `400`: Email inválido
+- `404`: Usuario no encontrado o email ya verificado
 
 ### Endpoints de Perfil
 
@@ -1313,7 +1374,26 @@ NODE_ENV=development
 
 # Frontend URL (para CORS)
 FRONTEND_URL=http://localhost:4200
+
+# Email Service (MailerSend - Recomendado - Sin dominio requerido)
+MAILERSEND_API_TOKEN=mlsn.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+EMAIL_FROM=MS_xxxxx@trial-xxxxx.mlsender.net
+
+# Email Service (Gmail - Alternativa)
+# GMAIL_USER=tu_email@gmail.com
+# GMAIL_APP_PASSWORD=tu_contraseña_de_aplicacion_gmail
+# EMAIL_FROM=tu_email@gmail.com
+
+# Email Service (SMTP Genérico - Alternativa)
+# SMTP_HOST=smtp.tu-proveedor.com
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER=tu_email@tudominio.com
+# SMTP_PASS=tu_contraseña
+# EMAIL_FROM=tu_email@tudominio.com
 ```
+
+**📖 Ver `SouFit/BackEnd/CONFIGURACION_EMAIL.md` para instrucciones detalladas de configuración de email.**
 
 ### Generar JWT_SECRET Seguro
 
@@ -1403,7 +1483,7 @@ La aplicación está desplegada en:
 - **Guía Completa:** `SouFit/GUIA_DESPLIEGUE_COMPLETA.md`
 - **Backend Render:** `SouFit/BackEnd/DESPLIEGUE_RENDER.md`
 - **Frontend Vercel:** `SouFit/FrontEnd/DESPLIEGUE_VERCEL.md`
-- **Configuración Email (Resend):** `SouFit/BackEnd/CONFIGURACION_RESEND.md`
+- **Configuración Email (MailerSend/Gmail/SMTP):** `SouFit/BackEnd/CONFIGURACION_EMAIL.md`
 
 ---
 
