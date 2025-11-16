@@ -1,24 +1,38 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const logger = require('../utils/logger');
 
-// Configuración del transporter de nodemailer
-// Prioridad: Resend > SMTP > Gmail
+// Instancia de Resend (si está configurado)
+let resendClient = null;
+if (process.env.RESEND_API_KEY) {
+  try {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+    logger.info('Resend SDK inicializado correctamente');
+  } catch (error) {
+    logger.error('Error al inicializar Resend SDK', error);
+  }
+}
+
+// Configuración del transporter de nodemailer (fallback)
+// Prioridad: Resend SDK > Resend SMTP > SMTP > Gmail
 const createTransporter = () => {
-  // PRIORIDAD 1: Resend (Recomendado para producción)
+  // Si Resend SDK está disponible, no necesitamos transporter
+  if (resendClient) {
+    return null; // Se usará el SDK directamente
+  }
+  
+  // PRIORIDAD 2: Resend SMTP (fallback si SDK no está disponible)
   if (process.env.RESEND_API_KEY) {
-    logger.info('Usando Resend para envío de correos');
-    // Resend soporta tanto puerto 587 (TLS) como 465 (SSL)
-    // Usamos 587 con secure: false para mejor compatibilidad
+    logger.info('Usando Resend SMTP (fallback) para envío de correos');
     return nodemailer.createTransport({
       host: 'smtp.resend.com',
       port: 587,
-      secure: false, // true para 465, false para otros puertos
+      secure: false,
       auth: {
         user: 'resend',
         pass: process.env.RESEND_API_KEY
       },
       tls: {
-        // No rechazar certificados no autorizados (útil para desarrollo)
         rejectUnauthorized: false
       }
     });
@@ -247,7 +261,50 @@ const getRecoveryEmailTemplate = (nombreUsuario, nombre, codigo) => {
   `;
 };
 
-// Función para enviar correo de recuperación con retry
+// Función para enviar correo usando Resend SDK
+const sendEmailWithResendSDK = async (fromEmail, toEmail, subject, html, text, maxRetries = 3) => {
+  if (!resendClient) {
+    return { success: false, error: 'Resend SDK no está inicializado' };
+  }
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const { data, error } = await resendClient.emails.send({
+        from: fromEmail,
+        to: toEmail,
+        subject: subject,
+        html: html,
+        text: text
+      });
+      
+      if (error) {
+        throw new Error(error.message || 'Error desconocido de Resend');
+      }
+      
+      logger.info('Correo enviado exitosamente con Resend SDK', {
+        messageId: data?.id,
+        to: toEmail,
+        attempt
+      });
+      return { success: true, messageId: data?.id };
+    } catch (error) {
+      logger.warn(`Intento ${attempt}/${maxRetries} falló al enviar correo con Resend SDK`, {
+        error: error.message,
+        to: toEmail
+      });
+      
+      if (attempt === maxRetries) {
+        logger.error('Todos los intentos de envío de correo con Resend SDK fallaron', error);
+        return { success: false, error: error.message };
+      }
+      
+      // Esperar antes de reintentar (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
+// Función para enviar correo con retry (usando nodemailer como fallback)
 const sendEmailWithRetry = async (transporter, mailOptions, maxRetries = 3) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -456,13 +513,6 @@ const getVerificationEmailTemplate = (nombreUsuario, nombre, codigo) => {
 // Función para enviar correo de verificación de email
 const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
   try {
-    const transporter = createTransporter();
-    
-    if (!transporter) {
-      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
-      return false;
-    }
-    
     // Determinar el email "from" según el servicio configurado
     let fromEmail = process.env.EMAIL_FROM;
     
@@ -473,12 +523,32 @@ const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
       fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
     }
     
+    const subject = '✅ Verifica tu Email - SouFit';
+    const html = getVerificationEmailTemplate(nombreUsuario, nombre, codigo);
+    const text = `¡Bienvenido ${nombre || nombreUsuario}!\n\nTu código de verificación de email es: ${codigo}\n\nEste código es válido por 24 horas.\n\nIngresa este código en la aplicación para verificar tu email y activar tu cuenta.\n\nSaludos,\nEl equipo de SouFit`;
+    
+    // PRIORIDAD 1: Intentar usar Resend SDK
+    if (resendClient) {
+      const result = await sendEmailWithResendSDK(fromEmail, email, subject, html, text);
+      if (result.success) {
+        return true;
+      }
+      logger.warn('Resend SDK falló, intentando con nodemailer como fallback');
+    }
+    
+    // PRIORIDAD 2: Usar nodemailer (Resend SMTP o otros servicios)
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
+      return false;
+    }
+    
     const mailOptions = {
       from: fromEmail,
       to: email,
-      subject: '✅ Verifica tu Email - SouFit',
-      html: getVerificationEmailTemplate(nombreUsuario, nombre, codigo),
-      text: `¡Bienvenido ${nombre || nombreUsuario}!\n\nTu código de verificación de email es: ${codigo}\n\nEste código es válido por 24 horas.\n\nIngresa este código en la aplicación para verificar tu email y activar tu cuenta.\n\nSaludos,\nEl equipo de SouFit`
+      subject: subject,
+      html: html,
+      text: text
     };
     
     const result = await sendEmailWithRetry(transporter, mailOptions);
@@ -495,13 +565,6 @@ exports.sendVerificationEmail = sendVerificationEmail;
 // Función para enviar correo de recuperación
 exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
   try {
-    const transporter = createTransporter();
-    
-    if (!transporter) {
-      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
-      return false;
-    }
-    
     // Determinar el email "from" según el servicio configurado
     let fromEmail = process.env.EMAIL_FROM;
     
@@ -512,12 +575,32 @@ exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
       fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
     }
     
+    const subject = '🔐 Recuperación de Contraseña - SouFit';
+    const html = getRecoveryEmailTemplate(nombreUsuario, nombre, codigo);
+    const text = `Hola ${nombre || nombreUsuario},\n\nTu código de recuperación de contraseña es: ${codigo}\n\nEste código es válido por 15 minutos.\n\nSi no solicitaste este código, ignora este correo.\n\nSaludos,\nEl equipo de SouFit`;
+    
+    // PRIORIDAD 1: Intentar usar Resend SDK
+    if (resendClient) {
+      const result = await sendEmailWithResendSDK(fromEmail, email, subject, html, text);
+      if (result.success) {
+        return true;
+      }
+      logger.warn('Resend SDK falló, intentando con nodemailer como fallback');
+    }
+    
+    // PRIORIDAD 2: Usar nodemailer (Resend SMTP o otros servicios)
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
+      return false;
+    }
+    
     const mailOptions = {
       from: fromEmail,
       to: email,
-      subject: '🔐 Recuperación de Contraseña - SouFit',
-      html: getRecoveryEmailTemplate(nombreUsuario, nombre, codigo),
-      text: `Hola ${nombre || nombreUsuario},\n\nTu código de recuperación de contraseña es: ${codigo}\n\nEste código es válido por 15 minutos.\n\nSi no solicitaste este código, ignora este correo.\n\nSaludos,\nEl equipo de SouFit`
+      subject: subject,
+      html: html,
+      text: text
     };
     
     const result = await sendEmailWithRetry(transporter, mailOptions);
