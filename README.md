@@ -1,194 +1,141 @@
-# 🏋️ SouFit - Plataforma Fitness
+# Presentado por:
+- German Oses
+- Fernando Figueroa  
+- Joshua Villavicencio
 
-**SouFit** es una aplicación web desarrollada como parte del proyecto universitario de Ingeniería Web.  
-El objetivo es permitir a los usuarios registrarse, iniciar sesión, gestionar su perfil y acceder a funciones relacionadas con el entrenamiento físico.
+# SouFit - Plataforma Fitness Social
 
-Este proyecto incluye tanto el **Frontend (Ionic + Angular)** como el **Backend (Node.js + Express + PostgreSQL)**.
+**Prototipo**
+https://www.figma.com/proto/9t08ubjNySuxTx8rygZNhD/SouFit?node-id=105-2&t=KKxqOlVgdH00sgOZ-1
+## Índice
+1. [Resumen del Proyecto](#resumen-del-proyecto)
+2. [Requerimientos](#requerimientos)
+3. [Arquitectura de la Información](#arquitectura-de-la-información)
+4. [Diseño de Prototipos](#diseño-de-prototipos)
+5. [Tecnologías Implementadas](#tecnologías-implementadas)
 
----
-
-## 📁 Estructura del Proyecto
-
-```
-SouFit/
-│
-├── BackEnd/          # API REST - Node.js + Express + PostgreSQL
-├── FrontEnd/         # Aplicación web - Ionic + Angular
-├── Otros/            # Documentos, mockups, informe
-│
-└── README.md         # Este archivo
-```
+## Resumen del Proyecto
+SouFit es una plataforma fitness social desarrollada con Ionic y Angular que permite a los usuarios gestionar sus rutinas de ejercicio, conectar con otros entusiastas del fitness y compartir su progreso. La aplicación incluye funciones de social networking específicas para el ámbito fitness.
 
 ---
 
-## 🚀 Tecnologías Principales
+## Requerimientos
 
-| Capa | Tecnologías |
-|------|--------------|
-| **Frontend** | Ionic, Angular (Standalone Components), TypeScript, RxJS |
-| **Backend** | Node.js, Express, PostgreSQL |
-| **Autenticación** | JSON Web Tokens (JWT), bcrypt.js |
-| **Validación** | express-validator |
-| **Almacenamiento local (Frontend)** | @ionic/storage-angular |
+## Roles del Sistema
+- **Usuario**: Puede gestionar su perfil, rutinas, ejercicios y interactuar socialmente.
+- **Administrador**: Control total sobre el banco de ejercicios y moderación de contenido.
 
----
+## Requerimientos Funcionales por Rol
 
-## 🧠 Funcionalidades Principales
+### Rol-Usuario
 
-### 🔐 Autenticación
-- Registro e inicio de sesión con verificación en base de datos.
-- Generación de **JWT** para sesiones seguras.
-- Middleware de autenticación en el backend.
-- Interceptor HTTP en el frontend para enviar el token automáticamente.
+- **RF-USR-01**: El usuario puede registrar una cuenta en el sistema.
+- **RF-USR-02**: El usuario puede iniciar sesión en su cuenta.
+- **RF-USR-03**: El usuario puede buscar ejercicios en el banco disponible.
+- **RF-USR-04**: El usuario puede agregar amigos a su red social.
+- **RF-USR-05**: El usuario puede publicar sus rutinas de ejercicio.
+- **RF-USR-06**: El usuario puede enviar mensajes a otros usuarios.
+- **RF-USR-07**: El usuario puede compartir rutinas o ejercicios.
+- **RF-USR-08**: El usuario puede editar su perfil personal.
+- **RF-USR-09**: El usuario puede crear rutinas personalizadas.
+- **RF-USR-10**: El usuario puede publicar ejercicios en el feed comunitario.
 
-### 👤 Gestión de Usuario
-- Consulta del perfil del usuario autenticado.
-- Cierre de sesión y control de estado desde `AuthService`.
+### Rol-Administrador
 
-### 🌍 Ubicación
-- Endpoints públicos para consultar **regiones y comunas** desde PostgreSQL.
+- **RF-ADM-01**: El administrador puede editar ejercicios del banco de ejercicios.
+- **RF-ADM-02**: El administrador puede agregar nuevos ejercicios al banco.
 
----
-
-## ⚙️ Instalación y Ejecución del Proyecto
-
-### 🔹 1. Prerrequisitos
-Asegúrate de tener instalado en tu sistema:
-- [Node.js](https://nodejs.org/es/) v18 o superior  
-- [PostgreSQL](https://www.postgresql.org/download/)  
-- (Opcional) Un gestor de base de datos como **pgAdmin** o **DBeaver**
+### Funcionalidades Opcionales
+- **RF-OPT-01**: El sistema puede recomendar dietas al usuario.
+- **RF-OPT-02**: El sistema puede recomendar rutinas al usuario.
+- **RF-OPT-03**: El sistema puede recomendar ejercicios al usuario.
+- **RF-OPT-04**: El usuario puede crear dietas personalizadas.
 
 ---
 
-### 🔹 2. Configuración del Backend
+## Requerimientos No Funcionales
 
-#### 📂 Ir a la carpeta del backend:
-```bash
-cd BackEnd
-```
+### RNF-01: Rendimiento y Concurrencia
+- El sistema debe soportar que múltiples usuarios envíen mensajes simultáneamente.
+- El sistema debe manejar los mensajes entre usuarios de tal manera en que se entreguen con un tiempo de retardo máximo de 2 segundos.
 
-#### 📦 Instalar dependencias:
-```bash
-npm install
-```
+### RNF-02: Usabilidad
+- La interfaz del sistema debe ser intuitiva, utilizando iconografía reconocible para cada funcionalidad.
+- El sistema debe contar con modo oscuro y modo claro intercambiables.
+- La interfaz del sistema debe adaptarse automáticamente a dispositivos móviles, tablets y escritorio (diseño responsivo).
 
-#### 🗄️ Crear la base de datos:
-En PostgreSQL, crea una nueva base de datos llamada `soufitdb`:
-```sql
-CREATE DATABASE SouFit;
-```
+### RNF-03: Multimedia
+- El sistema debe permitir subir fotos y videos en alta definición (HD).
 
-Luego, ejecuta el archivo `Soufit.sql` incluido en la carpeta `SouFit/` para crear las tablas y precargar datos.
+### RNF-04: Disponibilidad
+- El sistema debe estar disponible las 24 horas del día, 7 días a la semana.
 
-#### ⚙️ Configurar variables de entorno:
-Crea un archivo `.env` en la carpeta `BackEnd/` con el siguiente contenido:
-
-```
-PORT=3000
-DB_USER=tu_usuario_postgres
-DB_PASSWORD=tu_password
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=soufitdb
-JWT_SECRET=clave_secreta_segura
-```
-
-*(Ajusta los valores según tu configuración local.)*
-
-#### ▶️ Ejecutar el servidor:
-```bash
-npm run dev
-```
-El backend estará disponible en:  
-👉 `http://localhost:3000`
+### RNF-05: Compatibilidad
+- El sistema debe ser compatible con navegadores modernos y dispositivos iOS/Android a través de Ionic.
 
 ---
 
-### 🔹 3. Configuración del Frontend
+## Arquitectura de la Información
 
-#### 📂 Ir a la carpeta del frontend:
-```bash
-cd FrontEnd
-```
+### Estructura de Navegación Principal
 
-#### 📦 Instalar dependencias:
-```bash
-npm install
-```
 
-#### ▶️ Iniciar la aplicación:
-```bash
-ionic serve
-```
-La aplicación se abrirá en:  
-👉 `http://localhost:8100`
-
-> ⚠️ **Nota:** Asegúrate de que el backend esté ejecutándose antes de abrir el frontend.
+### Flujo de Inicio
+1. **Pantalla de bienvenida** → Login/Registro
+2. **Validación de credenciales**
+3. **Carga de datos de usuario**
+4. **Navegación al feed principal**
 
 ---
 
-## 🧪 Endpoints de la API (Backend)
+## Diseño de Prototipos
 
-| Método | Ruta | Descripción | Acceso |
-|:-------|:------|:-------------|:---------|
-| `POST` | `/api/auth/register` | Registra un nuevo usuario | Público |
-| `POST` | `/api/auth/login` | Inicia sesión y devuelve un token JWT | Público |
-| `GET` | `/api/profile` | Obtiene los datos del usuario autenticado | Privado |
-| `GET` | `/api/ubicacion/regiones` | Lista todas las regiones | Público |
-| `GET` | `/api/ubicacion/comunas/:id_region` | Lista las comunas por región | Público |
+### Mockups Implementados
+- **Inicio de sesión**: Interfaz limpia con campos para email y contraseña
+- **Crear cuenta**: Formulario de registro con validación
+- **Feed principal**: Timeline de publicaciones y rutinas compartidas
+- **Agregar ejercicio** (admin): Formulario para expandir el banco de ejercicios
+- **Mensajería**: Interfaz de chat estilo moderno
 
----
-
-## 🧰 Dependencias Clave
-
-### Backend
-- express  
-- pg  
-- dotenv  
-- bcryptjs  
-- jsonwebtoken  
-- express-validator  
-- cors  
-- nodemon *(para desarrollo)*
-
-### Frontend
-- @ionic/angular  
-- @angular/core  
-- @angular/router  
-- @ionic/storage-angular  
-- rxjs  
-- ionicons  
+### Características de UI/UX
+- **Design System** consistente con componentes Ionic
+- **Navegación por tabs** para acceso rápido a secciones principales
+- **Gestos móviles** implementados (swipe, pull-to-refresh)
+- **Feedback visual** inmediato para todas las acciones
 
 ---
 
-## 🧾 Scripts Útiles
+## Tecnologías Implementadas
 
-### Backend
-| Comando | Descripción |
-|:----------|:-------------|
-| `npm run dev` | Inicia el servidor con nodemon |
-| `npm start` | Inicia el servidor en modo producción |
+### Framework Principal
 
-### Frontend
-| Comando | Descripción |
-|:----------|:-------------|
-| `ionic serve` | Levanta la app en el navegador |
-| `ionic build` | Compila la app para producción |
+### Front-end
+- **Ionic Framework** (v7+)
+- **Angular** (v15+)
+- **TypeScript**
+
+### Back-end
+- **Node.js**
+- **Express**
+- **PostgreSQL**
+
+### Librerías y Herramientas
+- **Ionic Components** (UI library nativa)
+- **RxJS** (para programación reactiva)
+- **Angular Router** (navegación entre vistas)
+- **Capacitor** (para funcionalidades nativas)
+- **SASS** (estilos y theming)
+
+### Características Técnicas
+- **Arquitectura modular** con lazy loading
+- **Servicios injectables** para lógica de negocio
+- **Guards** para protección de rutas
+- **Interceptors** para manejo de HTTP requests
+- **Storage nativo** para persistencia local
 
 ---
 
-## 🧑‍💻 Autores
-
-**Proyecto SouFit**  
-Desarrollado por:
-- **Germán Oses**
-- **Fernando Figueroa**
-- **Joshua Villavicencio**
-
-Pontificia Universidad Catolica De Valparaiso - 2025  
-
----
-
-## 📄 Licencia
-Este proyecto fue desarrollado con fines académicos.  
-Todos los derechos reservados © 2025.
+**Carrera**: Ingeniería en Informática  
+**Asignatura**: Ingeniería web y móvil  
+**Fecha de entrega**: 02 de noviembre  
+**Ubicación**: Valparaíso, Chile
