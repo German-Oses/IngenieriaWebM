@@ -613,14 +613,18 @@ exports.sendVerificationEmail = sendVerificationEmail;
 // Función para enviar correo de recuperación
 exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
   try {
+    logger.info('Iniciando envío de correo de recuperación', { email, nombreUsuario });
+    
     // Determinar el email "from" según el servicio configurado
     let fromEmail = process.env.EMAIL_FROM;
     
     // Si usa Resend, el EMAIL_FROM debe ser un dominio verificado en Resend
     if (process.env.RESEND_API_KEY) {
       fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+      logger.info('Usando Resend para envío de recuperación', { fromEmail, hasApiKey: !!process.env.RESEND_API_KEY });
     } else {
       fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
+      logger.info('Resend no configurado, usando otros servicios para recuperación', { fromEmail });
     }
     
     const subject = '🔐 Recuperación de Contraseña - SouFit';
@@ -629,20 +633,31 @@ exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
     
     // PRIORIDAD 1: Intentar usar Resend SDK
     if (resendClient) {
+      logger.info('Intentando enviar correo de recuperación con Resend SDK');
       const result = await sendEmailWithResendSDK(fromEmail, email, subject, html, text);
       if (result.success) {
+        logger.info('Correo de recuperación enviado exitosamente con Resend SDK');
         return true;
       }
-      logger.warn('Resend SDK falló, intentando con nodemailer como fallback');
+      logger.warn('Resend SDK falló para recuperación, intentando con nodemailer como fallback', { error: result.error });
+    } else {
+      logger.warn('Resend SDK no está disponible para recuperación, usando nodemailer');
     }
     
     // PRIORIDAD 2: Usar nodemailer (Resend SMTP o otros servicios)
     const transporter = createTransporter();
     if (!transporter) {
-      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
+      logger.error('No se ha configurado el servicio de correo para recuperación. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
+      logger.error('Variables de entorno disponibles:', {
+        hasResendKey: !!process.env.RESEND_API_KEY,
+        hasEmailFrom: !!process.env.EMAIL_FROM,
+        hasSmtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER),
+        hasGmail: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD)
+      });
       return false;
     }
     
+    logger.info('Enviando correo de recuperación con nodemailer');
     const mailOptions = {
       from: fromEmail,
       to: email,
@@ -652,9 +667,18 @@ exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
     };
     
     const result = await sendEmailWithRetry(transporter, mailOptions);
+    if (result.success) {
+      logger.info('Correo de recuperación enviado exitosamente con nodemailer');
+    } else {
+      logger.error('Error al enviar correo de recuperación con nodemailer', { error: result.error });
+    }
     return result.success;
   } catch (error) {
-    logger.error('Error crítico al enviar correo de recuperación', error);
+    logger.error('Error crítico al enviar correo de recuperación', {
+      error: error.message,
+      stack: error.stack,
+      email
+    });
     return false;
   }
 };

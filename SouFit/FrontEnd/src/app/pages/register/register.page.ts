@@ -139,16 +139,24 @@ export class RegistroPage implements OnInit {
       loading.present();
       
       this.authService.register(userData).subscribe({
-        next: (response) => {
+        next: async (response) => {
           loading.dismiss();
+          
+          console.log('Respuesta del registro:', response);
           
           // Asegurarse de que tenemos el email para navegar
           const emailParaVerificar = response?.email || this.email;
           
           if (!emailParaVerificar) {
-            this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación.');
+            await this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación. Por favor, intenta nuevamente.');
             return;
           }
+          
+          // Mostrar mensaje de éxito y navegar
+          await this.presentAlert(
+            'Registro exitoso', 
+            'Se ha enviado un código de verificación a tu correo electrónico. Por favor, verifica tu email para completar el registro.'
+          );
           
           // Navegar a la pantalla de verificación (sin código - solo por email)
           this.router.navigate(['/verificar-email'], { 
@@ -156,19 +164,24 @@ export class RegistroPage implements OnInit {
             replaceUrl: true
           });
         },
-        error: (err) => {
+        error: async (err) => {
           loading.dismiss();
           console.error('Error en registro:', err);
           
           // Extraer mensaje de error de diferentes formatos posibles
-          let errorMsg = 'No se pudo completar el registro.';
+          let errorMsg = 'No se pudo completar el registro. Por favor, verifica los datos e intenta nuevamente.';
           if (err?.error) {
             errorMsg = err.error.msg || err.error.error || err.error.message || errorMsg;
           } else if (err?.message) {
             errorMsg = err.message;
           }
           
-          this.presentAlert('Error de Registro', errorMsg);
+          // Si el error es de servidor (500), puede ser problema de email
+          if (err?.status === 500) {
+            errorMsg = 'Error del servidor. Por favor, verifica la configuración del servidor de correo o intenta más tarde.';
+          }
+          
+          await this.presentAlert('Error de Registro', errorMsg);
         }
       });
     });

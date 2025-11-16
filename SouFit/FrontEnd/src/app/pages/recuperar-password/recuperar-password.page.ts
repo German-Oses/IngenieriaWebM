@@ -41,25 +41,28 @@ export class RecuperarPasswordPage {
     this.authService.solicitarRecuperacionPassword(this.email).subscribe({
       next: async (response) => {
         this.cargando = false;
+        
+        // Verificar si el email existe (indicador interno del backend)
+        if (response.emailExists === false) {
+          await this.presentAlert(
+            'Correo no registrado', 
+            'No existe una cuenta asociada a este correo electrónico. Por favor, verifica el correo o crea una cuenta nueva.'
+          );
+          return;
+        }
+        
+        // Si el email existe, continuar con el flujo
         this.codigoEnviado = true;
         this.paso = 'codigo';
         
-        // En desarrollo, mostrar el código en un alert
-        if (response.codigo) {
-          await this.presentAlert(
-            'Código enviado', 
-            `Código de recuperación: ${response.codigo}\n\n(En producción, este código se enviará por correo)`
-          );
-        } else {
-          await this.presentAlert(
-            'Código enviado', 
-            'Se ha enviado un código de recuperación a tu correo electrónico. Revisa tu bandeja de entrada.'
-          );
-        }
+        await this.presentAlert(
+          'Código enviado', 
+          'Se ha enviado un código de recuperación a tu correo electrónico. Revisa tu bandeja de entrada y la carpeta de spam.'
+        );
       },
       error: async (err) => {
         this.cargando = false;
-        const errorMsg = err.error?.error || 'Error al solicitar código de recuperación';
+        const errorMsg = err.error?.error || err.error?.message || 'Error al solicitar código de recuperación';
         await this.presentAlert('Error', errorMsg);
       }
     });

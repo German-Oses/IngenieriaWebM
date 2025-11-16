@@ -420,7 +420,8 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
             // Pero NO guardar código ni intentar enviar correo
             logger.info('Intento de recuperación de contraseña para email no registrado', { email });
             return res.json({ 
-                message: 'Si el correo existe, se enviará un código de recuperación'
+                message: 'Si el correo existe, se enviará un código de recuperación',
+                emailExists: false // Indicador interno para el frontend
             });
         }
         
@@ -469,9 +470,11 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
         
         logger.info('Código de recuperación enviado exitosamente', { email });
         
-        // Por seguridad, siempre devolver el mismo mensaje
+        // Por seguridad, siempre devolver el mismo mensaje público
+        // Pero incluir indicador interno para el frontend
         res.json({ 
-            message: 'Si el correo existe, se enviará un código de recuperación'
+            message: 'Si el correo existe, se enviará un código de recuperación',
+            emailExists: true // Indicador interno para el frontend
         });
         
     } catch (err) {
