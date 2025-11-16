@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
 import { CommonModule } from '@angular/common';
 import { IonInput } from '@ionic/angular/standalone';
+import { LoadingController } from '@ionic/angular';
 
 @Component({
   selector: 'app-registro',
@@ -39,7 +40,8 @@ export class RegistroPage implements OnInit {
     private authService: AuthService,
     private ubicacionService: UbicacionService,
     private router: Router,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private loadingController: LoadingController
   ) { }
 
   ngOnInit(): void {
@@ -129,18 +131,46 @@ export class RegistroPage implements OnInit {
       id_comuna: this.id_comuna
     };
 
-    this.authService.register(userData).subscribe({
-      next: (response) => {
-        // Navegar a la pantalla de verificación (sin código - solo por email)
-        this.router.navigate(['/verificar-email'], { 
-          queryParams: { email: response.email || this.email },
-          replaceUrl: true
-        });
-      },
-      error: (err) => {
-        const errorMsg = err?.error?.msg || err?.error?.errors?.[0] || 'No se pudo completar el registro.';
-        this.presentAlert('Error de Registro', errorMsg);
-      }
+    // Mostrar loading
+    this.loadingController.create({
+      message: 'Creando cuenta...',
+      duration: 30000 // Timeout de 30 segundos
+    }).then(loading => {
+      loading.present();
+      
+      this.authService.register(userData).subscribe({
+        next: (response) => {
+          loading.dismiss();
+          
+          // Asegurarse de que tenemos el email para navegar
+          const emailParaVerificar = response?.email || this.email;
+          
+          if (!emailParaVerificar) {
+            this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación.');
+            return;
+          }
+          
+          // Navegar a la pantalla de verificación (sin código - solo por email)
+          this.router.navigate(['/verificar-email'], { 
+            queryParams: { email: emailParaVerificar },
+            replaceUrl: true
+          });
+        },
+        error: (err) => {
+          loading.dismiss();
+          console.error('Error en registro:', err);
+          
+          // Extraer mensaje de error de diferentes formatos posibles
+          let errorMsg = 'No se pudo completar el registro.';
+          if (err?.error) {
+            errorMsg = err.error.msg || err.error.error || err.error.message || errorMsg;
+          } else if (err?.message) {
+            errorMsg = err.message;
+          }
+          
+          this.presentAlert('Error de Registro', errorMsg);
+        }
+      });
     });
   }
 

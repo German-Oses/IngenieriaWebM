@@ -6,11 +6,21 @@ const logger = require('../utils/logger');
 let resendClient = null;
 if (process.env.RESEND_API_KEY) {
   try {
+    logger.info('Inicializando Resend SDK...', { 
+      hasApiKey: !!process.env.RESEND_API_KEY,
+      apiKeyLength: process.env.RESEND_API_KEY?.length || 0,
+      apiKeyPrefix: process.env.RESEND_API_KEY?.substring(0, 5) || 'N/A'
+    });
     resendClient = new Resend(process.env.RESEND_API_KEY);
     logger.info('Resend SDK inicializado correctamente');
   } catch (error) {
-    logger.error('Error al inicializar Resend SDK', error);
+    logger.error('Error al inicializar Resend SDK', {
+      error: error.message,
+      stack: error.stack
+    });
   }
+} else {
+  logger.warn('RESEND_API_KEY no está configurado. Los correos no se enviarán con Resend SDK.');
 }
 
 // Configuración del transporter de nodemailer (fallback)
@@ -264,11 +274,16 @@ const getRecoveryEmailTemplate = (nombreUsuario, nombre, codigo) => {
 // Función para enviar correo usando Resend SDK
 const sendEmailWithResendSDK = async (fromEmail, toEmail, subject, html, text, maxRetries = 3) => {
   if (!resendClient) {
+    logger.error('Resend SDK no está inicializado. Verifica que RESEND_API_KEY esté configurado.');
     return { success: false, error: 'Resend SDK no está inicializado' };
   }
   
+  logger.info('Intentando enviar correo con Resend SDK', { from: fromEmail, to: toEmail, subject });
+  
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      logger.info(`Intento ${attempt}/${maxRetries} de envío con Resend SDK`);
+      
       const { data, error } = await resendClient.emails.send({
         from: fromEmail,
         to: toEmail,
@@ -278,23 +293,32 @@ const sendEmailWithResendSDK = async (fromEmail, toEmail, subject, html, text, m
       });
       
       if (error) {
-        throw new Error(error.message || 'Error desconocido de Resend');
+        logger.error('Error de Resend API', { error, from: fromEmail, to: toEmail });
+        throw new Error(error.message || JSON.stringify(error) || 'Error desconocido de Resend');
       }
       
       logger.info('Correo enviado exitosamente con Resend SDK', {
         messageId: data?.id,
         to: toEmail,
+        from: fromEmail,
         attempt
       });
       return { success: true, messageId: data?.id };
     } catch (error) {
       logger.warn(`Intento ${attempt}/${maxRetries} falló al enviar correo con Resend SDK`, {
         error: error.message,
-        to: toEmail
+        errorStack: error.stack,
+        to: toEmail,
+        from: fromEmail
       });
       
       if (attempt === maxRetries) {
-        logger.error('Todos los intentos de envío de correo con Resend SDK fallaron', error);
+        logger.error('Todos los intentos de envío de correo con Resend SDK fallaron', {
+          error: error.message,
+          errorStack: error.stack,
+          to: toEmail,
+          from: fromEmail
+        });
         return { success: false, error: error.message };
       }
       
@@ -513,14 +537,18 @@ const getVerificationEmailTemplate = (nombreUsuario, nombre, codigo) => {
 // Función para enviar correo de verificación de email
 const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
   try {
+    logger.info('Iniciando envío de correo de verificación', { email, nombreUsuario });
+    
     // Determinar el email "from" según el servicio configurado
     let fromEmail = process.env.EMAIL_FROM;
     
     // Si usa Resend, el EMAIL_FROM debe ser un dominio verificado en Resend
     if (process.env.RESEND_API_KEY) {
       fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+      logger.info('Usando Resend para envío', { fromEmail, hasApiKey: !!process.env.RESEND_API_KEY });
     } else {
       fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
+      logger.info('Resend no configurado, usando otros servicios', { fromEmail });
     }
     
     const subject = '✅ Verifica tu Email - SouFit';
@@ -529,20 +557,31 @@ const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
     
     // PRIORIDAD 1: Intentar usar Resend SDK
     if (resendClient) {
+      logger.info('Intentando enviar con Resend SDK');
       const result = await sendEmailWithResendSDK(fromEmail, email, subject, html, text);
       if (result.success) {
+        logger.info('Correo enviado exitosamente con Resend SDK');
         return true;
       }
-      logger.warn('Resend SDK falló, intentando con nodemailer como fallback');
+      logger.warn('Resend SDK falló, intentando con nodemailer como fallback', { error: result.error });
+    } else {
+      logger.warn('Resend SDK no está disponible, usando nodemailer');
     }
     
     // PRIORIDAD 2: Usar nodemailer (Resend SMTP o otros servicios)
     const transporter = createTransporter();
     if (!transporter) {
       logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
+      logger.error('Variables de entorno disponibles:', {
+        hasResendKey: !!process.env.RESEND_API_KEY,
+        hasEmailFrom: !!process.env.EMAIL_FROM,
+        hasSmtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER),
+        hasGmail: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD)
+      });
       return false;
     }
     
+    logger.info('Enviando correo con nodemailer');
     const mailOptions = {
       from: fromEmail,
       to: email,
@@ -552,9 +591,18 @@ const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
     };
     
     const result = await sendEmailWithRetry(transporter, mailOptions);
+    if (result.success) {
+      logger.info('Correo enviado exitosamente con nodemailer');
+    } else {
+      logger.error('Falló el envío con nodemailer', { error: result.error });
+    }
     return result.success;
   } catch (error) {
-    logger.error('Error crítico al enviar correo de verificación', error);
+    logger.error('Error crítico al enviar correo de verificación', {
+      error: error.message,
+      stack: error.stack,
+      email
+    });
     return false;
   }
 };
