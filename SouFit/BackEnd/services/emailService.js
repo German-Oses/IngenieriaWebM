@@ -2,9 +2,25 @@ const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
 
 // Configuración del transporter de nodemailer
+// Prioridad: Resend > SMTP > Gmail
 const createTransporter = () => {
-  // Si hay configuración SMTP en variables de entorno, usarla
+  // PRIORIDAD 1: Resend (Recomendado para producción)
+  if (process.env.RESEND_API_KEY) {
+    logger.info('Usando Resend para envío de correos');
+    return nodemailer.createTransport({
+      host: 'smtp.resend.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'resend',
+        pass: process.env.RESEND_API_KEY
+      }
+    });
+  }
+  
+  // PRIORIDAD 2: SMTP Genérico
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    logger.info('Usando SMTP genérico para envío de correos');
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -16,9 +32,9 @@ const createTransporter = () => {
     });
   }
   
-  // Si no hay configuración SMTP, usar Gmail (requiere contraseña de aplicación)
-  // O usar un servicio como Ethereal Email para desarrollo
+  // PRIORIDAD 3: Gmail (requiere contraseña de aplicación)
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    logger.info('Usando Gmail para envío de correos');
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -437,12 +453,22 @@ exports.sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => 
     const transporter = createTransporter();
     
     if (!transporter) {
-      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno SMTP o GMAIL.');
+      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
       return false;
     }
     
+    // Determinar el email "from" según el servicio configurado
+    let fromEmail = process.env.EMAIL_FROM;
+    
+    // Si usa Resend, el EMAIL_FROM debe ser un dominio verificado en Resend
+    if (process.env.RESEND_API_KEY) {
+      fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    } else {
+      fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
+    }
+    
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com',
+      from: fromEmail,
       to: email,
       subject: '✅ Verifica tu Email - SouFit',
       html: getVerificationEmailTemplate(nombreUsuario, nombre, codigo),
@@ -463,12 +489,22 @@ exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
     const transporter = createTransporter();
     
     if (!transporter) {
-      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno SMTP o GMAIL.');
+      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
       return false;
     }
     
+    // Determinar el email "from" según el servicio configurado
+    let fromEmail = process.env.EMAIL_FROM;
+    
+    // Si usa Resend, el EMAIL_FROM debe ser un dominio verificado en Resend
+    if (process.env.RESEND_API_KEY) {
+      fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    } else {
+      fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
+    }
+    
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com',
+      from: fromEmail,
       to: email,
       subject: '🔐 Recuperación de Contraseña - SouFit',
       html: getRecoveryEmailTemplate(nombreUsuario, nombre, codigo),
