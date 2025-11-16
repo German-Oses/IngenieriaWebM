@@ -64,15 +64,30 @@
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
       Fecha de nacimiento <span style="color: red;">*</span>
     </ion-label>
-    <ion-datetime
-      [(ngModel)]="fecha_nacimiento"
-      display-format="DD MMM YYYY"
-      placeholder="Selecciona tu fecha de nacimiento"
-      [max]="fechaMaxima"
-      [min]="fechaMinima"
-      presentation="date"
-      style="width: 100%;"
-    ></ion-datetime>
+    <ion-datetime-button datetime="datetime"></ion-datetime-button>
+    <ion-modal [keepContentsMounted]="true">
+      <ng-template>
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Seleccionar Fecha de Nacimiento</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="cerrarModalFecha()">Cerrar</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content>
+          <ion-datetime
+            #datetime
+            [(ngModel)]="fecha_nacimiento"
+            presentation="date"
+            [max]="fechaMaxima"
+            [min]="fechaMinima"
+            [showDefaultButtons]="true"
+            [showDefaultTitle]="true"
+          ></ion-datetime>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
   </ion-item>
 
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">

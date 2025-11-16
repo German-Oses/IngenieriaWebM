@@ -1,17 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController } from '@ionic/angular'; 
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
 import { CommonModule } from '@angular/common';
-import { IonDatetime } from '@ionic/angular/standalone';
+import { IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, ModalController } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-registro',
   templateUrl: './register.page.html',
   standalone: true,
-  imports: [IonicModule, FormsModule, CommonModule, IonDatetime]
+  imports: [IonicModule, FormsModule, CommonModule, IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent]
 })
 export class RegistroPage implements OnInit {
   nombre = '';
@@ -35,11 +35,14 @@ export class RegistroPage implements OnInit {
   fechaMaxima: string = '';
   fechaMinima: string = '';
 
+  @ViewChild(IonModal) modal?: IonModal;
+
   constructor(
     private authService: AuthService,
     private ubicacionService: UbicacionService,
     private router: Router,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private modalController: ModalController
   ) { }
 
   ngOnInit(): void {
@@ -126,13 +129,8 @@ export class RegistroPage implements OnInit {
     };
 
     this.authService.register(userData).subscribe({
-      next: async (response) => {
-        // Mostrar mensaje de éxito y navegar a verificación
-        await this.presentAlert(
-          'Registro Exitoso', 
-          'Tu cuenta ha sido creada. Por favor, verifica tu correo electrónico para activar tu cuenta.'
-        );
-        // Navegar a la página de verificación de email con el email
+      next: (response) => {
+        // Navegar a la pantalla de verificación (sin código - solo por email)
         this.router.navigate(['/verificar-email'], { 
           queryParams: { email: response.email || this.email },
           replaceUrl: true
@@ -143,6 +141,13 @@ export class RegistroPage implements OnInit {
         this.presentAlert('Error de Registro', errorMsg);
       }
     });
+  }
+
+  async cerrarModalFecha() {
+    const modal = await this.modalController.getTop();
+    if (modal) {
+      await modal.dismiss();
+    }
   }
 
   async presentAlert(header: string, message: string): Promise<void> {

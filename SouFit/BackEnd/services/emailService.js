@@ -448,7 +448,7 @@ const getVerificationEmailTemplate = (nombreUsuario, nombre, codigo) => {
 };
 
 // Función para enviar correo de verificación de email
-exports.sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
+const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
   try {
     const transporter = createTransporter();
     
@@ -482,6 +482,9 @@ exports.sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => 
     return false;
   }
 };
+
+// Exportar función de verificación
+exports.sendVerificationEmail = sendVerificationEmail;
 
 // Función para enviar correo de recuperación
 exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
