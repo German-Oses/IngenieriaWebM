@@ -26,21 +26,13 @@ router.post('/solicitar-recuperacion', authLimiter, authController.solicitarRecu
 // POST /api/auth/resetear-password (Público)
 router.post('/resetear-password', authLimiter, authController.resetearPassword);
 
-// POST /api/auth/verificar-email (Público)
-router.post('/verificar-email', authLimiter, authController.verificarEmail);
-
-// POST /api/auth/reenviar-codigo-verificacion (Público)
-router.post('/reenviar-codigo-verificacion', authLimiter, authController.reenviarCodigoVerificacion);
-
 // Log todas las rutas registradas
 logger.info('✅ Rutas de autenticación configuradas:', {
     routes: [
         'POST /register',
         'POST /login',
         'POST /solicitar-recuperacion',
-        'POST /resetear-password',
-        'POST /verificar-email',
-        'POST /reenviar-codigo-verificacion'
+        'POST /resetear-password'
     ]
 });
 

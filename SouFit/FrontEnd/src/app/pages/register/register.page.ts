@@ -9,7 +9,6 @@ import { IonInput } from '@ionic/angular/standalone';
 import { LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { mailOutline, refreshOutline, close } from 'ionicons/icons';
-import { ModalVerificacionComponent } from '../../components/modal-verificacion/modal-verificacion.component';
 
 @Component({
   selector: 'app-registro',
@@ -40,19 +39,14 @@ export class RegistroPage implements OnInit {
   fechaMaxima: string = '';
   fechaMinima: string = '';
 
-  // Variables para el modal de verificación
-  emailParaVerificar: string = '';
-
   constructor(
     private authService: AuthService,
     private ubicacionService: UbicacionService,
     private router: Router,
     private alertController: AlertController,
     private loadingController: LoadingController,
-    private toastController: ToastController,
-    private modalController: ModalController
+    private toastController: ToastController
   ) {
-    addIcons({ mailOutline, refreshOutline, close });
   }
 
   ngOnInit(): void {
@@ -198,19 +192,13 @@ export class RegistroPage implements OnInit {
             console.log('Loading cerrado');
           }
           
-          // Asegurarse de que tenemos el email para verificar
-          this.emailParaVerificar = response?.email || this.email?.trim();
-          console.log('Email para verificar:', this.emailParaVerificar);
-          
-          if (!this.emailParaVerificar) {
-            console.error('❌ No se pudo obtener el email');
-            await this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación. Por favor, intenta nuevamente.');
-            return;
-          }
-          
-          // Mostrar modal de verificación
-          console.log('✅ Mostrando modal de verificación');
-          await this.mostrarModalVerificacion();
+          // El AuthService ya guarda el token automáticamente en el pipe tap
+          // Redirigir al home directamente
+          console.log('✅ Registro exitoso, redirigiendo al home...');
+          await this.presentToast('¡Cuenta creada exitosamente!');
+          setTimeout(() => {
+            this.router.navigate(['/home'], { replaceUrl: true });
+          }, 1000);
         },
         error: async (err) => {
           console.error('❌ Error en registro:', err);
@@ -271,29 +259,6 @@ export class RegistroPage implements OnInit {
     await alert.onDidDismiss();
   }
 
-  // Método para mostrar el modal de verificación
-  async mostrarModalVerificacion() {
-    const modal = await this.modalController.create({
-      component: ModalVerificacionComponent,
-      componentProps: {
-        email: this.emailParaVerificar
-      },
-      backdropDismiss: false,
-      cssClass: 'modal-verificacion'
-    });
-
-    await modal.present();
-
-    const { data } = await modal.onWillDismiss();
-    
-    if (data && data.verificado) {
-      // Email verificado, redirigir al home
-      await this.presentToast('¡Email verificado exitosamente!');
-      setTimeout(() => {
-        this.router.navigate(['/home'], { replaceUrl: true });
-      }, 1000);
-    }
-  }
 
   async presentToast(message: string) {
     const toast = await this.toastController.create({

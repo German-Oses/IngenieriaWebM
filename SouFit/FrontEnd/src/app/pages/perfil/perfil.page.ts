@@ -8,6 +8,10 @@ import { AuthService } from '../../services/auth.service';
 import { PostService } from '../../services/post.service';
 import { ChatService } from '../../services/chat.service';
 import { UbicacionService } from '../../services/ubicacion.service';
+import { EstadisticasService } from '../../services/estadisticas.service';
+import { LogroService } from '../../services/logro.service';
+import { HistorialService } from '../../services/historial.service';
+import { ProgresoService } from '../../services/progreso.service';
 import { environment } from '../../../environments/environment';
 
 import { 
@@ -27,7 +31,7 @@ import {
   ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons'; 
-import { homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, createOutline, cameraOutline, imagesOutline, documentTextOutline, heartOutline, chatbubbleOutline as chatbubbleOutlineIcon, locationOutline, logOutOutline, arrowBackOutline } from 'ionicons/icons';
+import { homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, createOutline, cameraOutline, imagesOutline, documentTextOutline, heartOutline, chatbubbleOutline as chatbubbleOutlineIcon, locationOutline, logOutOutline, arrowBackOutline, trophyOutline, statsChartOutline, calendarOutline, trendingUpOutline, peopleOutline, bookmarkOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-perfil',
@@ -64,6 +68,14 @@ export class PerfilPage {
   comunas: any[] = [];
   cargandoRegiones: boolean = false;
 
+  // Estadísticas avanzadas
+  estadisticas: any = null;
+  logros: any[] = [];
+  historialReciente: any[] = [];
+  progresoFisico: any = null;
+  cargandoEstadisticas = false;
+  mostrarEstadisticas = false;
+
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -72,9 +84,13 @@ export class PerfilPage {
     private http: HttpClient,
     private postService: PostService,
     private chatService: ChatService,
-    private ubicacionService: UbicacionService
+    private ubicacionService: UbicacionService,
+    private estadisticasService: EstadisticasService,
+    private logroService: LogroService,
+    private historialService: HistorialService,
+    private progresoService: ProgresoService
   ) {
-    addIcons({ homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, createOutline, cameraOutline, imagesOutline, documentTextOutline, heartOutline, chatbubbleOutline: chatbubbleOutlineIcon, locationOutline, logOutOutline, arrowBackOutline });
+    addIcons({ homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, createOutline, cameraOutline, imagesOutline, documentTextOutline, heartOutline, chatbubbleOutline: chatbubbleOutlineIcon, locationOutline, logOutOutline, arrowBackOutline, trophyOutline, statsChartOutline, calendarOutline, trendingUpOutline, peopleOutline, bookmarkOutline });
   }
 
   ionViewWillEnter() {
@@ -183,8 +199,67 @@ export class PerfilPage {
             this.totalSeguidores = 0;
           }
         });
+
+        // Cargar estadísticas avanzadas
+        this.cargarEstadisticasAvanzadas();
       }
     });
+  }
+
+  cargarEstadisticasAvanzadas() {
+    this.cargandoEstadisticas = true;
+    
+    // Cargar estadísticas generales
+    this.estadisticasService.getEstadisticas().subscribe({
+      next: (data) => {
+        this.estadisticas = data.estadisticas;
+        this.cargandoEstadisticas = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar estadísticas:', err);
+        this.cargandoEstadisticas = false;
+      }
+    });
+
+    // Cargar logros
+    this.logroService.getLogros().subscribe({
+      next: (logros) => {
+        this.logros = logros || [];
+      },
+      error: (err) => {
+        console.error('Error al cargar logros:', err);
+        this.logros = [];
+      }
+    });
+
+    // Cargar historial reciente (últimos 5 entrenamientos)
+    this.historialService.getHistorial({ limit: 5 }).subscribe({
+      next: (historial) => {
+        this.historialReciente = historial || [];
+      },
+      error: (err) => {
+        console.error('Error al cargar historial:', err);
+        this.historialReciente = [];
+      }
+    });
+
+    // Cargar progreso físico
+    this.progresoService.getResumen(90).subscribe({
+      next: (progreso) => {
+        this.progresoFisico = progreso;
+      },
+      error: (err) => {
+        console.error('Error al cargar progreso:', err);
+        this.progresoFisico = null;
+      }
+    });
+  }
+
+  toggleEstadisticas() {
+    this.mostrarEstadisticas = !this.mostrarEstadisticas;
+    if (this.mostrarEstadisticas && !this.estadisticas) {
+      this.cargarEstadisticasAvanzadas();
+    }
   }
 
   verPost(post: any) {

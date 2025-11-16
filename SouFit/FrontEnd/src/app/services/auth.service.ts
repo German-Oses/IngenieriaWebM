@@ -63,7 +63,18 @@ export class AuthService {
   }
 
   register(userData: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/register`, userData);
+    return this.http.post<{token: string, user: any, message: string}>(`${this.apiUrl}/register`, userData).pipe(
+      tap(async (res) => {
+        if (res.token) {
+          // Guardar token y usuario automáticamente
+          await this.storage.set('token', res.token);
+          if (res.user) {
+            await this.saveUser(res.user);
+          }
+          this.isAuthenticated.next(true);
+        }
+      })
+    );
   }
 
   getUserProfile(): Observable<any> {
@@ -133,27 +144,4 @@ export class AuthService {
     });
   }
   
-  // Verificar email con código
-  verificarEmail(email: string, codigo: string): Observable<any> {
-    return this.http.post<{token: string, user: any, message: string}>(`${environment.apiUrl}/auth/verificar-email`, {
-      email,
-      codigo
-    }).pipe(
-      tap(async (res) => {
-        if (res.token) {
-          // Guardar token y usuario automáticamente
-          await this.storage.set('token', res.token);
-          if (res.user) {
-            await this.saveUser(res.user);
-          }
-          this.isAuthenticated.next(true);
-        }
-      })
-    );
-  }
-  
-  // Reenviar código de verificación
-  reenviarCodigoVerificacion(email: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/reenviar-codigo-verificacion`, { email });
-  }
 }

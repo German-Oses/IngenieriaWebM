@@ -2,7 +2,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { sendRecoveryEmail, sendVerificationEmail } = require('../services/emailService');
+const { sendRecoveryEmail } = require('../services/emailService');
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
@@ -54,78 +54,46 @@ exports.register = async (req, res) => {
             return res.status(400).json({ msg: 'El correo electrónico ya está registrado' });
         }
         
-        // Verificar si hay un código de verificación pendiente para este email
-        const codigoPendiente = await db.query(
-            'SELECT * FROM email_verification_codes WHERE email = $1 AND usado = FALSE AND fecha_expiracion > NOW()',
-            [email]
-        );
-        if (codigoPendiente.rows.length > 0) {
-            return res.status(400).json({ msg: 'Ya existe un código de verificación pendiente para este email. Por favor, verifica tu correo o espera a que expire.' });
-        }
-        
         // Verificar si el username ya está en uso
         const usernameExists = await db.query('SELECT * FROM usuario WHERE username = $1', [username]);
         if (usernameExists.rows.length > 0) {
             return res.status(400).json({ msg: 'El nombre de usuario ya está en uso' });
         }
 
-        // Generar código de verificación de 6 dígitos
-        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
-        
         // Hashear contraseña
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        // CREAR LA CUENTA INMEDIATAMENTE (con email_verificado = FALSE)
+        // CREAR LA CUENTA DIRECTAMENTE (sin verificación de email)
         const newUser = await db.query(
             `INSERT INTO usuario (username, email, password_hash, nombre, apellido, fecha_nacimiento, id_region, id_comuna, email_verificado) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FALSE) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE) 
              RETURNING id_usuario, username, nombre, apellido, email`,
             [username, email, hashedPassword, nombre, apellido, fecha_nacimiento, id_region, id_comuna]
         );
         
-        // Crear tabla de códigos de verificación si no existe
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS email_verification_codes (
-                id SERIAL PRIMARY KEY,
-                email VARCHAR(100) NOT NULL,
-                codigo VARCHAR(6) NOT NULL,
-                fecha_creacion TIMESTAMP DEFAULT NOW(),
-                fecha_expiracion TIMESTAMP DEFAULT (NOW() + INTERVAL '24 hours'),
-                usado BOOLEAN DEFAULT FALSE
-            )
-        `);
+        const userData = {
+            id: newUser.rows[0].id_usuario,
+            username: newUser.rows[0].username,
+            nombre: newUser.rows[0].nombre,
+            apellido: newUser.rows[0].apellido,
+            email: newUser.rows[0].email
+        };
         
-        // Eliminar códigos expirados o usados para este email
-        await db.query('DELETE FROM email_verification_codes WHERE email = $1 AND (fecha_expiracion < NOW() OR usado = TRUE)', [email]);
-        
-        // Guardar código de verificación
-        await db.query(
-            'INSERT INTO email_verification_codes (email, codigo) VALUES ($1, $2)',
-            [email, codigoVerificacion]
-        );
-        
-        // Enviar correo de verificación
-        const emailEnviado = await sendVerificationEmail(
-            email,
-            username,
-            nombre || username,
-            codigoVerificacion
-        );
-        
-        if (!emailEnviado) {
-            logger.warn('No se pudo enviar el correo de verificación', { email });
-            // Si no se puede enviar el email, eliminar el código (pero mantener la cuenta)
-            await db.query('DELETE FROM email_verification_codes WHERE email = $1 AND codigo = $2', [email, codigoVerificacion]);
-            return res.status(500).json({ 
-                msg: 'No se pudo enviar el correo de verificación. Por favor, verifica la configuración del servidor de correo.' 
+        // Generar token JWT inmediatamente
+        const payload = { user: userData };
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
+            if (err) {
+                logger.error('Error al generar token JWT en registro', err);
+                return res.status(500).json({ error: 'Error al generar token' });
+            }
+            
+            // Devolver éxito con token para login automático
+            res.status(201).json({ 
+                message: 'Cuenta creada exitosamente',
+                token,
+                user: userData
             });
-        }
-
-        // Devolver éxito con el email para la verificación
-        res.status(201).json({ 
-            message: 'Cuenta creada exitosamente. Se ha enviado un código de verificación a tu correo electrónico.',
-            email: email
         });
 
     } catch (error) {
@@ -139,7 +107,7 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await db.query(
-            'SELECT id_usuario, username, email, password_hash, nombre, apellido, email_verificado FROM usuario WHERE email = $1', 
+            'SELECT id_usuario, username, email, password_hash, nombre, apellido FROM usuario WHERE email = $1', 
             [email]
         );
         
@@ -150,14 +118,6 @@ exports.login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.rows[0].password_hash);
         if (!isMatch) {
             return res.status(400).json({ msg: 'Credenciales inválidas' });
-        }
-        
-        // Verificar que el email esté verificado
-        if (!user.rows[0].email_verificado) {
-            return res.status(403).json({ 
-                msg: 'Por favor, verifica tu correo electrónico antes de iniciar sesión',
-                emailNoVerificado: true
-            });
         }
 
       
@@ -476,149 +436,6 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
         
     } catch (err) {
         logger.error('Error al solicitar recuperación de contraseña', err);
-        res.status(500).json({ error: 'Error del servidor' });
-    }
-};
-
-// Verificar código de verificación de email y activar cuenta
-exports.verificarEmail = async (req, res) => {
-    const { email, codigo } = req.body;
-    
-    try {
-        if (!email || !codigo) {
-            return res.status(400).json({ error: 'Email y código son requeridos' });
-        }
-        
-        // Buscar código válido
-        const codigoValido = await db.query(
-            `SELECT * FROM email_verification_codes 
-             WHERE email = $1 AND codigo = $2 AND usado = FALSE AND fecha_expiracion > NOW()`,
-            [email, codigo]
-        );
-        
-        if (codigoValido.rows.length === 0) {
-            return res.status(400).json({ error: 'Código inválido o expirado' });
-        }
-        
-        // Verificar que el usuario existe (debe existir porque se creó en el registro)
-        const usuario = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
-        if (usuario.rows.length === 0) {
-            await db.query('UPDATE email_verification_codes SET usado = TRUE WHERE email = $1', [email]);
-            return res.status(400).json({ error: 'Usuario no encontrado. Por favor, regístrate nuevamente.' });
-        }
-        
-        // Verificar si el email ya está verificado
-        if (usuario.rows[0].email_verificado) {
-            await db.query('UPDATE email_verification_codes SET usado = TRUE WHERE email = $1 AND codigo = $2', [email, codigo]);
-            return res.status(400).json({ error: 'Este correo electrónico ya está verificado' });
-        }
-        
-        // ACTUALIZAR el usuario para marcar el email como verificado
-        const updatedUser = await db.query(
-            `UPDATE usuario SET email_verificado = TRUE 
-             WHERE email = $1 
-             RETURNING id_usuario, username, nombre, apellido, email`,
-            [email]
-        );
-        
-        // Marcar código como usado
-        await db.query('UPDATE email_verification_codes SET usado = TRUE WHERE email = $1 AND codigo = $2', [email, codigo]);
-        
-        const userData = {
-            id: updatedUser.rows[0].id_usuario,
-            username: updatedUser.rows[0].username,
-            nombre: updatedUser.rows[0].nombre,
-            apellido: updatedUser.rows[0].apellido,
-            email: updatedUser.rows[0].email
-        };
-        
-        // Generar token JWT ahora que el email está verificado
-        const payload = { user: userData };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
-            if (err) {
-                logger.error('Error al generar token JWT', err);
-                return res.status(500).json({ error: 'Error al generar token' });
-            }
-            
-            res.json({
-                message: 'Email verificado exitosamente. Tu cuenta ha sido activada.',
-                token,
-                user: userData
-            });
-        });
-        
-    } catch (err) {
-        logger.error('Error al verificar email', err);
-        res.status(500).json({ error: 'Error del servidor' });
-    }
-};
-
-// Reenviar código de verificación
-exports.reenviarCodigoVerificacion = async (req, res) => {
-    const { email } = req.body;
-    
-    try {
-        if (!email) {
-            return res.status(400).json({ error: 'El correo electrónico es requerido' });
-        }
-        
-        // Verificar que el usuario existe (la cuenta ya debe estar creada)
-        const usuario = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
-        if (usuario.rows.length === 0) {
-            return res.status(400).json({ error: 'No existe una cuenta asociada a este correo electrónico' });
-        }
-        
-        // Verificar si el email ya está verificado
-        if (usuario.rows[0].email_verificado) {
-            return res.status(400).json({ error: 'Este correo electrónico ya está verificado' });
-        }
-        
-        const userData = usuario.rows[0];
-        
-        // Buscar código pendiente o crear uno nuevo
-        const codigoPendiente = await db.query(
-            'SELECT * FROM email_verification_codes WHERE email = $1 AND usado = FALSE AND fecha_expiracion > NOW()',
-            [email]
-        );
-        
-        // Generar nuevo código
-        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        if (codigoPendiente.rows.length > 0) {
-            // Actualizar código existente
-            await db.query(
-                'UPDATE email_verification_codes SET codigo = $1, fecha_expiracion = NOW() + INTERVAL \'24 hours\' WHERE email = $2',
-                [codigoVerificacion, email]
-            );
-        } else {
-            // Crear nuevo código
-            await db.query(
-                'INSERT INTO email_verification_codes (email, codigo) VALUES ($1, $2)',
-                [email, codigoVerificacion]
-            );
-        }
-        
-        // Enviar correo
-        const emailEnviado = await sendVerificationEmail(
-            email,
-            userData.username,
-            userData.nombre || userData.username,
-            codigoVerificacion
-        );
-        
-        if (!emailEnviado) {
-            logger.warn('No se pudo enviar el correo de verificación', { email });
-            return res.status(500).json({ 
-                error: 'No se pudo enviar el correo de verificación. Por favor, verifica la configuración del servidor.' 
-            });
-        }
-        
-        res.json({ 
-            message: 'Se ha enviado un nuevo código de verificación a tu correo electrónico'
-        });
-        
-    } catch (err) {
-        logger.error('Error al reenviar código de verificación', err);
         res.status(500).json({ error: 'Error del servidor' });
     }
 };

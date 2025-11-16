@@ -85,6 +85,9 @@ export class HomePage implements OnInit, OnDestroy {
       this.chatService.setNotificationService(this.notificationService);
       this.chatService.inicializarChat(this.usuarioActual);
       
+      // Unirse a la sala de notificaciones
+      this.chatService.getSocket()?.emit('unirse_notificaciones', this.usuarioActual.id);
+      
       this.subscriptions.push(
         this.chatService.nuevoMensaje$.subscribe(mensaje => {
           if (mensaje) {
@@ -109,6 +112,31 @@ export class HomePage implements OnInit, OnDestroy {
           this.contadorMensajesNoLeidos = contador;
         })
       );
+      
+      // Escuchar notificaciones en tiempo real
+      const socket = this.chatService.getSocket();
+      if (socket) {
+        socket.on('nueva_notificacion', (notificacion: any) => {
+          console.log('Nueva notificación recibida:', notificacion);
+          
+          // Mostrar notificación push si la página no está visible
+          if (document.hidden && this.notificationService) {
+            this.notificationService.showNotification(
+              notificacion.titulo || 'Nueva notificación',
+              {
+                body: notificacion.contenido || '',
+                icon: '/assets/icon/SouFitLogo.png',
+                badge: '/assets/icon/SouFitLogo.png',
+                tag: `notificacion-${notificacion.id_notificacion}`,
+                requireInteraction: false
+              }
+            ).catch(err => console.log('Error al mostrar notificación push:', err));
+          }
+          
+          // Actualizar contador de notificaciones (si existe)
+          // Esto se puede implementar con un servicio de notificaciones
+        });
+      }
     }
   }
   

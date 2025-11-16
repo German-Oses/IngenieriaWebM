@@ -1,4 +1,10 @@
 const db = require('../config/db');
+let notificationHelper = null;
+
+// Función para establecer el helper de notificaciones
+exports.setNotificationHelper = (helper) => {
+    notificationHelper = helper;
+};
 
 // Obtener feed comunitario (posts de usuarios seguidos y públicos)
 exports.getFeed = async (req, res) => {
@@ -118,6 +124,14 @@ exports.createPost = async (req, res) => {
         `;
         
         const postResult = await db.query(postQuery, [result.rows[0].id_post]);
+        
+        // Verificar logros después de crear un post
+        if (notificationHelper) {
+            notificationHelper.verificarYOtorgarLogros(userId).catch(err => {
+                console.error('Error al verificar logros:', err);
+            });
+        }
+        
         res.status(201).json(postResult.rows[0]);
     } catch (error) {
         console.error('Error al crear post:', error);
@@ -210,21 +224,26 @@ exports.reaccionarPost = async (req, res) => {
                 [userId, id, tipo_reaccion]
             );
             
-            // Crear notificación para el autor del post
-            const post = await db.query('SELECT id_usuario FROM post WHERE id_post = $1', [id]);
-            if (post.rows.length > 0 && post.rows[0].id_usuario !== userId) {
-                const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
-                await db.query(
-                    'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
-                    [
-                        post.rows[0].id_usuario,
-                        'nuevo_like',
-                        'Nueva reacción en tu post',
-                        `${usuario.rows[0]?.username || 'Un usuario'} reaccionó a tu post`,
-                        id,
-                        'post'
-                    ]
-                );
+            // Crear notificación para el autor del post usando el helper
+            if (notificationHelper) {
+                await notificationHelper.notificarReaccionPost(id, userId);
+            } else {
+                // Fallback: crear notificación directamente
+                const post = await db.query('SELECT id_usuario FROM post WHERE id_post = $1', [id]);
+                if (post.rows.length > 0 && post.rows[0].id_usuario !== userId) {
+                    const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
+                    await db.query(
+                        'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
+                        [
+                            post.rows[0].id_usuario,
+                            'nuevo_like',
+                            'Nueva reacción en tu post',
+                            `${usuario.rows[0]?.username || 'Un usuario'} reaccionó a tu post`,
+                            id,
+                            'post'
+                        ]
+                    );
+                }
             }
             
             res.json({ message: 'Reacción agregada', reaccion: true });
@@ -268,21 +287,26 @@ exports.comentarPost = async (req, res) => {
         
         const comentarioResult = await db.query(comentarioQuery, [result.rows[0].id_comentario]);
         
-        // Crear notificación para el autor del post
-        const post = await db.query('SELECT id_usuario FROM post WHERE id_post = $1', [id]);
-        if (post.rows.length > 0 && post.rows[0].id_usuario !== userId) {
-            const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
-            await db.query(
-                'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
-                [
-                    post.rows[0].id_usuario,
-                    'nuevo_comentario',
-                    'Nuevo comentario en tu post',
-                    `${usuario.rows[0]?.username || 'Un usuario'} comentó tu post`,
-                    id,
-                    'post'
-                ]
-            );
+        // Crear notificación para el autor del post usando el helper
+        if (notificationHelper) {
+            await notificationHelper.notificarComentarioPost(id, userId);
+        } else {
+            // Fallback: crear notificación directamente
+            const post = await db.query('SELECT id_usuario FROM post WHERE id_post = $1', [id]);
+            if (post.rows.length > 0 && post.rows[0].id_usuario !== userId) {
+                const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
+                await db.query(
+                    'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [
+                        post.rows[0].id_usuario,
+                        'nuevo_comentario',
+                        'Nuevo comentario en tu post',
+                        `${usuario.rows[0]?.username || 'Un usuario'} comentó tu post`,
+                        id,
+                        'post'
+                    ]
+                );
+            }
         }
         
         res.status(201).json(comentarioResult.rows[0]);
@@ -333,21 +357,26 @@ exports.compartirPost = async (req, res) => {
         
         const result = await db.query(query, [userId, id]);
         
-        // Crear notificación para el autor del post
-        const post = await db.query('SELECT id_usuario FROM post WHERE id_post = $1', [id]);
-        if (post.rows.length > 0 && post.rows[0].id_usuario !== userId) {
-            const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
-            await db.query(
-                'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
-                [
-                    post.rows[0].id_usuario,
-                    'nuevo_compartido',
-                    'Tu post fue compartido',
-                    `${usuario.rows[0]?.username || 'Un usuario'} compartió tu post`,
-                    id,
-                    'post'
-                ]
-            );
+        // Crear notificación para el autor del post usando el helper
+        if (notificationHelper) {
+            await notificationHelper.notificarCompartidoPost(id, userId);
+        } else {
+            // Fallback: crear notificación directamente
+            const post = await db.query('SELECT id_usuario FROM post WHERE id_post = $1', [id]);
+            if (post.rows.length > 0 && post.rows[0].id_usuario !== userId) {
+                const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
+                await db.query(
+                    'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [
+                        post.rows[0].id_usuario,
+                        'nuevo_compartido',
+                        'Tu post fue compartido',
+                        `${usuario.rows[0]?.username || 'Un usuario'} compartió tu post`,
+                        id,
+                        'post'
+                    ]
+                );
+            }
         }
         
         res.json({ message: 'Post compartido', compartido: true });

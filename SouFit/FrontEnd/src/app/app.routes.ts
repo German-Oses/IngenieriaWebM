@@ -38,8 +38,4 @@ export const routes: Routes = [
     path: 'recuperar-password',
     loadComponent: () => import('./pages/recuperar-password/recuperar-password.page').then( m => m.RecuperarPasswordPage)
   },
-  {
-    path: 'verificar-email',
-    loadComponent: () => import('./pages/verificar-email/verificar-email.page').then( m => m.VerificarEmailPage)
-  },
 ];

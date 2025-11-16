@@ -449,7 +449,7 @@ Authorization: Bearer <token>
 ### Endpoints de Autenticación
 
 #### `POST /api/auth/register`
-Registra un nuevo usuario. **Requiere verificación de email.**
+Registra un nuevo usuario y crea la cuenta inmediatamente.
 
 **Acceso:** Público  
 **Rate Limit:** 5 requests / 15 minutos
@@ -471,17 +471,24 @@ Registra un nuevo usuario. **Requiere verificación de email.**
 **Response 201:**
 ```json
 {
-  "message": "Cuenta creada exitosamente. Se ha enviado un código de verificación a tu correo electrónico.",
-  "email": "usuario@example.com"
+  "message": "Cuenta creada exitosamente",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "username": "usuario123",
+    "nombre": "Juan",
+    "apellido": "Pérez",
+    "email": "usuario@example.com"
+  }
 }
 ```
 
-**Nota:** Después del registro, se envía un código de verificación por email. El usuario debe verificar su email antes de poder iniciar sesión.
+**Nota:** Después del registro, el usuario recibe un token JWT y queda autenticado automáticamente. No se requiere verificación de email.
 
 **Errores:**
 - `400`: Validación fallida (fecha de nacimiento obligatoria, formato inválido, etc.)
 - `409`: Usuario o email ya existe
-- `500`: Error del servidor (problema con el servicio de email)
+- `500`: Error del servidor
 
 #### `POST /api/auth/login`
 Inicia sesión y devuelve un token JWT.
@@ -567,63 +574,6 @@ Valida el código y restablece la contraseña.
 - `400`: Código inválido o expirado
 - `404`: Usuario no encontrado
 
-#### `POST /api/auth/verificar-email`
-Verifica el email del usuario con el código recibido por correo.
-
-**Acceso:** Público  
-**Rate Limit:** 5 requests / 15 minutos
-
-**Request Body:**
-```json
-{
-  "email": "usuario@example.com",
-  "codigo": "123456"
-}
-```
-
-**Response 200:**
-```json
-{
-  "message": "Email verificado correctamente",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id_usuario": 1,
-    "username": "usuario123",
-    "email": "usuario@example.com",
-    "email_verificado": true
-  }
-}
-```
-
-**Nota:** Después de verificar el email, el usuario es automáticamente autenticado y recibe un token JWT.
-
-**Errores:**
-- `400`: Código inválido, expirado o ya usado
-- `404`: Usuario no encontrado o email ya verificado
-
-#### `POST /api/auth/reenviar-codigo-verificacion`
-Reenvía el código de verificación de email.
-
-**Acceso:** Público  
-**Rate Limit:** 5 requests / 15 minutos
-
-**Request Body:**
-```json
-{
-  "email": "usuario@example.com"
-}
-```
-
-**Response 200:**
-```json
-{
-  "message": "Código de verificación reenviado"
-}
-```
-
-**Errores:**
-- `400`: Email inválido
-- `404`: Usuario no encontrado o email ya verificado
 
 ### Endpoints de Perfil
 
@@ -1185,6 +1135,102 @@ Elimina una notificación.
 
 **Acceso:** Privado
 
+### Endpoints de Estadísticas
+
+#### `GET /api/estadisticas`
+Obtiene las estadísticas del usuario autenticado.
+
+**Acceso:** Privado
+
+**Response 200:**
+```json
+{
+  "estadisticas": {
+    "total_posts": 15,
+    "total_rutinas": 5,
+    "total_siguiendo": 20,
+    "total_seguidores": 35,
+    "total_likes_posts": 120,
+    "total_comentarios_posts": 45,
+    "total_rutinas_guardadas": 8
+  },
+  "actividad_reciente": [
+    {
+      "fecha": "2025-01-15",
+      "cantidad": 3
+    }
+  ]
+}
+```
+
+#### `GET /api/estadisticas/rutinas`
+Obtiene el progreso de las rutinas del usuario.
+
+**Acceso:** Privado
+
+**Response 200:**
+```json
+[
+  {
+    "id_rutina": 1,
+    "nombre_rutina": "Rutina de Fuerza",
+    "duracion_semanas": 8,
+    "fecha_creacion": "2025-01-01T00:00:00.000Z",
+    "posts_completados": 5,
+    "total_dias": 24
+  }
+]
+```
+
+### Endpoints de Recordatorios
+
+#### `GET /api/recordatorios`
+Obtiene los recordatorios de entrenamiento del usuario.
+
+**Acceso:** Privado
+
+**Response 200:**
+```json
+[
+  {
+    "id_recordatorio": 1,
+    "id_usuario": 1,
+    "hora": "18:00:00",
+    "dias_semana": [1, 3, 5],
+    "mensaje": "¡Es hora de entrenar!",
+    "activo": true,
+    "fecha_creacion": "2025-01-15T00:00:00.000Z"
+  }
+]
+```
+
+**Nota:** `dias_semana` es un array de números donde 0=Domingo, 1=Lunes, ..., 6=Sábado.
+
+#### `POST /api/recordatorios`
+Crea un nuevo recordatorio de entrenamiento.
+
+**Acceso:** Privado
+
+**Request Body:**
+```json
+{
+  "hora": "18:00:00",
+  "dias_semana": [1, 3, 5],
+  "mensaje": "¡Es hora de entrenar!",
+  "activo": true
+}
+```
+
+#### `PUT /api/recordatorios/:id`
+Actualiza un recordatorio existente.
+
+**Acceso:** Privado
+
+#### `DELETE /api/recordatorios/:id`
+Elimina un recordatorio.
+
+**Acceso:** Privado
+
 ### Endpoints Externos
 
 #### `GET /api/external/ejercicios`
@@ -1252,16 +1298,37 @@ Se emite cuando se elimina un mensaje.
 ```
 
 #### `nueva_notificacion`
-Se emite cuando hay una nueva notificación.
+Se emite cuando se crea una nueva notificación para el usuario.
 
 **Payload:**
 ```json
 {
   "id_notificacion": 1,
-  "tipo_notificacion": "nuevo_seguidor",
-  "titulo": "Nuevo seguidor",
-  "contenido": "usuario456 comenzó a seguirte"
+  "tipo_notificacion": "nuevo_like",
+  "titulo": "Nueva reacción en tu post",
+  "contenido": "usuario123 reaccionó a tu post",
+  "id_referencia": 5,
+  "tipo_referencia": "post",
+  "leida": false,
+  "fecha_notificacion": "2025-01-15T10:00:00.000Z"
 }
+```
+
+**Tipos de notificaciones:**
+- `nuevo_mensaje` - Nuevo mensaje recibido
+- `nuevo_like` - Nueva reacción en un post
+- `nuevo_comentario` - Nuevo comentario en un post
+- `nuevo_compartido` - Post compartido
+- `nuevo_seguidor` - Nuevo seguidor
+- `rutina_guardada` - Rutina guardada por otro usuario
+- `nuevo_comentario_rutina` - Nuevo comentario en una rutina
+
+#### `unirse_notificaciones`
+El cliente se une a su sala de notificaciones.
+
+**Payload:**
+```javascript
+socket.emit('unirse_notificaciones', id_usuario);
 ```
 
 ### Salas (Rooms)
@@ -1550,32 +1617,107 @@ Actualmente la API no tiene versionado. Para futuras versiones, considerar:
 
 ## 🎨 Características Avanzadas
 
-### 1. Notificaciones Push Nativas
+### 1. Sistema de Notificaciones en Tiempo Real
 
 #### Implementación
-- **Servicio:** `NotificationService` (`src/app/services/notification.service.ts`)
+- **Backend:** `NotificationHelper` (`utils/notificationHelper.js`)
+- **Frontend:** `NotificationService` (`src/app/services/notification.service.ts`)
+- **Comunicación:** Socket.io para notificaciones en tiempo real
 - **API:** Web Notification API nativa del navegador
-- **Integración:** Automática con `ChatService` para mensajes nuevos
 
 #### Funcionalidades
+- **Notificaciones en tiempo real** mediante Socket.io
+- **Notificaciones push nativas** cuando la página está oculta
+- **Tipos de notificaciones:**
+  - Nuevos mensajes
+  - Nuevos likes en posts
+  - Nuevos comentarios en posts
+  - Posts compartidos
+  - Nuevos seguidores
+  - Rutinas guardadas
+  - Rutinas compartidas
 - Solicitud automática de permisos al inicializar
-- Notificaciones cuando la página está oculta (`document.hidden`)
 - Notificaciones con icono, badge y vibración
 - Manejo de clics en notificaciones para navegar a la aplicación
 - Cierre automático después de 5 segundos
 
 #### Uso
 ```typescript
-// En ChatService
-if (this.notificationService && document.hidden) {
-  this.notificationService.showMessageNotification(
-    remitenteNombre,
-    contenido
-  );
-}
+// En el backend, usar NotificationHelper
+await notificationHelper.notificarReaccionPost(postId, usuarioId);
+
+// En el frontend
+this.notificationService.showInteractionNotification(
+  'Nueva reacción',
+  'Usuario reaccionó a tu post'
+);
 ```
 
-### 2. Modo Oscuro
+### 2. Sistema de Estadísticas
+
+#### Implementación
+- **Backend:** `estadisticasController.js`
+- **Frontend:** `EstadisticasService` (`src/app/services/estadisticas.service.ts`)
+- **Endpoints:** `/api/estadisticas`
+
+#### Funcionalidades
+- Estadísticas generales del usuario:
+  - Total de posts
+  - Total de rutinas creadas
+  - Total de seguidores y seguidos
+  - Total de likes recibidos
+  - Total de comentarios recibidos
+  - Total de rutinas guardadas por otros usuarios
+- Actividad reciente (últimos 30 días)
+- Progreso de rutinas (posts completados vs total de días)
+
+#### Endpoints
+- `GET /api/estadisticas` - Obtener estadísticas generales
+- `GET /api/estadisticas/rutinas` - Obtener progreso de rutinas
+
+### 3. Sistema de Recordatorios de Entrenamiento
+
+#### Implementación
+- **Backend:** `recordatorioController.js`
+- **Frontend:** `RecordatorioService` (`src/app/services/recordatorio.service.ts`)
+- **Endpoints:** `/api/recordatorios`
+- **Base de datos:** Tabla `recordatorio_entrenamiento` (creada dinámicamente)
+
+#### Funcionalidades
+- Crear recordatorios personalizados
+- Configurar hora y días de la semana
+- Mensaje personalizado
+- Activar/desactivar recordatorios
+- CRUD completo de recordatorios
+
+#### Endpoints
+- `GET /api/recordatorios` - Obtener recordatorios del usuario
+- `POST /api/recordatorios` - Crear nuevo recordatorio
+- `PUT /api/recordatorios/:id` - Actualizar recordatorio
+- `DELETE /api/recordatorios/:id` - Eliminar recordatorio
+
+### 4. Búsqueda Avanzada
+
+#### Implementación
+- **Backend:** Filtros mejorados en `ejercicioController.js`
+- **Frontend:** `BuscarPage` con filtros avanzados
+
+#### Funcionalidades
+- Búsqueda por nombre o descripción
+- Filtros por:
+  - Tipo de ejercicio
+  - Grupo muscular
+  - Dificultad
+  - Duración máxima
+  - Equipamiento
+- Ordenamiento por:
+  - Relevancia (fecha)
+  - Nombre (alfabético)
+  - Duración
+  - Likes
+  - Guardados
+
+### 5. Modo Oscuro
 
 #### Implementación
 - **Servicio:** `ThemeService` (`src/app/services/theme.service.ts`)
@@ -1588,7 +1730,7 @@ if (this.notificationService && document.hidden) {
 - Integración con Ionic dark mode
 - Soporte para `prefers-color-scheme`
 
-### 3. Caché en Frontend
+### 6. Caché en Frontend
 
 #### Implementación
 - **Servicio:** `CacheService` (`src/app/services/cache.service.ts`)

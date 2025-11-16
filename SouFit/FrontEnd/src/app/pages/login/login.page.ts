@@ -27,19 +27,8 @@ export class LoginPage {
         this.router.navigate(['/home'], { replaceUrl: true });
       },
       error: (err) => {
-        // Si el email no está verificado, redirigir a la página de verificación
-        if (err.error?.emailNoVerificado) {
-          this.presentAlert(
-            'Email no verificado', 
-            'Por favor, verifica tu correo electrónico antes de iniciar sesión.'
-          );
-          this.router.navigate(['/verificar-email'], { 
-            queryParams: { email: this.email } 
-          });
-        } else {
-          const errorMsg = err.error?.msg || 'Credenciales inválidas.';
-          this.presentAlert('Error', errorMsg);
-        }
+        const errorMsg = err.error?.msg || 'Credenciales inválidas.';
+        this.presentAlert('Error', errorMsg);
       },
     });
   }

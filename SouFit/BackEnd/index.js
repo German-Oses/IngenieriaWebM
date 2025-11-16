@@ -157,12 +157,24 @@ const io = new Server(server, {
   }
 });
 
+// Almacenar instancia de io para acceso desde otros módulos
+ioInstance = io;
+
+// Exportar función para obtener io desde otros módulos
+module.exports.getIO = () => ioInstance;
+
 io.on('connection', (socket) =>{
     logger.info('Usuario conectado', { socketId: socket.id });
 
     socket.on('entrar_chat', (id_usuario) => {
         socket.join('usuario_' + id_usuario);
         logger.debug(`Usuario ${id_usuario} ha entrado a su chat`, { socketId: socket.id });
+    });
+    
+    // Permitir que los usuarios se unan a su sala de notificaciones
+    socket.on('unirse_notificaciones', (id_usuario) => {
+        socket.join('usuario_' + id_usuario);
+        logger.debug(`Usuario ${id_usuario} se unió a sus notificaciones`, { socketId: socket.id });
     });
 
     socket.on('enviar_mensaje', async (data) => {
@@ -235,10 +247,28 @@ const mensajesRouter = require('./routes/mensajes');
 mensajesRouter.setIO(io);
 app.use('/api', mensajesRouter);
 
+// Configurar helper de notificaciones
+const NotificationHelper = require('./utils/notificationHelper');
+const notificationHelper = new NotificationHelper(io);
+
+// Configurar helper en los controladores que lo necesiten
+const postController = require('./controllers/postController');
+postController.setNotificationHelper(notificationHelper);
+
+const rutinaController = require('./controllers/rutinaController');
+rutinaController.setNotificationHelper(notificationHelper);
+
 app.use('/api/ejercicios', require('./routes/ejercicios'));
 app.use('/api/rutinas', require('./routes/rutinas'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/notificaciones', require('./routes/notificaciones'));
+app.use('/api/estadisticas', require('./routes/estadisticas'));
+app.use('/api/recordatorios', require('./routes/recordatorios'));
+app.use('/api/logros', require('./routes/logros'));
+app.use('/api/historial', require('./routes/historial'));
+app.use('/api/progreso', require('./routes/progreso'));
+app.use('/api/notas', require('./routes/notas'));
+app.use('/api/calendario', require('./routes/calendario'));
 app.use('/api/external', require('./routes/external'));
 
 // Health check endpoint mejorado

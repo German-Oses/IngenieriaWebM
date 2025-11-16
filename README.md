@@ -32,6 +32,19 @@ https://www.figma.com/proto/9t08ubjNySuxTx8rygZNhD/SouFit?node-id=105-2&t=KKxqOl
 ## Resumen del Proyecto
 SouFit es una plataforma fitness social desarrollada con Ionic y Angular que permite a los usuarios gestionar sus rutinas de ejercicio, conectar con otros entusiastas del fitness y compartir su progreso. La aplicación incluye funciones de social networking específicas para el ámbito fitness.
 
+### 🆕 Funcionalidades Principales
+
+- ✅ **Registro e Inicio de Sesión**: Autenticación inmediata sin verificación de email
+- ✅ **Mensajería en Tiempo Real**: Chat con Socket.io, envío de imágenes y audio
+- ✅ **Feed Social**: Publicar ejercicios, rutinas y logros; reaccionar y comentar
+- ✅ **Sistema de Notificaciones**: Notificaciones push en tiempo real para likes, comentarios, mensajes y seguidores
+- ✅ **Búsqueda Avanzada**: Filtros por tipo, grupo muscular, dificultad, duración y equipamiento
+- ✅ **Estadísticas de Progreso**: Seguimiento de actividad, posts, rutinas y seguidores
+- ✅ **Recordatorios de Entrenamiento**: Crear recordatorios personalizados con hora y días de la semana
+- ✅ **Sistema de Favoritos**: Guardar ejercicios y rutinas como favoritos
+- ✅ **Modo Oscuro**: Toggle de tema claro/oscuro con persistencia
+- ✅ **Caché Inteligente**: Caché automático de respuestas API
+
 ---
 
 ## Requerimientos
