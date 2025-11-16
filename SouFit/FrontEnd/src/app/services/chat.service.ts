@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface Mensaje {
   id?: number;
@@ -29,7 +30,8 @@ export interface Chat {
 })
 export class ChatService {
   private socket: Socket;
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = environment.apiUrl;
+  private socketUrl = environment.socketUrl || environment.apiUrl.replace('/api', '');
   
   // Subjects para manejar el estado
   private mensajesSubject = new BehaviorSubject<Mensaje[]>([]);
@@ -44,7 +46,7 @@ export class ChatService {
   private usuarioActual: any = null;
 
   constructor(private http: HttpClient) {
-    this.socket = io('http://localhost:3000');
+    this.socket = io(this.socketUrl);
     this.setupSocketListeners();
   }
 
@@ -97,7 +99,7 @@ export class ChatService {
     
     // Si se solicita reconectar, crear un nuevo socket
     if (reconectar) {
-      this.socket = io('http://localhost:3000');
+      this.socket = io(this.socketUrl);
       this.setupSocketListeners();
     }
   }

@@ -18,6 +18,8 @@ const corsOptions = {
             'http://localhost:4200',
             'http://localhost:8100',
             'http://localhost:3000',
+            'https://soufit.vercel.app',
+            'https://ingenieria-web-m.vercel.app',
             process.env.FRONTEND_URL,
             // Permitir todos los dominios de Vercel (preview deployments)
             /^https:\/\/.*\.vercel\.app$/,
@@ -75,6 +77,8 @@ const io = new Server(server, {
             'http://localhost:4200',
             'http://localhost:8100',
             'http://localhost:3000',
+            'https://soufit.vercel.app',
+            'https://ingenieria-web-m.vercel.app',
             process.env.FRONTEND_URL,
             /^https:\/\/.*\.vercel\.app$/,
             /^https:\/\/.*\.render\.com$/

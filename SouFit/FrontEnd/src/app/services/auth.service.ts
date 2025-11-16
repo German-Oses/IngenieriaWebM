@@ -6,12 +6,13 @@ import { switchMap, tap } from 'rxjs/operators';
 import { Storage } from '@ionic/storage-angular';
 import { Router } from '@angular/router';
 import { ChatService } from './chat.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   
 
   private storageReady = new BehaviorSubject<boolean>(false);
@@ -71,7 +72,7 @@ export class AuthService {
       if (!ready) {
         return of(null);
       }
-      return this.http.get('http://localhost:3000/api/profile');
+      return this.http.get(`${environment.apiUrl}/profile`);
     })
   );
 }
