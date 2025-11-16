@@ -13,11 +13,11 @@ interface CacheItem<T> {
   providedIn: 'root'
 })
 export class CacheService {
-  private storageReady: Promise<boolean>;
+  private storageReady: Promise<void>;
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutos
 
   constructor(private storage: Storage) {
-    this.storageReady = this.storage.create();
+    this.storageReady = this.storage.create().then(() => {});
   }
 
   async set<T>(key: string, data: T, ttl: number = this.DEFAULT_TTL): Promise<void> {

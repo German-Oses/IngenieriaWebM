@@ -100,6 +100,11 @@ export class RecuperarPasswordPage {
     });
   }
 
+  filtrarSoloNumeros(event: any) {
+    const value = event.target.value || '';
+    this.codigo = value.replace(/[^0-9]/g, '');
+  }
+
   volverALogin() {
     this.router.navigate(['/login']);
   }

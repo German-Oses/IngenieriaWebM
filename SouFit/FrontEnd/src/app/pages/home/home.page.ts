@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonGrid, IonRow, IonCol, IonButton, IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner } from '@ionic/angular/standalone';

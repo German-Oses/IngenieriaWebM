@@ -11,10 +11,10 @@ export class ThemeService {
   private themeSubject = new BehaviorSubject<Theme>('system');
   public theme$: Observable<Theme> = this.themeSubject.asObservable();
   
-  private storageReady: Promise<boolean>;
+  private storageReady: Promise<void>;
 
   constructor(private storage: Storage) {
-    this.storageReady = this.storage.create();
+    this.storageReady = this.storage.create().then(() => {});
     this.initTheme();
   }
 

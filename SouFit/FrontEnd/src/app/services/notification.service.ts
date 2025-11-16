@@ -84,11 +84,15 @@ export class NotificationService {
       const defaultOptions: NotificationOptions = {
         icon: '/assets/icon/SouFitLogo.png',
         badge: '/assets/icon/SouFitLogo.png',
-        vibrate: [200, 100, 200],
         tag: 'soufit-notification',
         requireInteraction: false,
         ...options
-      };
+      } as NotificationOptions & { vibrate?: number[] };
+      
+      // Agregar vibrate si está disponible (no está en el tipo estándar pero es soportado)
+      if ('vibrate' in navigator) {
+        (defaultOptions as any).vibrate = [200, 100, 200];
+      }
 
       const notification = new Notification(title, defaultOptions);
 
