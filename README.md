@@ -5,8 +5,22 @@
 
 # SouFit - Plataforma Fitness Social
 
-**Prototipo**
+## 🌐 Aplicación en Producción
+
+**Frontend (Vercel):**  
+🔗 [https://soufit.vercel.app](https://soufit.vercel.app)
+
+**Backend API (Render):**  
+🔗 [https://soufit.onrender.com/api](https://soufit.onrender.com/api)
+
+**Health Check:**  
+🔗 [https://soufit.onrender.com/api/health](https://soufit.onrender.com/api/health)
+
+---
+
+**Prototipo (Figma):**  
 https://www.figma.com/proto/9t08ubjNySuxTx8rygZNhD/SouFit?node-id=105-2&t=KKxqOlVgdH00sgOZ-1
+
 ## Índice
 1. [Resumen del Proyecto](#resumen-del-proyecto)
 2. [Requerimientos](#requerimientos)

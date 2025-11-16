@@ -4,6 +4,25 @@
 **Última actualización:** 2025-01-16  
 **Proyecto:** SouFit - Plataforma Fitness Social
 
+## 🌐 Aplicación en Producción
+
+### URLs de Producción
+
+**Frontend (Vercel.com):**  
+🔗 [https://soufit.vercel.app](https://soufit.vercel.app)
+
+**Backend API (Render.com):**  
+🔗 [https://soufit.onrender.com/api](https://soufit.onrender.com/api)
+
+**Socket.io (Render.com):**  
+🔗 [https://soufit.onrender.com](https://soufit.onrender.com)
+
+**Health Check Endpoint:**  
+🔗 [https://soufit.onrender.com/api/health](https://soufit.onrender.com/api/health)
+
+**Base de Datos:**  
+PostgreSQL alojada en Render.com (acceso interno)
+
 ---
 
 ## 📋 Tabla de Contenidos
@@ -407,8 +426,15 @@ El esquema incluye índices estratégicos para mejorar el rendimiento:
 ## 🔌 API REST - Documentación Completa
 
 ### Base URL
+
+**Desarrollo:**
 ```
 http://localhost:3000/api
+```
+
+**Producción:**
+```
+https://soufit.onrender.com/api
 ```
 
 ### Autenticación
@@ -1320,8 +1346,10 @@ export const environment = {
 ```
 
 **URLs de Producción:**
-- **Frontend:** `https://soufit.vercel.app` o `https://ingenieria-web-m.vercel.app`
-- **Backend:** `https://soufit.onrender.com`
+- **Frontend:** [https://soufit.vercel.app](https://soufit.vercel.app)
+- **Backend API:** [https://soufit.onrender.com/api](https://soufit.onrender.com/api)
+- **Socket.io:** [https://soufit.onrender.com](https://soufit.onrender.com)
+- **Health Check:** [https://soufit.onrender.com/api/health](https://soufit.onrender.com/api/health)
 
 ---
 
@@ -1353,19 +1381,29 @@ docker-compose -f docker-compose.prod.yml up -d --build
 3. Build: `npm run build`
 4. Servir con Nginx o servidor estático
 
-### Opción 3: Plataformas Cloud
+### Opción 3: Plataformas Cloud (Producción Actual)
 
-#### Backend (Render, Railway, Heroku)
-1. Conectar repositorio
-2. Configurar variables de entorno
-3. Configurar base de datos PostgreSQL
-4. Ejecutar `Soufit.sql` en la base de datos
+La aplicación está desplegada en:
 
-#### Frontend (Vercel, Netlify)
-1. Conectar repositorio
-2. Configurar build command: `npm run build`
-3. Configurar output directory: `www` o `dist`
-4. Configurar variables de entorno
+#### Frontend - Vercel.com
+- **URL:** [https://soufit.vercel.app](https://soufit.vercel.app)
+- **Configuración:** Ver `SouFit/FrontEnd/DESPLIEGUE_VERCEL.md`
+- **Build automático** en cada push a la rama principal
+- **CDN global** automático
+- **HTTPS** incluido
+
+#### Backend - Render.com
+- **URL:** [https://soufit.onrender.com](https://soufit.onrender.com)
+- **API:** [https://soufit.onrender.com/api](https://soufit.onrender.com/api)
+- **Health Check:** [https://soufit.onrender.com/api/health](https://soufit.onrender.com/api/health)
+- **Configuración:** Ver `SouFit/BackEnd/DESPLIEGUE_RENDER.md`
+- **Base de Datos:** PostgreSQL en Render.com
+
+#### Guías de Despliegue
+- **Guía Completa:** `SouFit/GUIA_DESPLIEGUE_COMPLETA.md`
+- **Backend Render:** `SouFit/BackEnd/DESPLIEGUE_RENDER.md`
+- **Frontend Vercel:** `SouFit/FrontEnd/DESPLIEGUE_VERCEL.md`
+- **Configuración Email (Resend):** `SouFit/BackEnd/CONFIGURACION_RESEND.md`
 
 ---
 

@@ -30,15 +30,21 @@ const corsOptions = {
             /^https:\/\/.*\.render\.com$/
         ].filter(Boolean);
         
-        // En desarrollo, permitir sin origin (Postman, mobile apps, etc.)
-        if (!origin && process.env.NODE_ENV !== 'production') {
-            return callback(null, true);
-        }
-        
-        // En producción, si no hay origin, rechazar (más seguro)
+        // Permitir peticiones sin origin:
+        // - En desarrollo: siempre permitir (Postman, mobile apps, etc.)
+        // - En producción: permitir (Render health checks, herramientas de monitoreo)
+        // Las peticiones desde navegadores siempre tienen origin, así que esto es seguro
         if (!origin) {
-            logger.warn('Petición sin origin rechazada en producción');
-            return callback(new Error('Origin requerido en producción'), false);
+            // En desarrollo, siempre permitir
+            if (process.env.NODE_ENV !== 'production') {
+                return callback(null, true);
+            }
+            
+            // En producción, permitir peticiones sin origin
+            // Render y otros servicios hacen health checks sin origin
+            // Esto es seguro porque las peticiones desde navegadores siempre tienen origin
+            logger.debug('Permitiendo petición sin origin (probablemente health check o herramienta de monitoreo)');
+            return callback(null, true);
         }
         
         // Verificar si el origin está en la lista o coincide con regex
@@ -97,14 +103,11 @@ const io = new Server(server, {
             /^https:\/\/.*\.render\.com$/
         ].filter(Boolean);
         
-        // En desarrollo, permitir sin origin
-        if (!origin && process.env.NODE_ENV !== 'production') {
-            return callback(null, true);
-        }
-        
-        // En producción, requerir origin válido
+        // Permitir peticiones sin origin (health checks de Render, herramientas de monitoreo)
+        // Las peticiones desde navegadores siempre tienen origin, así que esto es seguro
         if (!origin) {
-            return callback(new Error('Origin requerido en producción'), false);
+            logger.debug('Permitiendo petición Socket.io sin origin (probablemente health check)');
+            return callback(null, true);
         }
         
         const isAllowed = allowedOrigins.some(allowed => {
