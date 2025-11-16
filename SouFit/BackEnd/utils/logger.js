@@ -56,7 +56,8 @@ const logger = {
   },
   
   debug: (message, data = null) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true') {
+      writeLog(INFO_LOG, 'DEBUG', message, data);
       console.debug(`[DEBUG] ${message}`, data || '');
     }
   }

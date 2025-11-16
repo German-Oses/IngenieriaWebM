@@ -37,36 +37,50 @@ const corsOptions = {
         if (!origin) {
             // En desarrollo, siempre permitir
             if (process.env.NODE_ENV !== 'production') {
+                logger.debug('Permitiendo petición sin origin (desarrollo)');
                 return callback(null, true);
             }
             
             // En producción, permitir peticiones sin origin
             // Render y otros servicios hacen health checks sin origin
             // Esto es seguro porque las peticiones desde navegadores siempre tienen origin
-            logger.debug('Permitiendo petición sin origin (probablemente health check o herramienta de monitoreo)');
+            logger.info('Permitiendo petición sin origin (probablemente health check o herramienta de monitoreo)');
             return callback(null, true);
         }
+        
+        // Log para debugging (info en producción para diagnosticar)
+        logger.info('Verificando origin CORS', { origin, allowedOrigins: allowedOrigins.filter(o => typeof o === 'string') });
         
         // Verificar si el origin está en la lista o coincide con regex
         const isAllowed = allowedOrigins.some(allowed => {
             if (typeof allowed === 'string') {
-                return allowed === origin;
+                const matches = allowed === origin;
+                if (matches) logger.info(`Origin permitido (string match): ${origin}`);
+                return matches;
             } else if (allowed instanceof RegExp) {
-                return allowed.test(origin);
+                const matches = allowed.test(origin);
+                if (matches) logger.info(`Origin permitido (regex match): ${origin}`);
+                return matches;
             }
             return false;
         });
         
         if (isAllowed) {
+            logger.info(`✅ Origin permitido: ${origin}`);
             callback(null, true);
         } else {
-            logger.warn('Intento de acceso desde origen no permitido', { origin });
+            logger.error('❌ Intento de acceso desde origen no permitido', { 
+                origin, 
+                allowedOrigins: allowedOrigins.filter(o => typeof o === 'string'),
+                frontendUrl: process.env.FRONTEND_URL 
+            });
             callback(new Error('No permitido por CORS'), false);
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Content-Type', 'Authorization'],
     preflightContinue: false,
     optionsSuccessStatus: 204
 };
@@ -106,28 +120,40 @@ const io = new Server(server, {
         // Permitir peticiones sin origin (health checks de Render, herramientas de monitoreo)
         // Las peticiones desde navegadores siempre tienen origin, así que esto es seguro
         if (!origin) {
-            logger.debug('Permitiendo petición Socket.io sin origin (probablemente health check)');
+            logger.info('Permitiendo petición Socket.io sin origin (probablemente health check)');
             return callback(null, true);
         }
         
+        logger.info('Verificando origin Socket.io CORS', { origin });
+        
         const isAllowed = allowedOrigins.some(allowed => {
             if (typeof allowed === 'string') {
-                return allowed === origin;
+                const matches = allowed === origin;
+                if (matches) logger.info(`Origin Socket.io permitido (string match): ${origin}`);
+                return matches;
             } else if (allowed instanceof RegExp) {
-                return allowed.test(origin);
+                const matches = allowed.test(origin);
+                if (matches) logger.info(`Origin Socket.io permitido (regex match): ${origin}`);
+                return matches;
             }
             return false;
         });
         
         if (isAllowed) {
+            logger.info(`✅ Origin Socket.io permitido: ${origin}`);
             callback(null, true);
         } else {
-            logger.warn('Intento de conexión Socket.io desde origen no permitido', { origin });
+            logger.error('❌ Intento de conexión Socket.io desde origen no permitido', { 
+                origin,
+                allowedOrigins: allowedOrigins.filter(o => typeof o === 'string'),
+                frontendUrl: process.env.FRONTEND_URL
+            });
             callback(new Error('No permitido por CORS'), false);
         }
     },
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With', 'Accept']
   }
 });
 
