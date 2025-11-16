@@ -20,7 +20,7 @@ export class RegistroPage implements OnInit {
   email = '';
   password = '';
   confirmPassword = '';
-  fecha_nacimiento = '';
+  fecha_nacimiento: string | null = null;
   acceptTerms = false;
 
   // IDs seleccionados
@@ -100,21 +100,34 @@ export class RegistroPage implements OnInit {
       return;
     }
 
-    // Convertir fecha a formato YYYY-MM-DD si viene en otro formato
+    // Convertir fecha a formato YYYY-MM-DD
     let fechaFormateada = '';
-    if (this.fecha_nacimiento && typeof this.fecha_nacimiento === 'object' && 'getTime' in this.fecha_nacimiento) {
-      // Es un objeto Date
-      fechaFormateada = (this.fecha_nacimiento as Date).toISOString().split('T')[0];
-    } else if (typeof this.fecha_nacimiento === 'string') {
-      // Si viene como string, intentar parsearlo
-      const fecha = new Date(this.fecha_nacimiento);
-      if (!isNaN(fecha.getTime())) {
-        fechaFormateada = fecha.toISOString().split('T')[0];
+    if (this.fecha_nacimiento) {
+      // ion-datetime devuelve un string en formato ISO
+      if (typeof this.fecha_nacimiento === 'string') {
+        // Si es un string ISO, extraer solo la fecha (YYYY-MM-DD)
+        const fechaISO = this.fecha_nacimiento.split('T')[0];
+        // Validar que tenga el formato correcto
+        if (fechaISO.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          fechaFormateada = fechaISO;
+        } else {
+          // Intentar parsear como Date
+          const fecha = new Date(this.fecha_nacimiento);
+          if (!isNaN(fecha.getTime())) {
+            fechaFormateada = fecha.toISOString().split('T')[0];
+          } else {
+            fechaFormateada = this.fecha_nacimiento.trim();
+          }
+        }
       } else {
-        fechaFormateada = this.fecha_nacimiento.trim();
+        // Si es un objeto Date u otro formato
+        const fecha = new Date(this.fecha_nacimiento);
+        if (!isNaN(fecha.getTime())) {
+          fechaFormateada = fecha.toISOString().split('T')[0];
+        } else {
+          fechaFormateada = String(this.fecha_nacimiento).trim();
+        }
       }
-    } else if (this.fecha_nacimiento) {
-      fechaFormateada = String(this.fecha_nacimiento).trim();
     }
 
     const userData: any = {
