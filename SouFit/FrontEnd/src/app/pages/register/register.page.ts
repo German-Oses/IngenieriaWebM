@@ -5,13 +5,13 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
 import { CommonModule } from '@angular/common';
-import { IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonFooter, IonIcon, ModalController } from '@ionic/angular/standalone';
+import { IonInput } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-registro',
   templateUrl: './register.page.html',
   standalone: true,
-  imports: [IonicModule, FormsModule, CommonModule, IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonFooter, IonIcon]
+  imports: [IonicModule, FormsModule, CommonModule, IonInput]
 })
 export class RegistroPage implements OnInit {
   nombre = '';
@@ -35,14 +35,11 @@ export class RegistroPage implements OnInit {
   fechaMaxima: string = '';
   fechaMinima: string = '';
 
-  @ViewChild(IonModal) modal?: IonModal;
-
   constructor(
     private authService: AuthService,
     private ubicacionService: UbicacionService,
     private router: Router,
-    private alertController: AlertController,
-    private modalController: ModalController
+    private alertController: AlertController
   ) { }
 
   ngOnInit(): void {
@@ -100,18 +97,15 @@ export class RegistroPage implements OnInit {
       return;
     }
 
-    // Convertir fecha a formato YYYY-MM-DD
+    // El input type="date" ya devuelve el formato YYYY-MM-DD directamente
     let fechaFormateada = '';
     if (this.fecha_nacimiento) {
-      // ion-datetime devuelve un string en formato ISO
       if (typeof this.fecha_nacimiento === 'string') {
-        // Si es un string ISO, extraer solo la fecha (YYYY-MM-DD)
-        const fechaISO = this.fecha_nacimiento.split('T')[0];
-        // Validar que tenga el formato correcto
-        if (fechaISO.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          fechaFormateada = fechaISO;
+        // El input type="date" devuelve directamente YYYY-MM-DD
+        if (this.fecha_nacimiento.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          fechaFormateada = this.fecha_nacimiento;
         } else {
-          // Intentar parsear como Date
+          // Si viene en otro formato, intentar parsearlo
           const fecha = new Date(this.fecha_nacimiento);
           if (!isNaN(fecha.getTime())) {
             fechaFormateada = fecha.toISOString().split('T')[0];
@@ -120,13 +114,7 @@ export class RegistroPage implements OnInit {
           }
         }
       } else {
-        // Si es un objeto Date u otro formato
-        const fecha = new Date(this.fecha_nacimiento);
-        if (!isNaN(fecha.getTime())) {
-          fechaFormateada = fecha.toISOString().split('T')[0];
-        } else {
-          fechaFormateada = String(this.fecha_nacimiento).trim();
-        }
+        fechaFormateada = String(this.fecha_nacimiento).trim();
       }
     }
 
@@ -156,12 +144,6 @@ export class RegistroPage implements OnInit {
     });
   }
 
-  async cerrarModalFecha() {
-    const modal = await this.modalController.getTop();
-    if (modal) {
-      await modal.dismiss();
-    }
-  }
 
   async presentAlert(header: string, message: string): Promise<void> {
     const alert = await this.alertController.create({

@@ -414,11 +414,13 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
         // Verificar que el usuario existe y obtener datos
         const user = await db.query('SELECT id_usuario, email, nombre, username FROM usuario WHERE email = $1', [email]);
         
+        // IMPORTANTE: Solo continuar si el usuario existe
         if (user.rows.length === 0) {
             // Por seguridad, no revelar si el email existe o no
+            // Pero NO guardar código ni intentar enviar correo
+            logger.info('Intento de recuperación de contraseña para email no registrado', { email });
             return res.json({ 
-                message: 'Si el correo existe, se enviará un código de recuperación',
-                // En producción, siempre devolver este mensaje
+                message: 'Si el correo existe, se enviará un código de recuperación'
             });
         }
         
@@ -426,10 +428,6 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
         
         // Generar código de 6 dígitos
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Guardar código en base de datos (crear tabla si no existe)
-        // Por ahora, usar una tabla temporal o almacenar en memoria (no recomendado para producción)
-        // En producción, crear tabla: password_reset_codes (email, codigo, fecha_expiracion)
         
         // Crear tabla si no existe
         await db.query(`
@@ -443,10 +441,10 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
             )
         `);
         
-        // Eliminar códigos expirados
-        await db.query('DELETE FROM password_reset_codes WHERE fecha_expiracion < NOW() OR usado = TRUE');
+        // Eliminar códigos expirados o usados para este email
+        await db.query('DELETE FROM password_reset_codes WHERE email = $1 AND (fecha_expiracion < NOW() OR usado = TRUE)', [email]);
         
-        // Guardar nuevo código
+        // Guardar nuevo código SOLO si el usuario existe
         await db.query(
             'INSERT INTO password_reset_codes (email, codigo) VALUES ($1, $2)',
             [email, codigo]
@@ -456,20 +454,24 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
         const emailEnviado = await sendRecoveryEmail(
             email,
             usuario.username,
-            usuario.nombre,
+            usuario.nombre || usuario.username,
             codigo
         );
         
         if (!emailEnviado) {
-            // Si falla el envío, loguear para desarrollo
-            logger.warn('No se pudo enviar el correo. Mostrando código en consola.', { email });
-            logger.info(`CÓDIGO DE RECUPERACIÓN PARA ${email}: ${codigo}`);
+            // Si falla el envío, eliminar el código guardado
+            await db.query('DELETE FROM password_reset_codes WHERE email = $1 AND codigo = $2', [email, codigo]);
+            logger.error('No se pudo enviar el correo de recuperación', { email });
+            return res.status(500).json({ 
+                error: 'No se pudo enviar el correo de recuperación. Por favor, verifica la configuración del servidor de correo.' 
+            });
         }
         
+        logger.info('Código de recuperación enviado exitosamente', { email });
+        
+        // Por seguridad, siempre devolver el mismo mensaje
         res.json({ 
-            message: 'Si el correo existe, se enviará un código de recuperación',
-            // En desarrollo, también devolver el código (solo para testing)
-            ...(process.env.NODE_ENV === 'development' && { codigo: codigo })
+            message: 'Si el correo existe, se enviará un código de recuperación'
         });
         
     } catch (err) {

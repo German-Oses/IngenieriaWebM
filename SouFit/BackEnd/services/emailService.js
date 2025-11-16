@@ -7,13 +7,19 @@ const createTransporter = () => {
   // PRIORIDAD 1: Resend (Recomendado para producción)
   if (process.env.RESEND_API_KEY) {
     logger.info('Usando Resend para envío de correos');
+    // Resend soporta tanto puerto 587 (TLS) como 465 (SSL)
+    // Usamos 587 con secure: false para mejor compatibilidad
     return nodemailer.createTransport({
       host: 'smtp.resend.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false, // true para 465, false para otros puertos
       auth: {
         user: 'resend',
         pass: process.env.RESEND_API_KEY
+      },
+      tls: {
+        // No rechazar certificados no autorizados (útil para desarrollo)
+        rejectUnauthorized: false
       }
     });
   }

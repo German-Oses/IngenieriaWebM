@@ -59,51 +59,19 @@
       </ion-select>
   </ion-item>
 
-  <!-- Fecha de nacimiento con ion-datetime -->
+  <!-- Fecha de nacimiento con input nativo -->
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-    <ion-label position="stacked" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555; margin-bottom: 8px;">
+    <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
       Fecha de nacimiento <span style="color: red;">*</span>
     </ion-label>
-    <ion-datetime-button datetime="fecha-nacimiento-datetime"></ion-datetime-button>
-    <ion-modal [keepContentsMounted]="true">
-      <ng-template>
-        <ion-header>
-          <ion-toolbar color="primary">
-            <ion-title style="font-weight: 600;">Seleccionar Fecha de Nacimiento</ion-title>
-            <ion-buttons slot="end">
-              <ion-button fill="clear" (click)="cerrarModalFecha()" style="--color: white;">
-                Cerrar
-              </ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
-        <ion-content class="ion-padding" style="--padding-start: 16px; --padding-end: 16px; --padding-top: 24px; --padding-bottom: 24px;">
-          <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 350px; padding: 20px 0;">
-            <ion-datetime
-              id="fecha-nacimiento-datetime"
-              [(ngModel)]="fecha_nacimiento"
-              presentation="date"
-              [max]="fechaMaxima"
-              [min]="fechaMinima"
-              [showDefaultButtons]="true"
-              [showDefaultTitle]="true"
-              [showClearButton]="true"
-              [preferWheel]="false"
-              style="width: 100%; max-width: 420px; --background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
-            ></ion-datetime>
-          </div>
-        </ion-content>
-        <ion-footer>
-          <ion-toolbar>
-            <ion-buttons slot="end" style="padding: 8px 16px;">
-              <ion-button (click)="cerrarModalFecha()" fill="solid" color="primary" style="--border-radius: 8px; font-weight: 600; min-width: 120px;">
-                Confirmar
-              </ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-footer>
-      </ng-template>
-    </ion-modal>
+    <ion-input
+      type="date"
+      [(ngModel)]="fecha_nacimiento"
+      [max]="fechaMaxima"
+      [min]="fechaMinima"
+      placeholder="Selecciona tu fecha de nacimiento"
+      style="font-family: Inter; font-size: 16px; padding: 12px 0;"
+    ></ion-input>
   </ion-item>
 
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
