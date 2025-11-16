@@ -11,6 +11,7 @@ import { environment } from './environments/environment';
 
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { IonicStorageModule } from '@ionic/storage-angular';
+import { ServiceWorkerModule } from '@angular/service-worker';
 
 import { jwtInterceptor } from './app/interceptors/jwt-interceptor'; 
 
@@ -24,7 +25,13 @@ bootstrapApplication(AppComponent, {
     provideIonicAngular(),
     provideRouter(routes),
     
-    importProvidersFrom(IonicStorageModule.forRoot()), 
+    importProvidersFrom(
+      IonicStorageModule.forRoot(),
+      ServiceWorkerModule.register('ngsw-worker.js', {
+        enabled: environment.production,
+        registrationStrategy: 'registerWhenStable:30000'
+      })
+    ), 
     provideHttpClient(withInterceptors([jwtInterceptor])), 
   ],
 });

@@ -11,5 +11,10 @@ router.post('/register', authLimiter, registerRules(), validate, authController.
 // POST /api/auth/login (Público)
 router.post('/login', authLimiter, authController.login);
 
+// POST /api/auth/solicitar-recuperacion (Público)
+router.post('/solicitar-recuperacion', authLimiter, authController.solicitarRecuperacionPassword);
+
+// POST /api/auth/resetear-password (Público)
+router.post('/resetear-password', authLimiter, authController.resetearPassword);
 
 module.exports = router;

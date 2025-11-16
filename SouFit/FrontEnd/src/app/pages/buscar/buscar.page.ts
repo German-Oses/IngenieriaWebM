@@ -6,7 +6,7 @@ import { IonContent, IonGrid, IonRow, IonCol, IonIcon, IonInput, IonButton, IonS
 import { EjercicioService, Ejercicio } from '../../services/ejercicio.service';
 import { ChatService } from '../../services/chat.service';
 import { addIcons } from 'ionicons';
-import { searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline } from 'ionicons/icons';
+import { searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline, arrowBackOutline } from 'ionicons/icons';
 
 export interface UsuarioBusqueda {
   id_usuario: number;
@@ -33,13 +33,18 @@ export class BuscarPage implements OnInit {
   ejerciciosEncontrados: Ejercicio[] = [];
   cargando = false;
   mostrarResultados = false;
+  
+  // Búsqueda avanzada
+  filtroGrupoMuscular: string = '';
+  filtroDuracion: string = '';
+  ordenarPor: 'relevancia' | 'nombre' | 'duracion' = 'relevancia';
 
   constructor(
     private router: Router,
     private chatService: ChatService,
     private ejercicioService: EjercicioService
   ) {
-    addIcons({ searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline });
+    addIcons({ searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline, arrowBackOutline });
   }
 
   ngOnInit() {
@@ -82,9 +87,35 @@ export class BuscarPage implements OnInit {
   }
 
   buscarEjercicios() {
-    this.ejercicioService.getEjercicios({ busqueda: this.terminoBusqueda, limit: 50 }).subscribe({
+    const filtros: any = {
+      nombre: this.terminoBusqueda,
+      limit: 50
+    };
+    
+    if (this.filtroGrupoMuscular) {
+      filtros.grupo_muscular = this.filtroGrupoMuscular;
+    }
+    
+    if (this.filtroDuracion) {
+      filtros.duracion_max = parseInt(this.filtroDuracion);
+    }
+    
+    this.ejercicioService.getEjercicios(filtros).subscribe({
       next: (ejercicios) => {
-        this.ejerciciosEncontrados = ejercicios;
+        let ejerciciosOrdenados = [...ejercicios];
+        
+        // Ordenar resultados
+        if (this.ordenarPor === 'nombre') {
+          ejerciciosOrdenados.sort((a, b) => 
+            (a.nombre_ejercicio || '').localeCompare(b.nombre_ejercicio || '')
+          );
+        } else if (this.ordenarPor === 'duracion') {
+          ejerciciosOrdenados.sort((a, b) => 
+            (a.duracion_minutos || 0) - (b.duracion_minutos || 0)
+          );
+        }
+        
+        this.ejerciciosEncontrados = ejerciciosOrdenados;
         this.cargando = false;
       },
       error: (error) => {

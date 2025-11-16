@@ -47,6 +47,6 @@ export class LoginPage {
   }
 
   forgotPassword() {
-    this.presentAlert('Info', 'Función no implementada.');
+    this.router.navigate(['/recuperar-password']);
   }
 }

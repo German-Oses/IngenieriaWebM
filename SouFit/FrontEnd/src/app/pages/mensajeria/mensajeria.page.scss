@@ -500,6 +500,35 @@ ion-content {
   cursor: pointer;
 }
 
+// Responsive: Ajustes para móvil
+@media (max-width: 768px) {
+  .lista-chats {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    display: none; // Ocultar lista de chats en móvil cuando hay chat activo
+    
+    &.mostrar {
+      display: flex !important;
+    }
+  }
+  
+  .mensajes-area {
+    width: 100% !important;
+    display: none; // Ocultar área de mensajes cuando no hay chat activo
+    
+    &.mostrar {
+      display: flex !important;
+    }
+  }
+  
+  // Mostrar solo lista o solo mensajes en móvil
+  .lista-chats.mostrar ~ .mensajes-area,
+  .mensajes-area.mostrar ~ .lista-chats {
+    display: none !important;
+  }
+}
+
 // Estilos para usuarios disponibles
 .usuarios-disponibles {
   background-color: #f8f9fa;

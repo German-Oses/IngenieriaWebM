@@ -19,6 +19,7 @@ export class RegistroPage implements OnInit {
   email = '';
   password = '';
   confirmPassword = '';
+  fecha_nacimiento = '';
   acceptTerms = false;
 
   // IDs seleccionados
@@ -75,7 +76,7 @@ export class RegistroPage implements OnInit {
       return;
     }
 
-    const userData = {
+    const userData: any = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
       username: this.username.trim(),
@@ -84,6 +85,11 @@ export class RegistroPage implements OnInit {
       id_region: this.id_region,
       id_comuna: this.id_comuna
     };
+    
+    // Agregar fecha de nacimiento si está presente
+    if (this.fecha_nacimiento && this.fecha_nacimiento.trim()) {
+      userData.fecha_nacimiento = this.fecha_nacimiento.trim();
+    }
 
     this.authService.register(userData).subscribe({
       next: (response) => {
