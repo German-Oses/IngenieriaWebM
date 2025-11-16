@@ -61,10 +61,10 @@
 
   <!-- Fecha de nacimiento con ion-datetime -->
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-    <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
+    <ion-label position="stacked" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555; margin-bottom: 8px;">
       Fecha de nacimiento <span style="color: red;">*</span>
     </ion-label>
-    <ion-datetime-button datetime="datetime"></ion-datetime-button>
+    <ion-datetime-button datetime="fecha-nacimiento-datetime" style="width: 100%;"></ion-datetime-button>
     <ion-modal [keepContentsMounted]="true">
       <ng-template>
         <ion-header>
@@ -77,7 +77,7 @@
         </ion-header>
         <ion-content>
           <ion-datetime
-            #datetime
+            id="fecha-nacimiento-datetime"
             [(ngModel)]="fecha_nacimiento"
             presentation="date"
             [max]="fechaMaxima"
