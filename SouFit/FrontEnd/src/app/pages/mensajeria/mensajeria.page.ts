@@ -1,20 +1,18 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonAvatar, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonRow, IonTitle, IonToolbar, IonButton, IonInput, IonModal } from '@ionic/angular/standalone';
+import { IonAvatar, IonCol, IonContent, IonGrid, IonIcon, IonRow } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { ChatService, Chat, Mensaje } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
-import { BuscarUsuariosComponent, UsuarioBusqueda } from '../../components/buscar-usuarios/buscar-usuarios.component';
 
 @Component({
   selector: 'app-mensajeria',
   templateUrl: './mensajeria.page.html',
   styleUrls: ['./mensajeria.page.scss'],
   standalone: true,
-  imports: [IonModal, IonInput, IonButton, IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule,IonIcon,IonCol,IonRow,IonGrid,IonAvatar, BuscarUsuariosComponent
-    ]
+  imports: [IonContent, CommonModule, FormsModule, IonIcon, IonCol, IonRow, IonGrid, IonAvatar]
 })
 export class MensajeriaPage implements OnInit, OnDestroy {
   @ViewChild('mensajesContainer', { static: false }) mensajesContainer!: ElementRef;
@@ -28,7 +26,11 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   // Variables para nueva conversación
   mostrarUsuariosDisponibles: boolean = false;
   usuariosDisponibles: any[] = [];
-  mostrarBusquedaAvanzada: boolean = false;
+  
+  // Variables para archivos
+  archivoSeleccionado: File | null = null;
+  previewArchivo: string | null = null;
+  tipoArchivo: 'imagen' | 'audio' | null = null;
   
   private subscriptions: Subscription[] = [];
 
@@ -95,12 +97,105 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
 
   enviarMensaje() {
-    if (!this.nuevoMensaje.trim() || !this.chatActivo) {
+    if (!this.chatActivo) {
+      return;
+    }
+
+    // Si hay archivo seleccionado, enviar con archivo
+    if (this.archivoSeleccionado) {
+      this.enviarMensajeConArchivo();
+      return;
+    }
+
+    // Si no hay contenido ni archivo, no enviar
+    if (!this.nuevoMensaje.trim()) {
       return;
     }
 
     this.chatService.enviarMensaje(this.chatActivo.id_usuario, this.nuevoMensaje.trim());
     this.nuevoMensaje = '';
+  }
+
+  enviarMensajeConArchivo() {
+    if (!this.archivoSeleccionado || !this.chatActivo) {
+      return;
+    }
+
+    this.chatService.enviarMensajeConArchivo(
+      this.chatActivo.id_usuario,
+      this.archivoSeleccionado,
+      this.nuevoMensaje.trim() || undefined
+    ).subscribe({
+      next: (mensaje) => {
+        // El mensaje ya se agregará automáticamente por el socket
+        this.limpiarArchivo();
+        this.nuevoMensaje = '';
+      },
+      error: (error) => {
+        console.error('Error al enviar archivo:', error);
+        alert('Error al enviar el archivo. Por favor, intenta de nuevo.');
+      }
+    });
+  }
+
+  seleccionarArchivo(event: any) {
+    const file: File = event.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/') && !file.type.startsWith('audio/')) {
+      alert('Solo se permiten archivos de imagen o audio');
+      return;
+    }
+
+    // Validar tamaño (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('El archivo es demasiado grande. Máximo 10MB');
+      return;
+    }
+
+    this.archivoSeleccionado = file;
+
+    if (file.type.startsWith('image/')) {
+      this.tipoArchivo = 'imagen';
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.previewArchivo = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type.startsWith('audio/')) {
+      this.tipoArchivo = 'audio';
+      this.previewArchivo = null;
+    }
+  }
+
+  limpiarArchivo() {
+    this.archivoSeleccionado = null;
+    this.previewArchivo = null;
+    this.tipoArchivo = null;
+    // Limpiar input file
+    const input = document.getElementById('input-archivo') as HTMLInputElement;
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  obtenerUrlArchivo(url: string | undefined): string {
+    if (!url) return '';
+    // Si ya es una URL completa, retornarla
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // Si es una ruta relativa, agregar el dominio del backend
+    return `http://localhost:3000${url}`;
+  }
+
+  abrirSelectorArchivo() {
+    const input = document.getElementById('input-archivo') as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
   }
 
   onEnterPressed(event: any) {
@@ -173,15 +268,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     }
   }
 
-  abrirBusquedaAvanzada() {
-    this.mostrarBusquedaAvanzada = true;
-  }
-
-  cerrarBusquedaAvanzada() {
-    this.mostrarBusquedaAvanzada = false;
-  }
-
-  onUsuarioSeleccionado(usuario: UsuarioBusqueda) {
+  onUsuarioSeleccionado(usuario: any) {
     // Crear un objeto Chat para el usuario seleccionado
     const nuevoChat: Chat = {
       id_usuario: usuario.id_usuario,
@@ -192,9 +279,6 @@ export class MensajeriaPage implements OnInit, OnDestroy {
 
     // Seleccionar el nuevo chat
     this.seleccionarChat(nuevoChat);
-    
-    // Cerrar la búsqueda
-    this.cerrarBusquedaAvanzada();
     
     // Limpiar mensajes (nueva conversación)
     this.chatService.limpiarMensajes();

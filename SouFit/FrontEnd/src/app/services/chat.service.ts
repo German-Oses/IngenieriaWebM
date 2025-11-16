@@ -7,7 +7,10 @@ export interface Mensaje {
   id?: number;
   id_remitente: number;
   id_destinatario: number;
-  contenido: string;
+  contenido?: string;
+  tipo_archivo?: string;
+  url_archivo?: string;
+  nombre_archivo?: string;
   fecha_envio?: string;
   leido?: boolean;
 }
@@ -48,10 +51,20 @@ export class ChatService {
   private setupSocketListeners() {
     // Escuchar nuevos mensajes
     this.socket.on('nuevo_mensaje', (mensaje: Mensaje) => {
-      const mensajesActuales = this.mensajesSubject.value;
-      this.mensajesSubject.next([...mensajesActuales, mensaje]);
+      const chatActivo = this.chatActivoSubject.value;
       
-      // Actualizar la lista de chats
+      // Si el mensaje es del chat activo, agregarlo a los mensajes
+      if (chatActivo && 
+          (mensaje.id_remitente === chatActivo.id_usuario || mensaje.id_destinatario === chatActivo.id_usuario)) {
+        const mensajesActuales = this.mensajesSubject.value;
+        // Verificar que el mensaje no esté ya en la lista
+        const existe = mensajesActuales.some(m => m.id === mensaje.id);
+        if (!existe) {
+          this.mensajesSubject.next([...mensajesActuales, mensaje]);
+        }
+      }
+      
+      // Actualizar la lista de chats siempre
       this.actualizarListaChats();
     });
 
@@ -68,10 +81,42 @@ export class ChatService {
     });
   }
 
+  // Limpiar completamente el estado del chat
+  limpiarEstado(reconectar: boolean = false) {
+    // Limpiar todos los subjects
+    this.mensajesSubject.next([]);
+    this.chatsSubject.next([]);
+    this.chatActivoSubject.next(null);
+    this.usuarioActual = null;
+    
+    // Desconectar y remover todos los listeners del socket
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+    }
+    
+    // Si se solicita reconectar, crear un nuevo socket
+    if (reconectar) {
+      this.socket = io('http://localhost:3000');
+      this.setupSocketListeners();
+    }
+  }
+
   // Inicializar el servicio con el usuario actual
   inicializarChat(usuario: any) {
+    // Limpiar el estado anterior y reconectar el socket
+    this.limpiarEstado(true);
+    
     this.usuarioActual = usuario;
-    this.entrarChat(usuario.id);
+    
+    // Esperar a que el socket se conecte antes de entrar al chat
+    if (this.socket.connected) {
+      this.entrarChat(usuario.id);
+    } else {
+      this.socket.once('connect', () => {
+        this.entrarChat(usuario.id);
+      });
+    }
     
     // Cargar chats y actualizar el subject
     this.cargarChats().subscribe({
@@ -112,6 +157,18 @@ export class ChatService {
     this.mensajesSubject.next([...mensajesActuales, mensajeLocal]);
   }
 
+  // Enviar mensaje con archivo (imagen o audio)
+  enviarMensajeConArchivo(idDestinatario: number, archivo: File, contenido?: string): Observable<Mensaje> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    formData.append('id_destinatario', idDestinatario.toString());
+    if (contenido) {
+      formData.append('contenido', contenido);
+    }
+
+    return this.http.post<Mensaje>(`${this.apiUrl}/mensajes/enviar`, formData);
+  }
+
   // Cargar historial de mensajes con un usuario específico
   cargarMensajes(idOtroUsuario: number): Observable<Mensaje[]> {
     return this.http.get<Mensaje[]>(`${this.apiUrl}/mensajes/${idOtroUsuario}`);
@@ -145,6 +202,11 @@ export class ChatService {
   // Obtener usuarios que sigo
   obtenerUsuariosSiguiendo(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/siguiendo`);
+  }
+
+  // Obtener seguidores del usuario actual
+  obtenerSeguidores(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/seguidores`);
   }
 
   // Seleccionar un chat activo
@@ -186,11 +248,9 @@ export class ChatService {
     return this.usuarioActual;
   }
 
-  // Desconectar del chat
+  // Desconectar del chat y limpiar estado (sin reconectar)
   desconectar() {
-    if (this.socket) {
-      this.socket.disconnect();
-    }
+    this.limpiarEstado(false);
   }
 
   // Limpiar mensajes

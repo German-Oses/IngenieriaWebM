@@ -61,12 +61,34 @@ ion-content {
   background-color: white;
   padding: 20px;
   text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .titulo-feed h1 {
   margin: 0;
   font-size: 24px;
   color: #333;
+}
+
+.btn-crear-post {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #3880ff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-crear-post:hover {
+  background-color: #3171e0;
 }
 
 .posts-contenedor {
@@ -77,60 +99,332 @@ ion-content {
 
 .post {
   background-color: white;
-  margin-bottom: 20px;
-  border-radius: 8px;
+  margin-bottom: 24px;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border: 1px solid #e0e0e0;
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .post-usuario {
   display: flex;
   align-items: center;
-  padding: 15px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.post-usuario:hover {
+  opacity: 0.8;
 }
 
 .post-usuario ion-avatar {
   width: 40px !important;
   height: 40px !important;
-  margin-right: 10px;
+  margin-right: 12px;
+  border: 2px solid #e0e0e0;
 }
 
 .post-usuario h3 {
   margin: 0;
   font-size: 14px;
-  font-weight: bold;
-  color : #333;
+  font-weight: 600;
+  color: #262626;
 }
 
 .post-usuario p {
-  margin: 0;
+  margin: 2px 0 0 0;
   font-size: 12px;
-  color: #333;
+  color: #8e8e8e;
 }
 
-.post-imagen {
-  height: 200px;
-  background-color: #f0f0f0;
+.btn-seguir-post, .btn-siguiendo-post {
+  background-color: #0095f6;
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-seguir-post:hover {
+  background-color: #1877f2;
+}
+
+.btn-siguiendo-post {
+  background-color: transparent;
+  color: #262626;
+  border: 1px solid #dbdbdb;
+}
+
+.btn-siguiendo-post:hover {
+  background-color: #fafafa;
+}
+
+.post-contenido {
+  padding: 0;
+}
+
+.post-texto {
+  font-size: 14px;
+  color: #262626;
+  margin: 0;
+  padding: 12px 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.post-media {
+  width: 100%;
+  background-color: #000;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 400px;
+  max-height: 600px;
 }
 
-.post-imagen p {
-  font-size: 18px;
-  margin: 0;
-  color : #333;
+.post-media img {
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  display: block;
+}
+
+.post-ejercicio, .post-rutina {
+  margin-top: 10px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #666;
+}
+
+.sin-posts {
+  text-align: center;
+  padding: 40px;
+  color: #666;
 }
 
 .post-acciones {
-  padding: 15px;
+  padding: 12px 16px;
   display: flex;
-  gap: 15px;
+  gap: 16px;
+  border-top: 1px solid #f0f0f0;
 }
 
-.post-acciones ion-icon {
-  font-size: 24px;
-  color: #333;
+.btn-accion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #262626;
   cursor: pointer;
+  font-size: 14px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn-accion:hover {
+  background-color: #f5f5f5;
+}
+
+.btn-accion.activo {
+  color: #ed4956;
+}
+
+.btn-accion.activo ion-icon {
+  animation: heartBeat 0.3s ease;
+}
+
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.btn-accion ion-icon {
+  font-size: 24px;
+}
+
+.comentarios-container {
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-top: 1px solid #f0f0f0;
+}
+
+.comentario {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.avatar-comentario {
+  width: 32px !important;
+  height: 32px !important;
+  flex-shrink: 0;
+}
+
+.comentario-contenido {
+  flex: 1;
+  background-color: white;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.comentario-contenido strong {
+  font-size: 13px;
+  color: #333;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.comentario-contenido p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.nuevo-comentario {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.input-comentario {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+}
+
+.btn-enviar-comentario {
+  background-color: #3880ff;
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-enviar-comentario:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.btn-cerrar-modal {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.tipo-post-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.btn-tipo-post {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-tipo-post.activo {
+  border-color: #3880ff;
+  background-color: #3880ff;
+  color: white;
+}
+
+.input-post {
+  width: 100%;
+  margin-bottom: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.input-url {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.contador-caracteres {
+  text-align: right;
+  font-size: 12px;
+  color: #8e8e8e;
+  margin-bottom: 15px;
+}
+
+.preview-media {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 300px;
+}
+
+.preview-media img {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.sin-ejercicios {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
 }
 
 .ejercicios-lateral {
@@ -151,9 +445,17 @@ ion-content {
   display: flex;
   align-items: center;
   margin-bottom: 15px;
-  padding: 10px;
+  padding: 12px;
   background-color: #f9f9f9;
   border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ejercicio:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .ejercicio-icono {

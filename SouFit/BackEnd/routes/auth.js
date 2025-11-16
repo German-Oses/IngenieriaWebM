@@ -3,14 +3,13 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { registerRules, validate } = require('../middleware/validator');
-const authMiddleware = require('../middleware/authmiddleware');
-
+const { authLimiter } = require('../middleware/security');
 
 // POST /api/auth/register (Público)
-router.post('/register', registerRules(), validate, authController.register);
+router.post('/register', authLimiter, registerRules(), validate, authController.register);
 
 // POST /api/auth/login (Público)
-router.post('/login', authController.login);
+router.post('/login', authLimiter, authController.login);
 
 
 module.exports = router;

@@ -5,6 +5,7 @@ import { Observable, BehaviorSubject, from, of } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
 import { Storage } from '@ionic/storage-angular';
 import { Router } from '@angular/router';
+import { ChatService } from './chat.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,8 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private storage: Storage,
-    private router: Router
+    private router: Router,
+    private chatService: ChatService
   ) {
 
     this.init();
@@ -96,9 +98,23 @@ export class AuthService {
 
 
   async logout() {
-    await this.storage.remove('token');
-    await this.storage.remove('user');
-    this.isAuthenticated.next(false);
-    this.router.navigate(['/login'], { replaceUrl: true });
+    try {
+      // Limpiar el estado del chat antes de cerrar sesión
+      this.chatService.desconectar();
+      
+      // Limpiar todo el almacenamiento
+      await this.storage.clear();
+      
+      // Limpiar el estado de autenticación
+      this.isAuthenticated.next(false);
+      
+      // Navegar al login y reemplazar el historial
+      this.router.navigate(['/login'], { replaceUrl: true });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Aún así navegar al login
+      this.isAuthenticated.next(false);
+      this.router.navigate(['/login'], { replaceUrl: true });
+    }
   }
 }

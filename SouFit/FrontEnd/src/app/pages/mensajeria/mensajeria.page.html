@@ -48,10 +48,6 @@
               <ion-icon name="add-outline"></ion-icon>
               Nueva conversación
             </button>
-            <button class="btn-buscar-avanzado" (click)="abrirBusquedaAvanzada()">
-              <ion-icon name="search-outline"></ion-icon>
-              Buscar usuarios
-            </button>
           </div>
         </div>
 
@@ -74,7 +70,7 @@
               </ion-avatar>
               <div class="usuario-info">
                 <h4>{{ usuario.nombre }}</h4>
-                <p>{{ usuario.email }}</p>
+                <p>@{{ usuario.username }}</p>
               </div>
             </div>
             <div *ngIf="usuariosDisponibles.length === 0" class="no-usuarios">
@@ -135,7 +131,23 @@
             [class.enviado]="esMensajePropio(mensaje)"
             [class.recibido]="!esMensajePropio(mensaje)">
             <div class="mensaje-contenido">
-              <p>{{ mensaje.contenido }}</p>
+              <!-- Imagen -->
+              <div *ngIf="mensaje.tipo_archivo === 'imagen' && mensaje.url_archivo" class="mensaje-imagen">
+                <img [src]="obtenerUrlArchivo(mensaje.url_archivo)" [alt]="mensaje.nombre_archivo || 'Imagen'" (error)="$event.target.style.display='none'">
+              </div>
+              
+              <!-- Audio -->
+              <div *ngIf="mensaje.tipo_archivo === 'audio' && mensaje.url_archivo" class="mensaje-audio">
+                <audio controls>
+                  <source [src]="obtenerUrlArchivo(mensaje.url_archivo)" [type]="'audio/' + mensaje.url_archivo.split('.').pop()">
+                  Tu navegador no soporta el elemento de audio.
+                </audio>
+                <p class="nombre-archivo" *ngIf="mensaje.nombre_archivo">{{ mensaje.nombre_archivo }}</p>
+              </div>
+              
+              <!-- Contenido de texto -->
+              <p *ngIf="mensaje.contenido">{{ mensaje.contenido }}</p>
+              
               <small class="mensaje-hora">{{ formatearHora(mensaje.fecha_envio!) }}</small>
             </div>
           </div>
@@ -157,23 +169,45 @@
 
         <!-- Área de escritura -->
         <div class="area-escribir" *ngIf="chatActivo">
+          <!-- Preview de archivo seleccionado -->
+          <div *ngIf="archivoSeleccionado" class="preview-archivo">
+            <div *ngIf="tipoArchivo === 'imagen' && previewArchivo" class="preview-imagen">
+              <img [src]="previewArchivo" alt="Preview">
+              <button class="btn-cerrar-preview" (click)="limpiarArchivo()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </div>
+            <div *ngIf="tipoArchivo === 'audio'" class="preview-audio">
+              <ion-icon name="musical-notes-outline"></ion-icon>
+              <span>{{ archivoSeleccionado.name }}</span>
+              <button class="btn-cerrar-preview" (click)="limpiarArchivo()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+          
           <div class="input-mensaje">
+            <!-- Input file oculto -->
+            <input 
+              type="file" 
+              id="input-archivo"
+              accept="image/*,audio/*"
+              (change)="seleccionarArchivo($event)"
+              style="display: none;" />
+            
             <input 
               type="text" 
               placeholder="Escribe un mensaje..."
               [(ngModel)]="nuevoMensaje"
               (keydown)="onEnterPressed($event)"
               #inputMensaje />
-            <button class="btn-enviar" (click)="enviarMensaje()" [disabled]="!nuevoMensaje.trim()">
+            <button class="btn-enviar" (click)="enviarMensaje()" [disabled]="!nuevoMensaje.trim() && !archivoSeleccionado">
               <ion-icon name="send-outline"></ion-icon>
             </button>
-            <button class="btn-micro">
+            <button class="btn-micro" title="Grabar audio">
               <ion-icon name="mic-outline"></ion-icon>
             </button>
-            <button class="btn-emoji">
-              <ion-icon name="happy-outline"></ion-icon>
-            </button>
-            <button class="btn-archivo">
+            <button class="btn-archivo" (click)="abrirSelectorArchivo()" title="Enviar imagen o audio">
               <ion-icon name="image-outline"></ion-icon>
             </button>
           </div>
@@ -184,16 +218,5 @@
     </ion-row>
   </ion-grid>
 
-  <!-- Modal de búsqueda avanzada -->
-  <ion-modal [isOpen]="mostrarBusquedaAvanzada" (didDismiss)="cerrarBusquedaAvanzada()">
-    <ng-template>
-      <div class="modal-backdrop">
-        <app-buscar-usuarios
-          (usuarioSeleccionado)="onUsuarioSeleccionado($event)"
-          (cerrar)="cerrarBusquedaAvanzada()">
-        </app-buscar-usuarios>
-      </div>
-    </ng-template>
-  </ion-modal>
 
 </ion-content>

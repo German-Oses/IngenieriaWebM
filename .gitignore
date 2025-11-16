@@ -7,24 +7,32 @@
 .DS_Store
 Thumbs.db
 desktop.ini
+__MACOSX/
 
-# Archivos de entorno globales
+# Archivos de entorno (¡NO SUBIR DATOS SENSIBLES!)
 .env
 .env.local
 .env.*.local
+*.env
 variables_entorno.txt
 
-# Archivos de dependencias (para seguridad)
+# Dependencias (NO subir node_modules)
 node_modules/
+**/node_modules/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
-# Archivos de build generales
+# Archivos de build
 dist/
 build/
 coverage/
 out/
+www/
+.angular/
+.ionic/
+platforms/
+plugins/
 
 # Archivos temporales
 *.log
@@ -32,6 +40,7 @@ out/
 *.temp
 *.bak
 *.old
+.cache/
 
 # Archivos de IDE y configuración
 .vscode/
@@ -49,7 +58,29 @@ out/
 
 # Archivos del proyecto que no deben subirse
 /Otros/Mockups/
-/Otros/Informe entrega parcial Soufit.pdf
+*.pdf
 
-# Carpeta de sistema de macOS
-__MACOSX/
+# Base de datos local (si hay backups)
+*.sql.backup
+*.db
+*.sqlite
+
+# Scripts SQL de prueba o antiguos (mantener solo database.sql y migraciones)
+datos_prueba_*.sql
+*_antiguo.sql
+*_old.sql
+
+# Archivos subidos por usuarios (NO subir a Git)
+**/uploads/
+**/BackEnd/uploads/
+
+# Documentación adicional (solo mantener README.md y DOCUMENTACION_TECNICA.md)
+# Ignorar todos los .md excepto README.md y DOCUMENTACION_TECNICA.md
+GUIA_*.md
+INSTRUCCIONES_*.md
+RESUMEN_*.md
+CUMPLIMIENTO_*.md
+*.md
+!README.md
+!DOCUMENTACION_TECNICA.md
+!**/README.md

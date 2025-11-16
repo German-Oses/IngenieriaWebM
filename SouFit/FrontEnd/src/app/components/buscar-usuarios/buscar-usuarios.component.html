@@ -100,22 +100,6 @@
                 title="Enviar mensaje">
                 <ion-icon name="chatbubble-outline"></ion-icon>
               </button>
-              
-              <button 
-                *ngIf="!usuario.siguiendo"
-                class="btn-seguir"
-                (click)="seguirUsuario(usuario)"
-                title="Seguir usuario">
-                <ion-icon name="person-add-outline"></ion-icon>
-              </button>
-              
-              <button 
-                *ngIf="usuario.siguiendo"
-                class="btn-siguiendo"
-                (click)="dejarDeSeguir(usuario)"
-                title="Dejar de seguir">
-                <ion-icon name="checkmark-outline"></ion-icon>
-              </button>
             </div>
           </div>
         </div>
@@ -160,13 +144,6 @@
               (click)="seleccionarUsuario(usuario)"
               title="Enviar mensaje">
               <ion-icon name="chatbubble-outline"></ion-icon>
-            </button>
-            
-            <button 
-              class="btn-siguiendo"
-              (click)="dejarDeSeguir(usuario)"
-              title="Dejar de seguir">
-              <ion-icon name="checkmark-outline"></ion-icon>
             </button>
           </div>
         </div>
