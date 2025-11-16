@@ -72,30 +72,58 @@ export class RegistroPage implements OnInit {
     }
   }
 
-  createAccount(): void {
+  async createAccount(): Promise<void> {
+    console.log('Iniciando creación de cuenta...');
+    
+    // Validar términos y condiciones
     if (!this.acceptTerms) {
-      this.presentAlert('Atención', 'Debes aceptar los términos y condiciones.');
+      await this.presentAlert('Atención', 'Debes aceptar los términos y condiciones.');
       return;
     }
 
-    if (!this.nombre.trim() || !this.apellido.trim()) {
-      this.presentAlert('Error', 'Nombre y apellido son obligatorios.');
+    // Validar nombre y apellido
+    if (!this.nombre || !this.nombre.trim()) {
+      await this.presentAlert('Error', 'El nombre es obligatorio.');
+      return;
+    }
+    
+    if (!this.apellido || !this.apellido.trim()) {
+      await this.presentAlert('Error', 'El apellido es obligatorio.');
+      return;
+    }
+
+    // Validar username
+    if (!this.username || !this.username.trim()) {
+      await this.presentAlert('Error', 'El nombre de usuario es obligatorio.');
+      return;
+    }
+
+    // Validar email
+    if (!this.email || !this.email.includes('@')) {
+      await this.presentAlert('Error', 'Debes ingresar un correo electrónico válido.');
+      return;
+    }
+
+    // Validar contraseña
+    if (!this.password || this.password.length < 6) {
+      await this.presentAlert('Error', 'La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
     if (this.password !== this.confirmPassword) {
-      this.presentAlert('Error', 'Las contraseñas no coinciden.');
+      await this.presentAlert('Error', 'Las contraseñas no coinciden.');
       return;
     }
 
+    // Validar región y comuna
     if (!this.id_region || !this.id_comuna) {
-      this.presentAlert('Error', 'Debes seleccionar región y comuna.');
+      await this.presentAlert('Error', 'Debes seleccionar región y comuna.');
       return;
     }
     
-    // Validar que fecha de nacimiento sea obligatoria
+    // Validar fecha de nacimiento
     if (!this.fecha_nacimiento) {
-      this.presentAlert('Error', 'La fecha de nacimiento es obligatoria.');
+      await this.presentAlert('Error', 'La fecha de nacimiento es obligatoria.');
       return;
     }
 
@@ -131,59 +159,57 @@ export class RegistroPage implements OnInit {
       id_comuna: this.id_comuna
     };
 
+    console.log('Datos del usuario a registrar:', { ...userData, password: '***' });
+
     // Mostrar loading
-    this.loadingController.create({
+    const loading = await this.loadingController.create({
       message: 'Creando cuenta...',
       duration: 30000 // Timeout de 30 segundos
-    }).then(loading => {
-      loading.present();
-      
-      this.authService.register(userData).subscribe({
-        next: async (response) => {
-          loading.dismiss();
-          
-          console.log('Respuesta del registro:', response);
-          
-          // Asegurarse de que tenemos el email para navegar
-          const emailParaVerificar = response?.email || this.email;
-          
-          if (!emailParaVerificar) {
-            await this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación. Por favor, intenta nuevamente.');
-            return;
-          }
-          
-          // Mostrar mensaje de éxito y navegar
-          await this.presentAlert(
-            'Registro exitoso', 
-            'Se ha enviado un código de verificación a tu correo electrónico. Por favor, verifica tu email para completar el registro.'
-          );
-          
-          // Navegar a la pantalla de verificación (sin código - solo por email)
-          this.router.navigate(['/verificar-email'], { 
-            queryParams: { email: emailParaVerificar },
-            replaceUrl: true
-          });
-        },
-        error: async (err) => {
-          loading.dismiss();
-          console.error('Error en registro:', err);
-          
-          // Extraer mensaje de error de diferentes formatos posibles
-          let errorMsg = 'No se pudo completar el registro. Por favor, verifica los datos e intenta nuevamente.';
-          if (err?.error) {
-            errorMsg = err.error.msg || err.error.error || err.error.message || errorMsg;
-          } else if (err?.message) {
-            errorMsg = err.message;
-          }
-          
-          // Si el error es de servidor (500), puede ser problema de email
-          if (err?.status === 500) {
-            errorMsg = 'Error del servidor. Por favor, verifica la configuración del servidor de correo o intenta más tarde.';
-          }
-          
-          await this.presentAlert('Error de Registro', errorMsg);
+    });
+    
+    await loading.present();
+    
+    this.authService.register(userData).subscribe({
+      next: async (response) => {
+        await loading.dismiss();
+        
+        console.log('Respuesta del registro:', response);
+        
+        // Asegurarse de que tenemos el email para navegar
+        const emailParaVerificar = response?.email || this.email?.trim();
+        
+        if (!emailParaVerificar) {
+          await this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación. Por favor, intenta nuevamente.');
+          return;
         }
-      });
+        
+        console.log('Navegando a verificación de email con:', emailParaVerificar);
+        
+        // Navegar directamente a la pantalla de verificación (sin alert para mejor UX)
+        this.router.navigate(['/verificar-email'], { 
+          queryParams: { email: emailParaVerificar },
+          replaceUrl: true
+        });
+      },
+      error: async (err) => {
+        await loading.dismiss();
+        console.error('Error en registro:', err);
+        
+        // Extraer mensaje de error de diferentes formatos posibles
+        let errorMsg = 'No se pudo completar el registro. Por favor, verifica los datos e intenta nuevamente.';
+        if (err?.error) {
+          errorMsg = err.error.msg || err.error.error || err.error.message || errorMsg;
+        } else if (err?.message) {
+          errorMsg = err.message;
+        }
+        
+        // Si el error es de servidor (500), puede ser problema de email
+        if (err?.status === 500) {
+          errorMsg = 'Error del servidor. Por favor, verifica la configuración del servidor de correo o intenta más tarde.';
+        }
+        
+        await this.presentAlert('Error de Registro', errorMsg);
+      }
     });
   }
 

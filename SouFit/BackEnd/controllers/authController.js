@@ -65,19 +65,15 @@ exports.register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        // Preparar datos del registro para guardar como JSON
-        const datosRegistro = {
-            username,
-            email,
-            password_hash: hashedPassword,
-            nombre,
-            apellido,
-            fecha_nacimiento,
-            id_region,
-            id_comuna
-        };
+        // CREAR LA CUENTA INMEDIATAMENTE (con email_verificado = FALSE)
+        const newUser = await db.query(
+            `INSERT INTO usuario (username, email, password_hash, nombre, apellido, fecha_nacimiento, id_region, id_comuna, email_verificado) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FALSE) 
+             RETURNING id_usuario, username, nombre, apellido, email`,
+            [username, email, hashedPassword, nombre, apellido, fecha_nacimiento, id_region, id_comuna]
+        );
         
-        // Crear tabla de códigos de verificación si no existe (y agregar campo datos_registro si no existe)
+        // Crear tabla de códigos de verificación si no existe
         await db.query(`
             CREATE TABLE IF NOT EXISTS email_verification_codes (
                 id SERIAL PRIMARY KEY,
@@ -89,23 +85,13 @@ exports.register = async (req, res) => {
             )
         `);
         
-        // Agregar columna datos_registro si no existe (sin error si ya existe)
-        try {
-            await db.query('ALTER TABLE email_verification_codes ADD COLUMN IF NOT EXISTS datos_registro JSONB');
-        } catch (err) {
-            // Ignorar error si la columna ya existe
-            if (!err.message.includes('already exists')) {
-                logger.warn('Error al agregar columna datos_registro (puede que ya exista)', err);
-            }
-        }
+        // Eliminar códigos expirados o usados para este email
+        await db.query('DELETE FROM email_verification_codes WHERE email = $1 AND (fecha_expiracion < NOW() OR usado = TRUE)', [email]);
         
-        // Eliminar códigos expirados o usados
-        await db.query('DELETE FROM email_verification_codes WHERE fecha_expiracion < NOW() OR usado = TRUE');
-        
-        // Guardar código de verificación con los datos del registro en JSON
+        // Guardar código de verificación
         await db.query(
-            'INSERT INTO email_verification_codes (email, codigo, datos_registro) VALUES ($1, $2, $3)',
-            [email, codigoVerificacion, JSON.stringify(datosRegistro)]
+            'INSERT INTO email_verification_codes (email, codigo) VALUES ($1, $2)',
+            [email, codigoVerificacion]
         );
         
         // Enviar correo de verificación
@@ -118,16 +104,16 @@ exports.register = async (req, res) => {
         
         if (!emailEnviado) {
             logger.warn('No se pudo enviar el correo de verificación', { email });
-            // Si no se puede enviar el email, eliminar el código
+            // Si no se puede enviar el email, eliminar el código (pero mantener la cuenta)
             await db.query('DELETE FROM email_verification_codes WHERE email = $1 AND codigo = $2', [email, codigoVerificacion]);
             return res.status(500).json({ 
                 msg: 'No se pudo enviar el correo de verificación. Por favor, verifica la configuración del servidor de correo.' 
             });
         }
 
-        // NO crear usuario todavía - solo devolver éxito
+        // Devolver éxito con el email para la verificación
         res.status(201).json({ 
-            message: 'Se ha enviado un código de verificación a tu correo electrónico. Por favor, verifica tu email para completar el registro.',
+            message: 'Cuenta creada exitosamente. Se ha enviado un código de verificación a tu correo electrónico.',
             email: email
         });
 
@@ -483,7 +469,7 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
     }
 };
 
-// Verificar código de verificación de email y crear cuenta
+// Verificar código de verificación de email y activar cuenta
 exports.verificarEmail = async (req, res) => {
     const { email, codigo } = req.body;
     
@@ -492,7 +478,7 @@ exports.verificarEmail = async (req, res) => {
             return res.status(400).json({ error: 'Email y código son requeridos' });
         }
         
-        // Buscar código válido con datos del registro
+        // Buscar código válido
         const codigoValido = await db.query(
             `SELECT * FROM email_verification_codes 
              WHERE email = $1 AND codigo = $2 AND usado = FALSE AND fecha_expiracion > NOW()`,
@@ -503,51 +489,39 @@ exports.verificarEmail = async (req, res) => {
             return res.status(400).json({ error: 'Código inválido o expirado' });
         }
         
-        const codigoData = codigoValido.rows[0];
-        
-        // Verificar que los datos del registro existan
-        if (!codigoData.datos_registro) {
-            return res.status(400).json({ error: 'Datos de registro no encontrados. Por favor, regístrate nuevamente.' });
-        }
-        
-        const datosRegistro = typeof codigoData.datos_registro === 'string' 
-            ? JSON.parse(codigoData.datos_registro) 
-            : codigoData.datos_registro;
-        
-        // Verificar que el email y username no estén ya registrados (por si acaso)
-        const emailExists = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
-        if (emailExists.rows.length > 0) {
+        // Verificar que el usuario existe (debe existir porque se creó en el registro)
+        const usuario = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
+        if (usuario.rows.length === 0) {
             await db.query('UPDATE email_verification_codes SET usado = TRUE WHERE email = $1', [email]);
-            return res.status(400).json({ error: 'Este correo electrónico ya está registrado' });
+            return res.status(400).json({ error: 'Usuario no encontrado. Por favor, regístrate nuevamente.' });
         }
         
-        const usernameExists = await db.query('SELECT * FROM usuario WHERE username = $1', [datosRegistro.username]);
-        if (usernameExists.rows.length > 0) {
-            await db.query('UPDATE email_verification_codes SET usado = TRUE WHERE email = $1', [email]);
-            return res.status(400).json({ error: 'Este nombre de usuario ya está en uso' });
+        // Verificar si el email ya está verificado
+        if (usuario.rows[0].email_verificado) {
+            await db.query('UPDATE email_verification_codes SET usado = TRUE WHERE email = $1 AND codigo = $2', [email, codigo]);
+            return res.status(400).json({ error: 'Este correo electrónico ya está verificado' });
         }
         
-        // Crear el usuario REAL ahora que el email está verificado
-        const newUser = await db.query(
-            `INSERT INTO usuario (username, email, password_hash, nombre, apellido, fecha_nacimiento, id_region, id_comuna, email_verificado) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE) 
+        // ACTUALIZAR el usuario para marcar el email como verificado
+        const updatedUser = await db.query(
+            `UPDATE usuario SET email_verificado = TRUE 
+             WHERE email = $1 
              RETURNING id_usuario, username, nombre, apellido, email`,
-            [datosRegistro.username, datosRegistro.email, datosRegistro.password_hash, datosRegistro.nombre, 
-             datosRegistro.apellido, datosRegistro.fecha_nacimiento, datosRegistro.id_region, datosRegistro.id_comuna]
+            [email]
         );
         
         // Marcar código como usado
         await db.query('UPDATE email_verification_codes SET usado = TRUE WHERE email = $1 AND codigo = $2', [email, codigo]);
         
         const userData = {
-            id: newUser.rows[0].id_usuario,
-            username: newUser.rows[0].username,
-            nombre: newUser.rows[0].nombre,
-            apellido: newUser.rows[0].apellido,
-            email: newUser.rows[0].email
+            id: updatedUser.rows[0].id_usuario,
+            username: updatedUser.rows[0].username,
+            nombre: updatedUser.rows[0].nombre,
+            apellido: updatedUser.rows[0].apellido,
+            email: updatedUser.rows[0].email
         };
         
-        // Generar token JWT ahora que el usuario está creado y verificado
+        // Generar token JWT ahora que el email está verificado
         const payload = { user: userData };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
             if (err) {
@@ -556,7 +530,7 @@ exports.verificarEmail = async (req, res) => {
             }
             
             res.json({
-                message: 'Email verificado exitosamente. Tu cuenta ha sido creada y activada.',
+                message: 'Email verificado exitosamente. Tu cuenta ha sido activada.',
                 token,
                 user: userData
             });
@@ -577,44 +551,47 @@ exports.reenviarCodigoVerificacion = async (req, res) => {
             return res.status(400).json({ error: 'El correo electrónico es requerido' });
         }
         
-        // Buscar código pendiente con datos del registro
+        // Verificar que el usuario existe (la cuenta ya debe estar creada)
+        const usuario = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
+        if (usuario.rows.length === 0) {
+            return res.status(400).json({ error: 'No existe una cuenta asociada a este correo electrónico' });
+        }
+        
+        // Verificar si el email ya está verificado
+        if (usuario.rows[0].email_verificado) {
+            return res.status(400).json({ error: 'Este correo electrónico ya está verificado' });
+        }
+        
+        const userData = usuario.rows[0];
+        
+        // Buscar código pendiente o crear uno nuevo
         const codigoPendiente = await db.query(
             'SELECT * FROM email_verification_codes WHERE email = $1 AND usado = FALSE AND fecha_expiracion > NOW()',
             [email]
         );
         
-        if (codigoPendiente.rows.length === 0) {
-            // Por seguridad, no revelar si el email existe
-            return res.json({ 
-                message: 'Si existe un registro pendiente, se enviará un nuevo código de verificación'
-            });
-        }
-        
-        const codigoData = codigoPendiente.rows[0];
-        
-        // Obtener datos del registro
-        if (!codigoData.datos_registro) {
-            return res.status(400).json({ error: 'Datos de registro no encontrados. Por favor, regístrate nuevamente.' });
-        }
-        
-        const datosRegistro = typeof codigoData.datos_registro === 'string' 
-            ? JSON.parse(codigoData.datos_registro) 
-            : codigoData.datos_registro;
-        
         // Generar nuevo código
         const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // Actualizar código y fecha de expiración
-        await db.query(
-            'UPDATE email_verification_codes SET codigo = $1, fecha_expiracion = NOW() + INTERVAL \'24 hours\' WHERE email = $2',
-            [codigoVerificacion, email]
-        );
+        if (codigoPendiente.rows.length > 0) {
+            // Actualizar código existente
+            await db.query(
+                'UPDATE email_verification_codes SET codigo = $1, fecha_expiracion = NOW() + INTERVAL \'24 hours\' WHERE email = $2',
+                [codigoVerificacion, email]
+            );
+        } else {
+            // Crear nuevo código
+            await db.query(
+                'INSERT INTO email_verification_codes (email, codigo) VALUES ($1, $2)',
+                [email, codigoVerificacion]
+            );
+        }
         
         // Enviar correo
         const emailEnviado = await sendVerificationEmail(
             email,
-            datosRegistro.username,
-            datosRegistro.nombre || datosRegistro.username,
+            userData.username,
+            userData.nombre || userData.username,
             codigoVerificacion
         );
         
