@@ -59,11 +59,20 @@
       </ion-select>
   </ion-item>
 
+  <!-- Fecha de nacimiento con ion-datetime -->
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
       Fecha de nacimiento <span style="color: red;">*</span>
     </ion-label>
-    <ion-input type="date" [(ngModel)]="fecha_nacimiento" required></ion-input>
+    <ion-datetime
+      [(ngModel)]="fecha_nacimiento"
+      display-format="DD MMM YYYY"
+      placeholder="Selecciona tu fecha de nacimiento"
+      [max]="fechaMaxima"
+      [min]="fechaMinima"
+      presentation="date"
+      style="width: 100%;"
+    ></ion-datetime>
   </ion-item>
 
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">

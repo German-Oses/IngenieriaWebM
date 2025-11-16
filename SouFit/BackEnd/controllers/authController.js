@@ -107,6 +107,7 @@ exports.register = async (req, res) => {
         // El usuario deberá verificar su email primero
         res.status(201).json({ 
             message: 'Usuario registrado exitosamente. Por favor, verifica tu email para activar tu cuenta.',
+            email: email, // Incluir email para la navegación
             emailEnviado: emailEnviado,
             // En desarrollo, también devolver el código (solo para testing)
             ...(process.env.NODE_ENV === 'development' && { codigoVerificacion: codigoVerificacion })

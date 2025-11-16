@@ -5,12 +5,13 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
 import { CommonModule } from '@angular/common';
+import { IonDatetime } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-registro',
   templateUrl: './register.page.html',
   standalone: true,
-  imports: [IonicModule, FormsModule, CommonModule]
+  imports: [IonicModule, FormsModule, CommonModule, IonDatetime]
 })
 export class RegistroPage implements OnInit {
   nombre = '';
@@ -30,6 +31,10 @@ export class RegistroPage implements OnInit {
   regiones: any[] = [];
   comunas: any[] = [];
 
+  // Fechas para el datetime picker
+  fechaMaxima: string = '';
+  fechaMinima: string = '';
+
   constructor(
     private authService: AuthService,
     private ubicacionService: UbicacionService,
@@ -38,6 +43,16 @@ export class RegistroPage implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    // Configurar fechas para el datetime picker
+    const hoy = new Date();
+    const fechaMax = new Date();
+    fechaMax.setFullYear(fechaMax.getFullYear() - 13); // Mínimo 13 años
+    const fechaMin = new Date();
+    fechaMin.setFullYear(fechaMin.getFullYear() - 120); // Máximo 120 años
+    
+    this.fechaMaxima = fechaMax.toISOString().split('T')[0];
+    this.fechaMinima = fechaMin.toISOString().split('T')[0];
+
     this.ubicacionService.getRegiones().subscribe({
       next: (data) => { this.regiones = data; },
       error: (err) => { console.error('Error cargando regiones', err); }
@@ -77,9 +92,26 @@ export class RegistroPage implements OnInit {
     }
     
     // Validar que fecha de nacimiento sea obligatoria
-    if (!this.fecha_nacimiento || !this.fecha_nacimiento.trim()) {
+    if (!this.fecha_nacimiento) {
       this.presentAlert('Error', 'La fecha de nacimiento es obligatoria.');
       return;
+    }
+
+    // Convertir fecha a formato YYYY-MM-DD si viene en otro formato
+    let fechaFormateada = '';
+    if (this.fecha_nacimiento && typeof this.fecha_nacimiento === 'object' && 'getTime' in this.fecha_nacimiento) {
+      // Es un objeto Date
+      fechaFormateada = (this.fecha_nacimiento as Date).toISOString().split('T')[0];
+    } else if (typeof this.fecha_nacimiento === 'string') {
+      // Si viene como string, intentar parsearlo
+      const fecha = new Date(this.fecha_nacimiento);
+      if (!isNaN(fecha.getTime())) {
+        fechaFormateada = fecha.toISOString().split('T')[0];
+      } else {
+        fechaFormateada = this.fecha_nacimiento.trim();
+      }
+    } else if (this.fecha_nacimiento) {
+      fechaFormateada = String(this.fecha_nacimiento).trim();
     }
 
     const userData: any = {
@@ -88,16 +120,22 @@ export class RegistroPage implements OnInit {
       username: this.username.trim(),
       email: this.email,
       password: this.password,
-      fecha_nacimiento: this.fecha_nacimiento.trim(),
+      fecha_nacimiento: fechaFormateada,
       id_region: this.id_region,
       id_comuna: this.id_comuna
     };
 
     this.authService.register(userData).subscribe({
-      next: (response) => {
+      next: async (response) => {
+        // Mostrar mensaje de éxito y navegar a verificación
+        await this.presentAlert(
+          'Registro Exitoso', 
+          'Tu cuenta ha sido creada. Por favor, verifica tu correo electrónico para activar tu cuenta.'
+        );
         // Navegar a la página de verificación de email con el email
         this.router.navigate(['/verificar-email'], { 
-          queryParams: { email: response.email || this.email } 
+          queryParams: { email: response.email || this.email },
+          replaceUrl: true
         });
       },
       error: (err) => {
@@ -107,12 +145,13 @@ export class RegistroPage implements OnInit {
     });
   }
 
-  async presentAlert(header: string, message: string) {
+  async presentAlert(header: string, message: string): Promise<void> {
     const alert = await this.alertController.create({
       header,
       message,
       buttons: ['OK'],
     });
     await alert.present();
+    await alert.onDidDismiss();
   }
 }
