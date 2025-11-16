@@ -3,10 +3,11 @@ import { inject } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const storage = inject(Storage);
-  const apiUrl = 'http://localhost:3000/api';
+  const apiUrl = environment.apiUrl;
 
   // Evitamos agregar el token en login/register
   if (req.url.startsWith(apiUrl) && 

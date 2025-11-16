@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { ChatService, Chat, Mensaje } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-mensajeria',
@@ -188,7 +189,8 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       return url;
     }
     // Si es una ruta relativa, agregar el dominio del backend
-    return `http://localhost:3000${url}`;
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    return `${baseUrl}${url}`;
   }
 
   abrirSelectorArchivo() {
