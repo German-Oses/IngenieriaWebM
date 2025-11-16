@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { ChatService, Chat, Mensaje } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-mensajeria',
