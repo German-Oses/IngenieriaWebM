@@ -211,8 +211,9 @@ app.get('/api/health', async (req, res) => {
 // Middleware de manejo de errores (debe ir al final, antes de iniciar el servidor)
 app.use(errorHandler);
 
-// Manejo de rutas no encontradas
-app.use('*', (req, res) => {
+// Manejo de rutas no encontradas (debe ir al final, después de todas las rutas)
+// En Express 5, no se puede usar '*' directamente, se usa sin ruta para capturar todo
+app.use((req, res) => {
     res.status(404).json({
         error: 'Ruta no encontrada',
         path: req.originalUrl
