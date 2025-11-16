@@ -36,14 +36,45 @@ const storage = multer.diskStorage({
   }
 });
 
-// Filtro de archivos permitidos
+// Validación mejorada de tipos MIME permitidos
+const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+const allowedAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm'];
+
+// Filtro de archivos mejorado con validación de extensión
 const fileFilter = (req, file, cb) => {
-  // Permitir imágenes y audio
-  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Solo se permiten archivos de imagen o audio'), false);
+  // Validar por tipo MIME
+  const isValidMime = file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/');
+  
+  if (!isValidMime) {
+    return cb(new Error('Solo se permiten archivos de imagen o audio'), false);
   }
+  
+  // Validación adicional por tipo específico
+  if (file.mimetype.startsWith('image/') && !allowedImageTypes.includes(file.mimetype)) {
+    return cb(new Error('Tipo de imagen no permitido. Use JPEG, PNG, GIF o WebP'), false);
+  }
+  
+  if (file.mimetype.startsWith('audio/') && !allowedAudioTypes.includes(file.mimetype)) {
+    return cb(new Error('Tipo de audio no permitido. Use MP3, WAV, OGG o WebM'), false);
+  }
+  
+  cb(null, true);
+};
+
+// Validación adicional de tamaño por tipo
+const validateFileSize = (file) => {
+  const maxImageSize = 5 * 1024 * 1024; // 5MB para imágenes
+  const maxAudioSize = 10 * 1024 * 1024; // 10MB para audio
+  
+  if (file.mimetype.startsWith('image/') && file.size > maxImageSize) {
+    throw new Error('La imagen no puede ser mayor a 5MB');
+  }
+  
+  if (file.mimetype.startsWith('audio/') && file.size > maxAudioSize) {
+    throw new Error('El audio no puede ser mayor a 10MB');
+  }
+  
+  return true;
 };
 
 // Configuración de multer
@@ -51,9 +82,25 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB máximo
+    fileSize: 10 * 1024 * 1024, // 10MB máximo
+    files: 1, // Solo un archivo a la vez
+    fieldSize: 10 * 1024 * 1024 // 10MB para campos
   }
 });
+
+// Middleware adicional para validar tamaño
+upload.validateFileSize = (req, res, next) => {
+  if (req.file) {
+    try {
+      validateFileSize(req.file);
+      next();
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  } else {
+    next();
+  }
+};
 
 module.exports = upload;
 

@@ -426,6 +426,52 @@ BEGIN
     END IF;
 END $$;
 
+-- ============================================
+-- ÍNDICES PARA OPTIMIZACIÓN
+-- ============================================
+
+-- Índices para tabla usuario
+CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
+CREATE INDEX IF NOT EXISTS idx_usuario_username ON usuario(username);
+CREATE INDEX IF NOT EXISTS idx_usuario_region ON usuario(id_region);
+CREATE INDEX IF NOT EXISTS idx_usuario_comuna ON usuario(id_comuna);
+
+-- Índices para tabla post
+CREATE INDEX IF NOT EXISTS idx_post_usuario ON post(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_post_tipo ON post(tipo_post);
+CREATE INDEX IF NOT EXISTS idx_post_fecha ON post(fecha_publicacion DESC);
+CREATE INDEX IF NOT EXISTS idx_post_ejercicio ON post(id_ejercicio) WHERE id_ejercicio IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_post_rutina ON post(id_rutina) WHERE id_rutina IS NOT NULL;
+
+-- Índices para tabla mensaje
+CREATE INDEX IF NOT EXISTS idx_mensaje_remitente ON mensaje(id_remitente);
+CREATE INDEX IF NOT EXISTS idx_mensaje_destinatario ON mensaje(id_destinatario);
+CREATE INDEX IF NOT EXISTS idx_mensaje_fecha ON mensaje(fecha_envio DESC);
+CREATE INDEX IF NOT EXISTS idx_mensaje_conversacion ON mensaje(id_remitente, id_destinatario, fecha_envio DESC);
+
+-- Índices para tabla seguimiento
+CREATE INDEX IF NOT EXISTS idx_seguimiento_seguidor ON seguimiento(id_seguidor);
+CREATE INDEX IF NOT EXISTS idx_seguimiento_seguido ON seguimiento(id_seguido);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_seguimiento_unique ON seguimiento(id_seguidor, id_seguido);
+
+-- Índices para tabla reaccion
+CREATE INDEX IF NOT EXISTS idx_reaccion_post ON reaccion(id_post);
+CREATE INDEX IF NOT EXISTS idx_reaccion_usuario ON reaccion(id_usuario);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reaccion_unique ON reaccion(id_post, id_usuario);
+
+-- Índices para tabla comentario
+CREATE INDEX IF NOT EXISTS idx_comentario_post ON comentario(id_post);
+CREATE INDEX IF NOT EXISTS idx_comentario_usuario ON comentario(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_comentario_fecha ON comentario(fecha_comentario DESC);
+
+-- Índices para tabla ejercicio
+CREATE INDEX IF NOT EXISTS idx_ejercicio_grupo_muscular ON ejercicio(grupo_muscular);
+CREATE INDEX IF NOT EXISTS idx_ejercicio_nombre ON ejercicio(nombre_ejercicio);
+
+-- Índices para tabla rutina
+CREATE INDEX IF NOT EXISTS idx_rutina_usuario ON rutina(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_rutina_nombre ON rutina(nombre_rutina);
+
 -- ===============================================
 -- FIN DEL SCRIPT
 -- ===============================================

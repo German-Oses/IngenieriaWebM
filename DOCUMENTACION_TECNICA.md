@@ -1,7 +1,7 @@
 # 📚 Documentación Técnica - SouFit
 
-**Versión:** 1.0.0  
-**Última actualización:** 2025  
+**Versión:** 1.1.0  
+**Última actualización:** 2025-01-16  
 **Proyecto:** SouFit - Plataforma Fitness Social
 
 ---
@@ -16,6 +16,8 @@
 6. [Configuración y Variables de Entorno](#configuración-y-variables-de-entorno)
 7. [Despliegue](#despliegue)
 8. [Optimizaciones](#optimizaciones)
+9. [Características Avanzadas](#características-avanzadas)
+10. [Responsive Design y PWA](#responsive-design-y-pwa)
 
 ---
 
@@ -30,6 +32,10 @@
 - **Comunicación en Tiempo Real:** Socket.io Client
 - **Almacenamiento Local:** @ionic/storage-angular
 - **Build:** Angular CLI
+- **PWA:** Service Worker (@angular/service-worker)
+- **Notificaciones:** Web Notification API
+- **Tema:** Modo oscuro/claro con ThemeService
+- **Caché:** CacheService para respuestas API
 
 #### Backend
 - **Runtime:** Node.js
@@ -96,11 +102,13 @@ SouFit/
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── pages/        # Páginas de la aplicación
-│   │   │   ├── services/     # Servicios (API, auth, chat)
+│   │   │   ├── services/     # Servicios (API, auth, chat, theme, cache, notification)
 │   │   │   ├── components/   # Componentes reutilizables
 │   │   │   └── interceptors/ # Interceptores HTTP
 │   │   ├── assets/           # Recursos estáticos
-│   │   └── environments/     # Configuración de entornos
+│   │   ├── environments/     # Configuración de entornos
+│   │   ├── manifest.json     # Web App Manifest (PWA)
+│   │   └── ngsw-config.json  # Service Worker config
 │   └── package.json
 │
 ├── Soufit.sql             # Script completo de base de datos
@@ -352,14 +360,47 @@ Datos geográficos de Chile.
 
 El esquema incluye índices estratégicos para mejorar el rendimiento:
 
-- **Usuarios:** email, username
-- **Seguimiento:** seguidor, seguido
-- **Ejercicios:** usuario, tipo, grupo_muscular, es_sistema
-- **Rutinas:** usuario, es_publica
-- **Posts:** usuario, fecha_publicacion (DESC)
-- **Reacciones:** usuario, post, ejercicio, rutina (con índices únicos)
-- **Mensajes:** remitente, destinatario, fecha_envio (DESC)
-- **Notificaciones:** usuario, leida, fecha_notificacion (DESC)
+#### Índices de Usuario
+- `idx_usuario_email` en `email`
+- `idx_usuario_username` en `username`
+- `idx_usuario_region` en `id_region`
+- `idx_usuario_comuna` en `id_comuna`
+
+#### Índices de Post
+- `idx_post_usuario` en `id_usuario`
+- `idx_post_tipo` en `tipo_post`
+- `idx_post_fecha` en `fecha_publicacion DESC`
+- `idx_post_ejercicio` en `id_ejercicio` (parcial, WHERE id_ejercicio IS NOT NULL)
+- `idx_post_rutina` en `id_rutina` (parcial, WHERE id_rutina IS NOT NULL)
+
+#### Índices de Mensaje
+- `idx_mensaje_remitente` en `id_remitente`
+- `idx_mensaje_destinatario` en `id_destinatario`
+- `idx_mensaje_fecha` en `fecha_envio DESC`
+- `idx_mensaje_conversacion` en `(id_remitente, id_destinatario, fecha_envio DESC)`
+
+#### Índices de Seguimiento
+- `idx_seguimiento_seguidor` en `id_seguidor`
+- `idx_seguimiento_seguido` en `id_seguido`
+- `idx_seguimiento_unique` único en `(id_seguidor, id_seguido)`
+
+#### Índices de Reacción
+- `idx_reaccion_post` en `id_post`
+- `idx_reaccion_usuario` en `id_usuario`
+- `idx_reaccion_unique` único en `(id_post, id_usuario)`
+
+#### Índices de Comentario
+- `idx_comentario_post` en `id_post`
+- `idx_comentario_usuario` en `id_usuario`
+- `idx_comentario_fecha` en `fecha_comentario DESC`
+
+#### Índices de Ejercicio
+- `idx_ejercicio_grupo_muscular` en `grupo_muscular`
+- `idx_ejercicio_nombre` en `nombre_ejercicio`
+
+#### Índices de Rutina
+- `idx_rutina_usuario` en `id_usuario`
+- `idx_rutina_nombre` en `nombre_rutina`
 
 ---
 
@@ -443,6 +484,59 @@ Inicia sesión y devuelve un token JWT.
 
 **Errores:**
 - `401`: Credenciales inválidas
+
+#### `POST /api/auth/solicitar-recuperacion`
+Solicita un código de recuperación de contraseña por email.
+
+**Acceso:** Público  
+**Rate Limit:** 5 requests / 15 minutos
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com"
+}
+```
+
+**Response 200:**
+```json
+{
+  "message": "Si el correo existe, se enviará un código de recuperación",
+  "codigo": "123456"
+}
+```
+
+**Nota:** En desarrollo, el código se devuelve en la respuesta. En producción, se envía por email.
+
+**Errores:**
+- `400`: Email inválido
+- `404`: Usuario no encontrado
+
+#### `POST /api/auth/resetear-password`
+Valida el código y restablece la contraseña.
+
+**Acceso:** Público  
+**Rate Limit:** 5 requests / 15 minutos
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com",
+  "codigo": "123456",
+  "nuevaPassword": "nueva_password123"
+}
+```
+
+**Response 200:**
+```json
+{
+  "message": "Contraseña restablecida correctamente"
+}
+```
+
+**Errores:**
+- `400`: Código inválido o expirado
+- `404`: Usuario no encontrado
 
 ### Endpoints de Perfil
 
@@ -557,7 +651,11 @@ Obtiene lista de ejercicios (con filtros opcionales).
 - `grupo_muscular` (opcional): Filtro por grupo muscular
 - `dificultad` (opcional): Principiante, Intermedio, Avanzado
 - `es_sistema` (opcional): true/false
-- `search` (opcional): Búsqueda por nombre
+- `busqueda` (opcional): Búsqueda por nombre
+- `duracion_max` (opcional): Duración máxima en minutos
+- `ordenar_por` (opcional): 'relevancia', 'nombre', 'duracion'
+- `limit` (opcional): Límite de resultados
+- `offset` (opcional): Offset para paginación
 
 **Response 200:**
 ```json
@@ -809,6 +907,18 @@ Marca todos los mensajes de un usuario como leídos.
 
 **Acceso:** Privado
 
+#### `GET /api/mensajes/contador-no-leidos`
+Obtiene el contador de mensajes no leídos del usuario autenticado.
+
+**Acceso:** Privado
+
+**Response 200:**
+```json
+{
+  "total": 5
+}
+```
+
 #### `GET /api/siguiendo`
 Obtiene la lista de usuarios que sigue el usuario autenticado.
 
@@ -849,6 +959,8 @@ Obtiene el feed de posts (usuarios seguidos + propios).
 **Query Parameters:**
 - `limit` (opcional): Límite de resultados (default: 20)
 - `offset` (opcional): Offset para paginación
+- `tipo` (opcional): Filtro por tipo ('texto', 'ejercicio', 'rutina', 'logro')
+- `orden` (opcional): Ordenamiento ('recientes', 'populares')
 
 **Response 200:**
 ```json
@@ -1111,10 +1223,11 @@ Esto permite enviar mensajes y notificaciones específicas a usuarios conectados
   - Dominios de Vercel y Render (regex)
 
 #### 6. Rate Limiting
-- **Middleware:** `express-rate-limit`
+- **Middleware:** Implementación personalizada en `middleware/security.js`
 - **Límites:**
-  - Autenticación: 5 requests / 15 minutos
-  - General: 100 requests / 15 minutos
+  - Autenticación: 100 requests / 15 minutos (producción)
+  - General: 100 requests / 15 minutos (producción), 1000 requests / minuto (desarrollo)
+- No aplica a peticiones OPTIONS (preflight CORS)
 
 #### 7. Headers de Seguridad HTTP
 - **Middleware:** `securityHeaders` en `middleware/security.js`
@@ -1131,8 +1244,11 @@ Esto permite enviar mensajes y notificaciones específicas a usuarios conectados
 
 #### 9. Subida de Archivos Segura
 - **Middleware:** `multer` con configuración de límites
-- Validación de tipos MIME
-- Límite de tamaño: 10MB
+- Validación estricta de tipos MIME:
+  - **Imágenes:** JPEG, JPG, PNG, GIF, WebP (máx. 5MB)
+  - **Audio:** MP3, WAV, OGG, WebM (máx. 10MB)
+- Validación de extensiones de archivo
+- Middleware adicional `validateFileSize` para validar tamaño por tipo
 - Almacenamiento en carpetas específicas (`uploads/mensajes/imagenes`, `uploads/mensajes/audios`)
 
 #### 10. Variables de Entorno
@@ -1198,10 +1314,14 @@ export const environment = {
 ```typescript
 export const environment = {
   production: true,
-  apiUrl: 'https://api.soufit.com/api',
-  socketUrl: 'https://api.soufit.com'
+  apiUrl: 'https://soufit.onrender.com/api',
+  socketUrl: 'https://soufit.onrender.com'
 };
 ```
+
+**URLs de Producción:**
+- **Frontend:** `https://soufit.vercel.app` o `https://ingenieria-web-m.vercel.app`
+- **Backend:** `https://soufit.onrender.com`
 
 ---
 
@@ -1267,10 +1387,12 @@ docker-compose -f docker-compose.prod.yml up -d --build
 
 ### Frontend
 
-1. **Lazy Loading:** Cargar módulos bajo demanda
-2. **Caché de Servicios:** Implementar caché en servicios HTTP
-3. **Optimización de Imágenes:** Comprimir imágenes antes de subir
-4. **Service Workers:** Implementar PWA para offline
+1. **Lazy Loading:** ✅ Implementado - Carga de módulos bajo demanda
+2. **Caché de Servicios:** ✅ Implementado - `CacheService` con TTL configurable
+3. **Optimización de Imágenes:** Lazy loading de imágenes con atributo `loading="lazy"`
+4. **Service Workers:** ✅ Implementado - PWA configurada con `@angular/service-worker`
+5. **Infinite Scroll:** ✅ Implementado - Carga paginada de posts en el feed
+6. **Skeleton Loaders:** ✅ Implementado - Indicadores de carga mejorados
 
 ### Recomendaciones Futuras
 
@@ -1308,6 +1430,171 @@ Actualmente la API no tiene versionado. Para futuras versiones, considerar:
 
 ---
 
-**Documentación generada para SouFit v1.0.0**  
-**Última actualización:** 2025
+## 🎨 Características Avanzadas
+
+### 1. Notificaciones Push Nativas
+
+#### Implementación
+- **Servicio:** `NotificationService` (`src/app/services/notification.service.ts`)
+- **API:** Web Notification API nativa del navegador
+- **Integración:** Automática con `ChatService` para mensajes nuevos
+
+#### Funcionalidades
+- Solicitud automática de permisos al inicializar
+- Notificaciones cuando la página está oculta (`document.hidden`)
+- Notificaciones con icono, badge y vibración
+- Manejo de clics en notificaciones para navegar a la aplicación
+- Cierre automático después de 5 segundos
+
+#### Uso
+```typescript
+// En ChatService
+if (this.notificationService && document.hidden) {
+  this.notificationService.showMessageNotification(
+    remitenteNombre,
+    contenido
+  );
+}
+```
+
+### 2. Modo Oscuro
+
+#### Implementación
+- **Servicio:** `ThemeService` (`src/app/services/theme.service.ts`)
+- **Persistencia:** LocalStorage
+- **Opciones:** Light, Dark, System (sigue preferencia del sistema)
+
+#### Funcionalidades
+- Toggle de tema en el header
+- Persistencia de preferencia entre sesiones
+- Integración con Ionic dark mode
+- Soporte para `prefers-color-scheme`
+
+### 3. Caché en Frontend
+
+#### Implementación
+- **Servicio:** `CacheService` (`src/app/services/cache.service.ts`)
+- **Almacenamiento:** LocalStorage con TTL (Time To Live)
+- **Uso:** Caché automático de respuestas API
+
+#### Funcionalidades
+- TTL configurable por item
+- Limpieza automática de items expirados
+- Métodos: `set()`, `get()`, `remove()`, `clear()`
+
+#### Ejemplo de Uso
+```typescript
+// Cachear feed por 2 minutos
+this.cacheService.set('feed_todos_recientes_0', posts, 2 * 60 * 1000);
+
+// Obtener del caché
+const cached = await this.cacheService.get<Post[]>('feed_todos_recientes_0');
+```
+
+### 4. Búsqueda Avanzada
+
+#### Filtros de Ejercicios
+- **Grupo muscular:** Piernas, Pecho, Espalda, Brazos, Core, Cuerpo completo
+- **Duración máxima:** Filtro por minutos
+- **Ordenamiento:** Relevancia, Nombre, Duración
+
+#### Filtros de Feed
+- **Tipo:** Todos, Texto, Ejercicio, Rutina, Logro
+- **Orden:** Recientes, Populares
+
+### 5. Actualización en Tiempo Real Mejorada
+
+#### ChatService Mejorado
+- **Observables:** `nuevoMensaje$`, `contadorNoLeidos$`
+- **Actualización automática:** Lista de chats se actualiza en tiempo real
+- **Marcado automático:** Mensajes se marcan como leídos al abrir el chat
+- **Contador preciso:** Endpoint backend para contador de no leídos
+
+#### Eventos Socket.io
+- `nuevo_mensaje`: Emitido cuando llega un mensaje nuevo
+- `mensaje_actualizado`: Emitido cuando se actualiza un mensaje
+- `mensaje_eliminado`: Emitido cuando se elimina un mensaje
+
+---
+
+## 📱 Responsive Design y PWA
+
+### Diseño Responsive
+
+#### Breakpoints
+- **Móvil:** `max-width: 768px`
+  - Menú lateral oculto
+  - Header móvil con menú hamburguesa
+  - Layout de una columna
+- **Tablet:** `769px - 1024px`
+  - Menú lateral reducido (70px)
+  - Lista de chats ajustada (300px)
+- **Escritorio:** `min-width: 1025px`
+  - Layout completo con menú lateral visible
+  - Header móvil oculto
+
+#### Componentes Responsive
+- Header móvil con botón de menú
+- Menú móvil desplegable con overlay
+- Badge de notificaciones en menú móvil
+- Navegación adaptativa según tamaño de pantalla
+
+### Progressive Web App (PWA)
+
+#### Configuración
+- **Manifest:** `src/manifest.json`
+- **Service Worker:** `src/ngsw-config.json`
+- **Registro:** Configurado en `main.ts`
+
+#### Características PWA
+- **Instalable:** Puede instalarse como app nativa
+- **Offline:** Service Worker para caché de assets
+- **Actualización:** Actualización automática en background
+- **Iconos:** Configurados en manifest
+
+#### Service Worker
+- **Asset Groups:** Prefetch de archivos estáticos
+- **Data Groups:** Caché de respuestas API (1 hora, estrategia freshness)
+- **Estrategia:** Freshness para API, Prefetch para assets
+
+#### Manifest.json
+```json
+{
+  "name": "SouFit",
+  "short_name": "SouFit",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3880ff",
+  "icons": [...]
+}
+```
+
+---
+
+## 📊 Tabla de Recuperación de Contraseña
+
+El sistema de recuperación de contraseña utiliza una tabla temporal para almacenar códigos:
+
+```sql
+CREATE TABLE IF NOT EXISTS password_reset_codes (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+    codigo VARCHAR(6) NOT NULL,
+    usado BOOLEAN DEFAULT FALSE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_expiracion TIMESTAMP NOT NULL
+);
+```
+
+**Características:**
+- Código de 6 dígitos
+- Expiración: 15 minutos
+- Un solo uso por código
+- Limpieza automática de códigos expirados
+
+---
+
+**Documentación generada para SouFit v1.1.0**  
+**Última actualización:** 2025-01-16
 

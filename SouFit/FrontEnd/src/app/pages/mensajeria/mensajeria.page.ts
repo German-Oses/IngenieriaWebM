@@ -7,6 +7,8 @@ import { ChatService, Chat, Mensaje } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { addIcons } from 'ionicons';
+import { arrowBackOutline, addOutline, closeOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-mensajeria',
@@ -39,7 +41,9 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     private router: Router,
     private chatService: ChatService,
     private authService: AuthService
-  ) { }
+  ) {
+    addIcons({ arrowBackOutline, addOutline, closeOutline });
+  }
 
   ngOnInit() {
     this.initializeChat();
@@ -74,11 +78,55 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       this.subscriptions.push(
         this.chatService.chatActivo$.subscribe(chat => {
           this.chatActivo = chat;
+          // Cuando se selecciona un chat, cargar mensajes y marcar como leídos
+          if (chat) {
+            this.cargarMensajesDelChat(chat.id_usuario);
+          }
+        })
+      );
+      
+      // Suscribirse a nuevos mensajes para notificaciones
+      this.subscriptions.push(
+        this.chatService.nuevoMensaje$.subscribe(mensaje => {
+          if (mensaje) {
+            // Si el mensaje es del chat activo, agregarlo automáticamente
+            if (this.chatActivo && 
+                (mensaje.id_remitente === this.chatActivo.id_usuario || 
+                 mensaje.id_destinatario === this.chatActivo.id_usuario)) {
+              // El mensaje ya se agregará por el observable mensajes$
+              // Marcar como leído automáticamente si estoy viendo el chat
+              this.chatService.marcarMensajesLeidos(this.chatActivo.id_usuario).subscribe();
+            } else {
+              // Actualizar lista de chats para mostrar el nuevo mensaje
+              this.chatService.recargarChats();
+            }
+          }
+        })
+      );
+      
+      // Suscribirse al contador de mensajes no leídos
+      this.subscriptions.push(
+        this.chatService.contadorNoLeidos$.subscribe(contador => {
+          // El contador se actualiza automáticamente
         })
       );
       
       // Los chats se cargan automáticamente cuando se inicializa el servicio
     }
+  }
+  
+  cargarMensajesDelChat(otroUsuarioId: number) {
+    this.chatService.cargarMensajes(otroUsuarioId).subscribe({
+      next: (mensajes) => {
+        this.mensajes = mensajes;
+        setTimeout(() => this.scrollToBottom(), 100);
+        // Marcar mensajes como leídos
+        this.chatService.marcarMensajesLeidos(otroUsuarioId).subscribe();
+      },
+      error: (error) => {
+        console.error('Error al cargar mensajes:', error);
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -95,6 +143,8 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   seleccionarChat(chat: Chat) {
     this.chatActivo = chat;
     this.chatService.seleccionarChat(chat);
+    // Cargar mensajes del chat seleccionado
+    this.cargarMensajesDelChat(chat.id_usuario);
   }
 
   enviarMensaje() {

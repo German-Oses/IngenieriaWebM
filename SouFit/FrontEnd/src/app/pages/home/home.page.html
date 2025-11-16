@@ -1,5 +1,50 @@
 <ion-content class="ion-no-padding">
   
+  <!-- Header móvil (solo visible en móvil) -->
+  <div class="header-movil">
+    <button class="btn-menu-hamburguesa" (click)="toggleMenuMovil()">
+      <ion-icon name="menu-outline"></ion-icon>
+    </button>
+    <h1>SouFit</h1>
+    <button class="btn-crear-post-movil" (click)="abrirModalCrearPost()">
+      <ion-icon name="add-outline"></ion-icon>
+    </button>
+  </div>
+  
+  <!-- Menú móvil desplegable -->
+  <div class="menu-movil-overlay" [class.activo]="menuMovilAbierto" (click)="cerrarMenuMovil()"></div>
+  <div class="menu-movil" [class.activo]="menuMovilAbierto">
+    <div class="menu-movil-header">
+      <h2>SouFit</h2>
+      <button class="btn-cerrar-menu" (click)="cerrarMenuMovil()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+    <div class="menu-movil-items">
+      <div class="menu-item activo" (click)="navegarYcerrarMenu('/home')">
+        <ion-icon name="home-outline"></ion-icon>
+        <span>Inicio</span>
+      </div>
+      <div class="menu-item" (click)="navegarYcerrarMenu('/buscar')">
+        <ion-icon name="search-outline"></ion-icon>
+        <span>Buscar</span>
+      </div>
+      <div class="menu-item" (click)="navegarYcerrarMenu('/rutinas')">
+        <ion-icon name="barbell-outline"></ion-icon>
+        <span>Rutinas</span>
+      </div>
+      <div class="menu-item" (click)="navegarYcerrarMenu('/mensajeria')">
+        <ion-icon name="chatbubbles-outline"></ion-icon>
+        <span>Mensajería</span>
+        <span class="badge-notificacion" *ngIf="contadorMensajesNoLeidos > 0">{{ contadorMensajesNoLeidos }}</span>
+      </div>
+      <div class="menu-item" (click)="navegarYcerrarMenu('/perfil')">
+        <ion-icon name="person-outline"></ion-icon>
+        <span>Perfil</span>
+      </div>
+    </div>
+  </div>
+  
   <ion-grid style="height: 100vh;">
     <ion-row style="height: 100%;">
       
@@ -42,17 +87,62 @@
         
         <div class="titulo-feed">
           <h1>SouFit</h1>
-          <button class="btn-crear-post" (click)="abrirModalCrearPost()">
-            <ion-icon name="add-outline"></ion-icon>
-            Crear Post
-          </button>
+          <div class="feed-actions">
+            <!-- Toggle tema -->
+            <button class="btn-toggle-theme" (click)="toggleTheme()" [attr.aria-label]="'Cambiar tema'">
+              <ion-icon [name]="themeService.getTheme() === 'dark' ? 'moon' : 'sunny'"></ion-icon>
+            </button>
+            <button class="btn-crear-post" (click)="abrirModalCrearPost()">
+              <ion-icon name="add-outline"></ion-icon>
+              Crear Post
+            </button>
+          </div>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="filtros-feed">
+          <div class="filtro-grupo">
+            <label>Tipo:</label>
+            <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="filtro-select">
+              <option value="todos">Todos</option>
+              <option value="texto">Texto</option>
+              <option value="ejercicio">Ejercicio</option>
+              <option value="rutina">Rutina</option>
+              <option value="logro">Logro</option>
+            </select>
+          </div>
+          <div class="filtro-grupo">
+            <label>Orden:</label>
+            <select [(ngModel)]="filtroOrden" (change)="aplicarFiltros()" class="filtro-select">
+              <option value="recientes">Recientes</option>
+              <option value="populares">Populares</option>
+            </select>
+          </div>
         </div>
 
-        <div class="posts-contenedor">
-          <!-- Loading -->
-          <div *ngIf="cargando" class="loading-container">
+        <div class="posts-contenedor" #postsContainer (scroll)="onScroll($event)">
+          <!-- Loading inicial -->
+          <div *ngIf="cargando && posts.length === 0" class="loading-container">
             <ion-spinner></ion-spinner>
             <p>Cargando feed...</p>
+          </div>
+          
+          <!-- Skeleton loaders -->
+          <div *ngIf="cargando && posts.length === 0" class="skeleton-container">
+            <div *ngFor="let i of [1,2,3]" class="skeleton-post">
+              <div class="skeleton-header">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-text">
+                  <div class="skeleton-line short"></div>
+                  <div class="skeleton-line shorter"></div>
+                </div>
+              </div>
+              <div class="skeleton-content">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line medium"></div>
+              </div>
+            </div>
           </div>
 
           <!-- Posts -->
@@ -64,7 +154,7 @@
             <div class="post-header">
               <div class="post-usuario" (click)="verPerfil(post.autor_id || post.id_usuario)">
                 <ion-avatar>
-                  <img [src]="post.autor_avatar || 'assets/icon/SouFitLogo.png'" [alt]="post.autor_username">
+                  <img [src]="post.autor_avatar || 'assets/icon/SouFitLogo.png'" [alt]="post.autor_username" loading="lazy" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
                 </ion-avatar>
                 <div>
                   <h3>{{ post.autor_nombre || post.autor_username }}</h3>
@@ -86,9 +176,18 @@
             </div>
             
             <div class="post-contenido">
+              <!-- Botón eliminar para posts propios -->
+              <button 
+                *ngIf="(post.autor_id || post.id_usuario) === usuarioActual?.id && post.id_post"
+                class="btn-eliminar-post"
+                (click)="eliminarPost(post.id_post)"
+                aria-label="Eliminar post">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+              
               <p *ngIf="post.contenido" class="post-texto">{{ post.contenido }}</p>
               <div *ngIf="post.url_media" class="post-media">
-                <img [src]="post.url_media" alt="Media del post" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+                <img [src]="post.url_media" alt="Media del post" loading="lazy" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
               </div>
               <div *ngIf="post.nombre_ejercicio" class="post-ejercicio">
                 <ion-chip color="primary">
@@ -146,6 +245,17 @@
                 </button>
               </div>
             </div>
+          </div>
+          
+          <!-- Loading más posts -->
+          <div *ngIf="cargandoMas" class="loading-mas-container">
+            <ion-spinner></ion-spinner>
+            <p>Cargando más posts...</p>
+          </div>
+          
+          <!-- No hay más posts -->
+          <div *ngIf="!hayMasPosts && posts.length > 0" class="no-mas-posts">
+            <p>No hay más publicaciones</p>
           </div>
         </div>
       </ion-col>

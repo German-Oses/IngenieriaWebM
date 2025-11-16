@@ -37,7 +37,8 @@ import {
   searchOutline,
   barbellOutline,
   chatbubblesOutline,
-  personOutline
+  personOutline,
+  arrowBackOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -90,7 +91,7 @@ export class RutinasPage implements OnInit {
     private alertController: AlertController,
     private toastController: ToastController
   ) {
-    addIcons({ addOutline, closeOutline, createOutline, trashOutline, shareOutline, heartOutline, heart, homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline });
+    addIcons({ addOutline, closeOutline, createOutline, trashOutline, shareOutline, heartOutline, heart, homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, arrowBackOutline });
   }
 
   async ngOnInit() {

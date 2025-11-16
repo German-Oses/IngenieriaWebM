@@ -118,4 +118,18 @@ export class AuthService {
       this.router.navigate(['/login'], { replaceUrl: true });
     }
   }
+  
+  // Solicitar código de recuperación
+  solicitarRecuperacionPassword(email: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/auth/solicitar-recuperacion`, { email });
+  }
+  
+  // Resetear contraseña con código
+  resetearPassword(email: string, codigo: string, nuevaPassword: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/auth/resetear-password`, {
+      email,
+      codigo,
+      nuevaPassword
+    });
+  }
 }

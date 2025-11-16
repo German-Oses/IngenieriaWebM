@@ -1,5 +1,16 @@
 <ion-content class="ion-no-padding">
   
+  <!-- Header móvil (solo visible en móvil) -->
+  <div class="header-movil">
+    <button class="btn-menu-hamburguesa" (click)="volverHome()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <h1>Mensajería</h1>
+    <button class="btn-crear-post-movil" (click)="toggleUsuariosDisponibles()">
+      <ion-icon name="add-outline"></ion-icon>
+    </button>
+  </div>
+  
   <ion-grid style="height: 100vh;">
     <ion-row style="height: 100%;">
       

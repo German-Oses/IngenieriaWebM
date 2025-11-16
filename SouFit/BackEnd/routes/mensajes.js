@@ -212,6 +212,25 @@ router.put('/mensajes/marcar-leidos/:otroUsuarioId', auth, async (req, res) => {
     }
 });
 
+// Obtener contador de mensajes no leídos
+router.get('/mensajes/contador-no-leidos', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const query = `
+            SELECT COUNT(*) as total
+            FROM mensaje
+            WHERE id_destinatario = $1 AND leido = false
+        `;
+        
+        const result = await db.query(query, [userId]);
+        res.json({ total: parseInt(result.rows[0].total) });
+    } catch (error) {
+        console.error('Error al obtener contador de mensajes no leídos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Obtener todos los usuarios disponibles para chatear (solo los que sigo o con los que chateé)
 router.get('/usuarios-disponibles', auth, async (req, res) => {
     try {
@@ -355,7 +374,7 @@ router.delete('/seguir/:userId', auth, async (req, res) => {
 });
 
 // Enviar mensaje con archivo (imagen o audio)
-router.post('/mensajes/enviar', auth, upload.single('archivo'), async (req, res) => {
+router.post('/mensajes/enviar', auth, upload.single('archivo'), upload.validateFileSize, async (req, res) => {
     try {
         const userId = req.user.id;
         const { id_destinatario, contenido } = req.body;
