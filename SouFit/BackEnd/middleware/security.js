@@ -38,8 +38,8 @@ const rateLimit = (windowMs, max) => {
 // Rate limiting para autenticación
 const authLimiter =
     process.env.NODE_ENV === "production"
-        ? rateLimit(15 * 60 * 1000, 5)  // producción
-        : (req, res, next) => next();   // desarrollo (sin límite)
+        ? rateLimit(15 * 60 * 1000,100)  
+        : (req, res, next) => next();  
 
 
 // Rate limiting general (más permisivo en desarrollo)
