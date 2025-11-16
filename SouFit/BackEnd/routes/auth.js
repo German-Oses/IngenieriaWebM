@@ -4,9 +4,18 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { registerRules, validate } = require('../middleware/validator');
 const { authLimiter } = require('../middleware/security');
+const logger = require('../utils/logger');
+
+logger.info('🔧 Configurando rutas de autenticación...');
 
 // POST /api/auth/register (Público)
-router.post('/register', authLimiter, registerRules(), validate, authController.register);
+router.post('/register', authLimiter, registerRules(), validate, (req, res, next) => {
+    logger.info('📨 Petición POST /register recibida', { 
+        email: req.body?.email,
+        username: req.body?.username 
+    });
+    authController.register(req, res, next);
+});
 
 // POST /api/auth/login (Público)
 router.post('/login', authLimiter, authController.login);
@@ -22,5 +31,17 @@ router.post('/verificar-email', authLimiter, authController.verificarEmail);
 
 // POST /api/auth/reenviar-codigo-verificacion (Público)
 router.post('/reenviar-codigo-verificacion', authLimiter, authController.reenviarCodigoVerificacion);
+
+// Log todas las rutas registradas
+logger.info('✅ Rutas de autenticación configuradas:', {
+    routes: [
+        'POST /register',
+        'POST /login',
+        'POST /solicitar-recuperacion',
+        'POST /resetear-password',
+        'POST /verificar-email',
+        'POST /reenviar-codigo-verificacion'
+    ]
+});
 
 module.exports = router;

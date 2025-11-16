@@ -1,46 +1,52 @@
 const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
 const logger = require('../utils/logger');
 
-// Instancia de Resend (si está configurado)
-let resendClient = null;
-if (process.env.RESEND_API_KEY) {
-  try {
-    logger.info('Inicializando Resend SDK...', { 
-      hasApiKey: !!process.env.RESEND_API_KEY,
-      apiKeyLength: process.env.RESEND_API_KEY?.length || 0,
-      apiKeyPrefix: process.env.RESEND_API_KEY?.substring(0, 5) || 'N/A'
-    });
-    resendClient = new Resend(process.env.RESEND_API_KEY);
-    logger.info('Resend SDK inicializado correctamente');
-  } catch (error) {
-    logger.error('Error al inicializar Resend SDK', {
-      error: error.message,
-      stack: error.stack
-    });
-  }
-} else {
-  logger.warn('RESEND_API_KEY no está configurado. Los correos no se enviarán con Resend SDK.');
-}
-
-// Configuración del transporter de nodemailer (fallback)
-// Prioridad: Resend SDK > Resend SMTP > SMTP > Gmail
+// Configuración del transporter de nodemailer
+// Prioridad: MailerSend > Gmail > SMTP Genérico
 const createTransporter = () => {
-  // Si Resend SDK está disponible, no necesitamos transporter
-  if (resendClient) {
-    return null; // Se usará el SDK directamente
-  }
-  
-  // PRIORIDAD 2: Resend SMTP (fallback si SDK no está disponible)
-  if (process.env.RESEND_API_KEY) {
-    logger.info('Usando Resend SMTP (fallback) para envío de correos');
+  // PRIORIDAD 1: MailerSend (permite usar sin dominio - dominio de prueba)
+  // MailerSend puede configurarse de dos formas:
+  // 1. Solo con MAILERSEND_API_TOKEN (el sistema genera el username)
+  // 2. Con MAILERSEND_SMTP_USER y MAILERSEND_SMTP_PASS explícitos
+  if (process.env.MAILERSEND_API_TOKEN || (process.env.MAILERSEND_SMTP_USER && process.env.MAILERSEND_SMTP_PASS)) {
+    let smtpUsername, smtpPassword;
+    
+    // Si se proporcionan username y password explícitos, usarlos
+    if (process.env.MAILERSEND_SMTP_USER && process.env.MAILERSEND_SMTP_PASS) {
+      smtpUsername = process.env.MAILERSEND_SMTP_USER;
+      smtpPassword = process.env.MAILERSEND_SMTP_PASS;
+      logger.info('✅ Usando MailerSend con credenciales SMTP explícitas', { 
+        username: smtpUsername
+      });
+    } else if (process.env.MAILERSEND_API_TOKEN) {
+      // Si solo se proporciona el token, extraer el username del token
+      // El token tiene formato: mlsn.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      // El username para SMTP es: MS_ + primeros caracteres después de "mlsn."
+      const tokenParts = process.env.MAILERSEND_API_TOKEN.split('.');
+      
+      if (tokenParts.length > 1 && tokenParts[1]) {
+        // Tomar los primeros caracteres después de "mlsn." para formar MS_xxxxx
+        smtpUsername = `MS_${tokenParts[1].substring(0, 10)}`;
+      } else {
+        // Fallback: intentar usar el token directamente si tiene formato MS_
+        smtpUsername = process.env.MAILERSEND_API_TOKEN.startsWith('MS_') 
+          ? process.env.MAILERSEND_API_TOKEN.split('_').slice(0, 2).join('_')
+          : 'MS_user';
+      }
+      
+      smtpPassword = process.env.MAILERSEND_API_TOKEN;
+      logger.info('✅ Usando MailerSend con token API (username generado automáticamente)', { 
+        username: smtpUsername
+      });
+    }
+    
     return nodemailer.createTransport({
-      host: 'smtp.resend.com',
+      host: 'smtp.mailersend.com',
       port: 587,
       secure: false,
       auth: {
-        user: 'resend',
-        pass: process.env.RESEND_API_KEY
+        user: smtpUsername,
+        pass: smtpPassword
       },
       tls: {
         rejectUnauthorized: false
@@ -48,23 +54,11 @@ const createTransporter = () => {
     });
   }
   
-  // PRIORIDAD 2: SMTP Genérico
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    logger.info('Usando SMTP genérico para envío de correos');
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true', // true para 465, false para otros puertos
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
-  }
-  
-  // PRIORIDAD 3: Gmail (requiere contraseña de aplicación)
+  // PRIORIDAD 2: Gmail (requiere contraseña de aplicación) - RECOMENDADO
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    logger.info('Usando Gmail para envío de correos');
+    logger.info('✅ Usando Gmail para envío de correos', { 
+      user: process.env.GMAIL_USER 
+    });
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -74,9 +68,28 @@ const createTransporter = () => {
     });
   }
   
-  // Para desarrollo: si no hay configuración, retornar null
-  // El sistema mostrará el código en consola como fallback
-  logger.warn('No se ha configurado el servicio de correo. El código se mostrará en consola.');
+  // PRIORIDAD 3: SMTP Genérico (cualquier proveedor SMTP)
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    logger.info('✅ Usando SMTP genérico para envío de correos', {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT || '587'
+    });
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true', // true para 465, false para otros puertos
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      tls: {
+        rejectUnauthorized: false // Para desarrollo, en producción debería ser true
+      }
+    });
+  }
+  
+  // Si no hay configuración, retornar null
+  logger.error('❌ No se ha configurado el servicio de correo. Configura MAILERSEND_API_TOKEN, GMAIL_USER/GMAIL_APP_PASSWORD o SMTP_HOST/SMTP_USER/SMTP_PASS.');
   return null;
 };
 
@@ -271,62 +284,6 @@ const getRecoveryEmailTemplate = (nombreUsuario, nombre, codigo) => {
   `;
 };
 
-// Función para enviar correo usando Resend SDK
-const sendEmailWithResendSDK = async (fromEmail, toEmail, subject, html, text, maxRetries = 3) => {
-  if (!resendClient) {
-    logger.error('Resend SDK no está inicializado. Verifica que RESEND_API_KEY esté configurado.');
-    return { success: false, error: 'Resend SDK no está inicializado' };
-  }
-  
-  logger.info('Intentando enviar correo con Resend SDK', { from: fromEmail, to: toEmail, subject });
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      logger.info(`Intento ${attempt}/${maxRetries} de envío con Resend SDK`);
-      
-      const { data, error } = await resendClient.emails.send({
-        from: fromEmail,
-        to: toEmail,
-        subject: subject,
-        html: html,
-        text: text
-      });
-      
-      if (error) {
-        logger.error('Error de Resend API', { error, from: fromEmail, to: toEmail });
-        throw new Error(error.message || JSON.stringify(error) || 'Error desconocido de Resend');
-      }
-      
-      logger.info('Correo enviado exitosamente con Resend SDK', {
-        messageId: data?.id,
-        to: toEmail,
-        from: fromEmail,
-        attempt
-      });
-      return { success: true, messageId: data?.id };
-    } catch (error) {
-      logger.warn(`Intento ${attempt}/${maxRetries} falló al enviar correo con Resend SDK`, {
-        error: error.message,
-        errorStack: error.stack,
-        to: toEmail,
-        from: fromEmail
-      });
-      
-      if (attempt === maxRetries) {
-        logger.error('Todos los intentos de envío de correo con Resend SDK fallaron', {
-          error: error.message,
-          errorStack: error.stack,
-          to: toEmail,
-          from: fromEmail
-        });
-        return { success: false, error: error.message };
-      }
-      
-      // Esperar antes de reintentar (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-    }
-  }
-};
 
 // Función para enviar correo con retry (usando nodemailer como fallback)
 const sendEmailWithRetry = async (transporter, mailOptions, maxRetries = 3) => {
@@ -542,38 +499,32 @@ const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
     // Determinar el email "from" según el servicio configurado
     let fromEmail = process.env.EMAIL_FROM;
     
-    // Si usa Resend, el EMAIL_FROM debe ser un dominio verificado en Resend
-    if (process.env.RESEND_API_KEY) {
-      fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-      logger.info('Usando Resend para envío', { fromEmail, hasApiKey: !!process.env.RESEND_API_KEY });
+    // Si usa MailerSend, puede usar el dominio de prueba sin verificar
+    if (process.env.MAILERSEND_API_TOKEN) {
+      fromEmail = process.env.EMAIL_FROM || process.env.MAILERSEND_FROM_EMAIL || 'MS_xxxxx@trial-xxxxx.mlsender.net';
+      logger.info('Configurando envío con MailerSend', { 
+        fromEmail,
+        hasToken: !!process.env.MAILERSEND_API_TOKEN
+      });
     } else {
       fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
-      logger.info('Resend no configurado, usando otros servicios', { fromEmail });
+      logger.info('Configurando envío de correo de verificación', { 
+        fromEmail,
+        hasGmail: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
+        hasSmtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER)
+      });
     }
     
     const subject = '✅ Verifica tu Email - SouFit';
     const html = getVerificationEmailTemplate(nombreUsuario, nombre, codigo);
     const text = `¡Bienvenido ${nombre || nombreUsuario}!\n\nTu código de verificación de email es: ${codigo}\n\nEste código es válido por 24 horas.\n\nIngresa este código en la aplicación para verificar tu email y activar tu cuenta.\n\nSaludos,\nEl equipo de SouFit`;
     
-    // PRIORIDAD 1: Intentar usar Resend SDK
-    if (resendClient) {
-      logger.info('Intentando enviar con Resend SDK');
-      const result = await sendEmailWithResendSDK(fromEmail, email, subject, html, text);
-      if (result.success) {
-        logger.info('Correo enviado exitosamente con Resend SDK');
-        return true;
-      }
-      logger.warn('Resend SDK falló, intentando con nodemailer como fallback', { error: result.error });
-    } else {
-      logger.warn('Resend SDK no está disponible, usando nodemailer');
-    }
-    
-    // PRIORIDAD 2: Usar nodemailer (Resend SMTP o otros servicios)
+    // Usar nodemailer con el transporter configurado
     const transporter = createTransporter();
     if (!transporter) {
-      logger.error('No se ha configurado el servicio de correo. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
+      logger.error('❌ No se ha configurado el servicio de correo. Verifica las variables de entorno MAILERSEND_API_TOKEN, GMAIL_USER/GMAIL_APP_PASSWORD o SMTP_HOST/SMTP_USER/SMTP_PASS.');
       logger.error('Variables de entorno disponibles:', {
-        hasResendKey: !!process.env.RESEND_API_KEY,
+        hasMailerSend: !!process.env.MAILERSEND_API_TOKEN,
         hasEmailFrom: !!process.env.EMAIL_FROM,
         hasSmtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER),
         hasGmail: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD)
@@ -581,7 +532,7 @@ const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
       return false;
     }
     
-    logger.info('Enviando correo con nodemailer');
+    logger.info('Enviando correo de verificación con nodemailer', { from: fromEmail, to: email });
     const mailOptions = {
       from: fromEmail,
       to: email,
@@ -592,9 +543,9 @@ const sendVerificationEmail = async (email, nombreUsuario, nombre, codigo) => {
     
     const result = await sendEmailWithRetry(transporter, mailOptions);
     if (result.success) {
-      logger.info('Correo enviado exitosamente con nodemailer');
+      logger.info('✅ Correo de verificación enviado exitosamente', { messageId: result.messageId });
     } else {
-      logger.error('Falló el envío con nodemailer', { error: result.error });
+      logger.error('❌ Falló el envío del correo de verificación', { error: result.error });
     }
     return result.success;
   } catch (error) {
@@ -618,38 +569,32 @@ exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
     // Determinar el email "from" según el servicio configurado
     let fromEmail = process.env.EMAIL_FROM;
     
-    // Si usa Resend, el EMAIL_FROM debe ser un dominio verificado en Resend
-    if (process.env.RESEND_API_KEY) {
-      fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-      logger.info('Usando Resend para envío de recuperación', { fromEmail, hasApiKey: !!process.env.RESEND_API_KEY });
+    // Si usa MailerSend, puede usar el dominio de prueba sin verificar
+    if (process.env.MAILERSEND_API_TOKEN) {
+      fromEmail = process.env.EMAIL_FROM || process.env.MAILERSEND_FROM_EMAIL || 'MS_xxxxx@trial-xxxxx.mlsender.net';
+      logger.info('Configurando envío de recuperación con MailerSend', { 
+        fromEmail,
+        hasToken: !!process.env.MAILERSEND_API_TOKEN
+      });
     } else {
       fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@soufit.com';
-      logger.info('Resend no configurado, usando otros servicios para recuperación', { fromEmail });
+      logger.info('Configurando envío de correo de recuperación', { 
+        fromEmail,
+        hasGmail: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
+        hasSmtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER)
+      });
     }
     
     const subject = '🔐 Recuperación de Contraseña - SouFit';
     const html = getRecoveryEmailTemplate(nombreUsuario, nombre, codigo);
     const text = `Hola ${nombre || nombreUsuario},\n\nTu código de recuperación de contraseña es: ${codigo}\n\nEste código es válido por 15 minutos.\n\nSi no solicitaste este código, ignora este correo.\n\nSaludos,\nEl equipo de SouFit`;
     
-    // PRIORIDAD 1: Intentar usar Resend SDK
-    if (resendClient) {
-      logger.info('Intentando enviar correo de recuperación con Resend SDK');
-      const result = await sendEmailWithResendSDK(fromEmail, email, subject, html, text);
-      if (result.success) {
-        logger.info('Correo de recuperación enviado exitosamente con Resend SDK');
-        return true;
-      }
-      logger.warn('Resend SDK falló para recuperación, intentando con nodemailer como fallback', { error: result.error });
-    } else {
-      logger.warn('Resend SDK no está disponible para recuperación, usando nodemailer');
-    }
-    
-    // PRIORIDAD 2: Usar nodemailer (Resend SMTP o otros servicios)
+    // Usar nodemailer con el transporter configurado
     const transporter = createTransporter();
     if (!transporter) {
-      logger.error('No se ha configurado el servicio de correo para recuperación. Verifica las variables de entorno RESEND_API_KEY, SMTP o GMAIL.');
+      logger.error('❌ No se ha configurado el servicio de correo para recuperación. Verifica las variables de entorno MAILERSEND_API_TOKEN, GMAIL_USER/GMAIL_APP_PASSWORD o SMTP_HOST/SMTP_USER/SMTP_PASS.');
       logger.error('Variables de entorno disponibles:', {
-        hasResendKey: !!process.env.RESEND_API_KEY,
+        hasMailerSend: !!process.env.MAILERSEND_API_TOKEN,
         hasEmailFrom: !!process.env.EMAIL_FROM,
         hasSmtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER),
         hasGmail: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD)
@@ -657,7 +602,7 @@ exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
       return false;
     }
     
-    logger.info('Enviando correo de recuperación con nodemailer');
+    logger.info('Enviando correo de recuperación con nodemailer', { from: fromEmail, to: email });
     const mailOptions = {
       from: fromEmail,
       to: email,
@@ -668,9 +613,9 @@ exports.sendRecoveryEmail = async (email, nombreUsuario, nombre, codigo) => {
     
     const result = await sendEmailWithRetry(transporter, mailOptions);
     if (result.success) {
-      logger.info('Correo de recuperación enviado exitosamente con nodemailer');
+      logger.info('✅ Correo de recuperación enviado exitosamente', { messageId: result.messageId });
     } else {
-      logger.error('Error al enviar correo de recuperación con nodemailer', { error: result.error });
+      logger.error('❌ Error al enviar correo de recuperación', { error: result.error });
     }
     return result.success;
   } catch (error) {

@@ -1,16 +1,19 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController } from '@ionic/angular'; 
+import { IonicModule, AlertController, ModalController, ToastController } from '@ionic/angular'; 
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
 import { CommonModule } from '@angular/common';
 import { IonInput } from '@ionic/angular/standalone';
 import { LoadingController } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { mailOutline, refreshOutline, close } from 'ionicons/icons';
 
 @Component({
   selector: 'app-registro',
   templateUrl: './register.page.html',
+  styleUrls: ['./register.page.scss'],
   standalone: true,
   imports: [IonicModule, FormsModule, CommonModule, IonInput]
 })
@@ -36,13 +39,23 @@ export class RegistroPage implements OnInit {
   fechaMaxima: string = '';
   fechaMinima: string = '';
 
+  // Variables para el modal de verificación
+  mostrarModalVerificacion: boolean = false;
+  emailParaVerificar: string = '';
+  codigoVerificacion: string = '';
+  verificando: boolean = false;
+  reenviandoCodigo: boolean = false;
+
   constructor(
     private authService: AuthService,
     private ubicacionService: UbicacionService,
     private router: Router,
     private alertController: AlertController,
-    private loadingController: LoadingController
-  ) { }
+    private loadingController: LoadingController,
+    private toastController: ToastController
+  ) {
+    addIcons({ mailOutline, refreshOutline, close });
+  }
 
   ngOnInit(): void {
     // Configurar fechas para el datetime picker
@@ -187,29 +200,19 @@ export class RegistroPage implements OnInit {
             console.log('Loading cerrado');
           }
           
-          // Asegurarse de que tenemos el email para navegar
-          const emailParaVerificar = response?.email || this.email?.trim();
-          console.log('Email para verificar:', emailParaVerificar);
+          // Asegurarse de que tenemos el email para verificar
+          this.emailParaVerificar = response?.email || this.email?.trim();
+          console.log('Email para verificar:', this.emailParaVerificar);
           
-          if (!emailParaVerificar) {
+          if (!this.emailParaVerificar) {
             console.error('❌ No se pudo obtener el email');
             await this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación. Por favor, intenta nuevamente.');
             return;
           }
           
-          console.log('🚀 Navegando a verificación de email con:', emailParaVerificar);
-          
-          // Navegar directamente a la pantalla de verificación (sin alert para mejor UX)
-          try {
-            await this.router.navigate(['/verificar-email'], { 
-              queryParams: { email: emailParaVerificar },
-              replaceUrl: true
-            });
-            console.log('✅ Navegación completada');
-          } catch (navError) {
-            console.error('❌ Error al navegar:', navError);
-            await this.presentAlert('Error', 'No se pudo navegar a la pantalla de verificación. Por favor, intenta acceder manualmente.');
-          }
+          // Mostrar modal de verificación
+          console.log('✅ Mostrando modal de verificación');
+          this.mostrarModalVerificacion = true;
         },
         error: async (err) => {
           console.error('❌ Error en registro:', err);
@@ -268,5 +271,75 @@ export class RegistroPage implements OnInit {
     });
     await alert.present();
     await alert.onDidDismiss();
+  }
+
+  // Métodos para el modal de verificación
+  filtrarSoloNumerosCodigo(event: any) {
+    const input = event.target;
+    const value = input.value.replace(/[^0-9]/g, '');
+    this.codigoVerificacion = value;
+    input.value = value;
+  }
+
+  async verificarCodigoModal() {
+    if (!this.codigoVerificacion || this.codigoVerificacion.length !== 6) {
+      await this.presentAlert('Error', 'Por favor, ingresa un código de 6 dígitos');
+      return;
+    }
+
+    this.verificando = true;
+    this.authService.verificarEmail(this.emailParaVerificar, this.codigoVerificacion).subscribe({
+      next: async (response) => {
+        this.verificando = false;
+        await this.presentToast('¡Email verificado exitosamente!');
+        this.mostrarModalVerificacion = false;
+        
+        // Redirigir al home (ya está autenticado)
+        setTimeout(() => {
+          this.router.navigate(['/home'], { replaceUrl: true });
+        }, 1000);
+      },
+      error: async (err) => {
+        this.verificando = false;
+        const errorMsg = err?.error?.error || err?.error?.msg || 'Código inválido o expirado';
+        await this.presentAlert('Error', errorMsg);
+        this.codigoVerificacion = ''; // Limpiar el código
+      }
+    });
+  }
+
+  async reenviarCodigoModal() {
+    if (!this.emailParaVerificar) {
+      await this.presentAlert('Error', 'No se encontró el email');
+      return;
+    }
+
+    this.reenviandoCodigo = true;
+    this.authService.reenviarCodigoVerificacion(this.emailParaVerificar).subscribe({
+      next: async (response) => {
+        this.reenviandoCodigo = false;
+        await this.presentToast('Código de verificación reenviado. Revisa tu correo.');
+      },
+      error: async (err) => {
+        this.reenviandoCodigo = false;
+        const errorMsg = err?.error?.error || err?.error?.msg || 'Error al reenviar el código';
+        await this.presentAlert('Error', errorMsg);
+      }
+    });
+  }
+
+  cerrarModalVerificacion() {
+    this.mostrarModalVerificacion = false;
+    this.codigoVerificacion = '';
+  }
+
+  async presentToast(message: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      position: 'bottom',
+      color: 'success'
+    });
+    await toast.present();
   }
 }

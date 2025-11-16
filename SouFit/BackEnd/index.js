@@ -198,9 +198,37 @@ io.on('connection', (socket) =>{
 
 
 // Definir y usar las rutas
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/ubicacion', require('./routes/ubicacion'));
-app.use('/api/profile', require('./routes/profile'));
+logger.info('🔧 Montando rutas...');
+try {
+    const authRoutes = require('./routes/auth');
+    app.use('/api/auth', (req, res, next) => {
+        logger.info('📥 Petición recibida en /api/auth', { 
+            method: req.method, 
+            path: req.path,
+            originalUrl: req.originalUrl,
+            url: req.url
+        });
+        authRoutes(req, res, next);
+    });
+    logger.info('✅ Ruta /api/auth montada correctamente');
+} catch (error) {
+    logger.error('❌ Error al montar ruta /api/auth', error);
+    throw error; // Re-lanzar para que el servidor no inicie con rutas rotas
+}
+
+try {
+    app.use('/api/ubicacion', require('./routes/ubicacion'));
+    logger.info('✅ Ruta /api/ubicacion montada correctamente');
+} catch (error) {
+    logger.error('❌ Error al montar ruta /api/ubicacion', error);
+}
+
+try {
+    app.use('/api/profile', require('./routes/profile'));
+    logger.info('✅ Ruta /api/profile montada correctamente');
+} catch (error) {
+    logger.error('❌ Error al montar ruta /api/profile', error);
+}
 
 // Configurar io en la ruta de mensajes antes de usarla
 const mensajesRouter = require('./routes/mensajes');
@@ -243,9 +271,16 @@ app.use(errorHandler);
 // Manejo de rutas no encontradas (debe ir al final, después de todas las rutas)
 // En Express 5, no se puede usar '*' directamente, se usa sin ruta para capturar todo
 app.use((req, res) => {
+    logger.warn('⚠️ Ruta no encontrada', { 
+        method: req.method, 
+        path: req.originalUrl,
+        url: req.url,
+        baseUrl: req.baseUrl
+    });
     res.status(404).json({
         error: 'Ruta no encontrada',
-        path: req.originalUrl
+        path: req.originalUrl,
+        method: req.method
     });
 });
 
