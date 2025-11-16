@@ -5,13 +5,13 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
 import { CommonModule } from '@angular/common';
-import { IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, ModalController } from '@ionic/angular/standalone';
+import { IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonFooter, IonIcon, ModalController } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-registro',
   templateUrl: './register.page.html',
   standalone: true,
-  imports: [IonicModule, FormsModule, CommonModule, IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent]
+  imports: [IonicModule, FormsModule, CommonModule, IonDatetime, IonDatetimeButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonFooter, IonIcon]
 })
 export class RegistroPage implements OnInit {
   nombre = '';
