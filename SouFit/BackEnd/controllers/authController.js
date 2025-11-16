@@ -8,54 +8,82 @@ const logger = require('../utils/logger');
 
 // FUNCIÓN DE REGISTRO 
 exports.register = async (req, res) => {
-    
-    const { username, email, password, nombre, apellido, fecha_nacimiento, id_region, id_comuna } = req.body;
-    
-    logger.info('📝 Intento de registro recibido', { 
-        email, 
-        username, 
-        hasPassword: !!password,
-        hasNombre: !!nombre,
-        hasApellido: !!apellido,
-        hasFechaNacimiento: !!fecha_nacimiento,
-        hasRegion: !!id_region,
-        hasComuna: !!id_comuna
-    });
-    
-    // Validar que fecha_nacimiento sea obligatoria
-    if (!fecha_nacimiento || !fecha_nacimiento.trim()) {
-        return res.status(400).json({ msg: 'La fecha de nacimiento es obligatoria' });
-    }
-    
-    // Validar formato de fecha (YYYY-MM-DD)
-    const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!fechaRegex.test(fecha_nacimiento)) {
-        return res.status(400).json({ msg: 'Formato de fecha inválido. Use YYYY-MM-DD' });
-    }
-    
-    // Validar que la fecha no sea futura
-    const fechaNac = new Date(fecha_nacimiento);
-    const hoy = new Date();
-    if (fechaNac > hoy) {
-        return res.status(400).json({ msg: 'La fecha de nacimiento no puede ser futura' });
-    }
-    
-    // Validar edad mínima (por ejemplo, 13 años)
-    const edadMinima = new Date();
-    edadMinima.setFullYear(edadMinima.getFullYear() - 13);
-    if (fechaNac > edadMinima) {
-        return res.status(400).json({ msg: 'Debes tener al menos 13 años para registrarte' });
-    }
-
     try {
+        const { username, email, password, nombre, apellido, fecha_nacimiento, id_region, id_comuna } = req.body;
+        
+        logger.info('📝 Intento de registro recibido', { 
+            email, 
+            username, 
+            hasPassword: !!password,
+            hasNombre: !!nombre,
+            hasApellido: !!apellido,
+            hasFechaNacimiento: !!fecha_nacimiento,
+            hasRegion: !!id_region,
+            hasComuna: !!id_comuna,
+            bodyKeys: Object.keys(req.body)
+        });
+        
+        // Validaciones básicas
+        if (!username || !username.trim()) {
+            return res.status(400).json({ msg: 'El nombre de usuario es obligatorio' });
+        }
+        
+        if (!email || !email.trim()) {
+            return res.status(400).json({ msg: 'El correo electrónico es obligatorio' });
+        }
+        
+        if (!password || password.length < 6) {
+            return res.status(400).json({ msg: 'La contraseña debe tener al menos 6 caracteres' });
+        }
+        
+        if (!nombre || !nombre.trim()) {
+            return res.status(400).json({ msg: 'El nombre es obligatorio' });
+        }
+        
+        if (!apellido || !apellido.trim()) {
+            return res.status(400).json({ msg: 'El apellido es obligatorio' });
+        }
+        
+        // Validar que fecha_nacimiento sea obligatoria
+        if (!fecha_nacimiento || (typeof fecha_nacimiento === 'string' && !fecha_nacimiento.trim())) {
+            return res.status(400).json({ msg: 'La fecha de nacimiento es obligatoria' });
+        }
+        
+        // Validar formato de fecha (YYYY-MM-DD)
+        const fechaStr = String(fecha_nacimiento).trim();
+        const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!fechaRegex.test(fechaStr)) {
+            return res.status(400).json({ msg: 'Formato de fecha inválido. Use YYYY-MM-DD' });
+        }
+        
+        // Validar que la fecha no sea futura
+        const fechaNac = new Date(fechaStr);
+        const hoy = new Date();
+        hoy.setHours(23, 59, 59, 999); // Permitir hasta el final del día de hoy
+        if (fechaNac > hoy) {
+            return res.status(400).json({ msg: 'La fecha de nacimiento no puede ser futura' });
+        }
+        
+        // Validar edad mínima (13 años)
+        const edadMinima = new Date();
+        edadMinima.setFullYear(edadMinima.getFullYear() - 13);
+        if (fechaNac > edadMinima) {
+            return res.status(400).json({ msg: 'Debes tener al menos 13 años para registrarte' });
+        }
+        
+        // Validar región y comuna
+        if (!id_region || !id_comuna) {
+            return res.status(400).json({ msg: 'Debes seleccionar región y comuna' });
+        }
+
         // Verificar si el email ya está registrado
-        const emailExists = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
+        const emailExists = await db.query('SELECT id_usuario FROM usuario WHERE email = $1', [email]);
         if (emailExists.rows.length > 0) {
             return res.status(400).json({ msg: 'El correo electrónico ya está registrado' });
         }
         
         // Verificar si el username ya está en uso
-        const usernameExists = await db.query('SELECT * FROM usuario WHERE username = $1', [username]);
+        const usernameExists = await db.query('SELECT id_usuario FROM usuario WHERE username = $1', [username]);
         if (usernameExists.rows.length > 0) {
             return res.status(400).json({ msg: 'El nombre de usuario ya está en uso' });
         }
@@ -64,13 +92,22 @@ exports.register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
+        logger.info('Creando usuario en la base de datos...', { username, email });
+        
         // CREAR LA CUENTA DIRECTAMENTE (sin verificación de email)
         const newUser = await db.query(
             `INSERT INTO usuario (username, email, password_hash, nombre, apellido, fecha_nacimiento, id_region, id_comuna, email_verificado) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE) 
              RETURNING id_usuario, username, nombre, apellido, email`,
-            [username, email, hashedPassword, nombre, apellido, fecha_nacimiento, id_region, id_comuna]
+            [username.trim(), email.trim(), hashedPassword, nombre.trim(), apellido.trim(), fechaStr, parseInt(id_region), parseInt(id_comuna)]
         );
+        
+        if (!newUser.rows || newUser.rows.length === 0) {
+            logger.error('Error: No se creó el usuario en la base de datos');
+            return res.status(500).json({ error: 'Error al crear el usuario en la base de datos' });
+        }
+        
+        logger.info('✅ Usuario creado exitosamente', { id_usuario: newUser.rows[0].id_usuario });
         
         const userData = {
             id: newUser.rows[0].id_usuario,
@@ -88,6 +125,8 @@ exports.register = async (req, res) => {
                 return res.status(500).json({ error: 'Error al generar token' });
             }
             
+            logger.info('✅ Token generado, enviando respuesta al cliente');
+            
             // Devolver éxito con token para login automático
             res.status(201).json({ 
                 message: 'Cuenta creada exitosamente',
@@ -97,8 +136,26 @@ exports.register = async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('Error en registro', error);
-        res.status(500).json({ error: 'Error en el servidor' });
+        logger.error('Error en registro', { 
+            error: error.message, 
+            stack: error.stack,
+            code: error.code,
+            detail: error.detail
+        });
+        
+        // Mensaje de error más específico
+        let errorMessage = 'Error en el servidor';
+        if (error.code === '23505') { // Violación de constraint único
+            if (error.detail && error.detail.includes('email')) {
+                errorMessage = 'El correo electrónico ya está registrado';
+            } else if (error.detail && error.detail.includes('username')) {
+                errorMessage = 'El nombre de usuario ya está en uso';
+            }
+        } else if (error.code === '23503') { // Violación de foreign key
+            errorMessage = 'La región o comuna seleccionada no es válida';
+        }
+        
+        res.status(500).json({ error: errorMessage, details: process.env.NODE_ENV === 'development' ? error.message : undefined });
     }
 };
 

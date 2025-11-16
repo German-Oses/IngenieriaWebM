@@ -99,6 +99,23 @@
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+
+    h1 {
+      font-size: 20px;
+    }
+
+    .botones-header {
+      justify-content: center;
+      gap: 8px;
+    }
   }
 }
 
@@ -126,6 +143,16 @@
 
   &:hover {
     background-color: #3171e0;
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 6px;
+
+    ion-icon {
+      font-size: 16px;
+    }
   }
 }
 
@@ -208,12 +235,22 @@
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   border: 1px solid #e0e0e0;
+
+  @media (max-width: 768px) {
+    padding: 20px 16px;
+  }
 }
 
 .perfil-contenido {
   display: flex;
   gap: 40px;
   align-items: flex-start;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
 }
 
 .perfil-avatar {
@@ -223,6 +260,12 @@
   border: 3px solid #e0e0e0;
   border-radius: 50%;
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    width: 120px !important;
+    height: 120px !important;
+    border-width: 2px;
+  }
 }
 
 .perfil-avatar-editar {
@@ -287,6 +330,20 @@
       background: #3171e0;
     }
   }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 16px;
+
+    .btn-editar-inline {
+      width: 100%;
+      justify-content: center;
+      padding: 10px;
+      font-size: 13px;
+    }
+  }
 }
 
 .perfil-nombre {
@@ -294,6 +351,11 @@
   font-weight: 300;
   margin: 0;
   color: #262626;
+
+  @media (max-width: 768px) {
+    font-size: 22px;
+    text-align: center;
+  }
 }
 
 .perfil-stats {
@@ -321,6 +383,26 @@
     span {
       font-size: 16px;
       color: #262626;
+    }
+  }
+
+  @media (max-width: 768px) {
+    gap: 20px;
+    justify-content: space-around;
+    margin-bottom: 16px;
+
+    .stat-item {
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+
+      strong {
+        font-size: 18px;
+      }
+
+      span {
+        font-size: 12px;
+      }
     }
   }
 }
@@ -408,6 +490,12 @@
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   border: 1px solid #e0e0e0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    margin-top: 16px;
+  }
 }
 
 .post-grid-item {
@@ -512,6 +600,11 @@
   margin-top: 20px;
   display: flex;
   gap: 10px;
+
+  @media (max-width: 768px) {
+    margin-top: 16px;
+    justify-content: center;
+  }
 }
 
 .btn-estadisticas {
@@ -536,6 +629,13 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
 }
 
 .estadisticas-card {
@@ -553,6 +653,16 @@
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 16px;
   margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-card {
@@ -593,6 +703,25 @@
       letter-spacing: 0.5px;
     }
   }
+
+  @media (max-width: 768px) {
+    padding: 16px 12px;
+    gap: 8px;
+
+    ion-icon {
+      font-size: 24px;
+    }
+
+    .stat-info {
+      strong {
+        font-size: 20px;
+      }
+
+      span {
+        font-size: 11px;
+      }
+    }
+  }
 }
 
 .logros-section,
@@ -622,6 +751,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 }
 
 .logro-item {
@@ -701,12 +835,44 @@
       color: #8e8e8e;
     }
   }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+
+    .historial-fecha {
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+
+    .historial-info {
+      margin-left: 0;
+
+      strong {
+        font-size: 13px;
+      }
+
+      span {
+        font-size: 11px;
+      }
+    }
+  }
 }
 
 .progreso-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .progreso-item {

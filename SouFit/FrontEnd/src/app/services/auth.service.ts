@@ -65,13 +65,37 @@ export class AuthService {
   register(userData: any): Observable<any> {
     return this.http.post<{token: string, user: any, message: string}>(`${this.apiUrl}/register`, userData).pipe(
       tap(async (res) => {
+        // Esperar a que el storage esté listo (máximo 5 segundos)
+        if (!this.storageReady.value) {
+          const waitPromise = new Promise<void>((resolve) => {
+            const subscription = this.storageReady.subscribe(ready => {
+              if (ready) {
+                subscription.unsubscribe();
+                resolve();
+              }
+            });
+            // Timeout de seguridad
+            setTimeout(() => {
+              subscription.unsubscribe();
+              resolve();
+            }, 5000);
+          });
+          await waitPromise;
+        }
+        
         if (res.token) {
           // Guardar token y usuario automáticamente
-          await this.storage.set('token', res.token);
-          if (res.user) {
-            await this.saveUser(res.user);
+          try {
+            await this.storage.set('token', res.token);
+            if (res.user) {
+              await this.saveUser(res.user);
+            }
+            this.isAuthenticated.next(true);
+            console.log('✅ Datos guardados en storage correctamente');
+          } catch (error) {
+            console.error('Error al guardar en storage:', error);
+            // Continuar aunque falle el storage
           }
-          this.isAuthenticated.next(true);
         }
       })
     );

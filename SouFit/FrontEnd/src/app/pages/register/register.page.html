@@ -97,8 +97,9 @@
   </ion-item>
 
   
-  <ion-button expand="block" style="background-color: #8B0000; border-radius: 12px; height: 50px; font-family: Inter; font-size: 16px; font-weight: 600;" (click)="createAccount()">
-    Crear cuenta
+  <ion-button expand="block" style="background-color: #8B0000; border-radius: 12px; height: 50px; font-family: Inter; font-size: 16px; font-weight: 600;" (click)="createAccount()" [disabled]="creando">
+    <span *ngIf="!creando">Crear cuenta</span>
+    <span *ngIf="creando">Creando cuenta...</span>
   </ion-button>
 
 </ion-content>
