@@ -20,7 +20,9 @@ const corsOptions = {
             'http://localhost:3000',
             process.env.FRONTEND_URL,
             // Permitir todos los dominios de Vercel (preview deployments)
-            /^https:\/\/.*\.vercel\.app$/
+            /^https:\/\/.*\.vercel\.app$/,
+            // Permitir todos los dominios de Render
+            /^https:\/\/.*\.render\.com$/
         ].filter(Boolean);
         
         // Permitir peticiones sin origin (ej: Postman, mobile apps)
@@ -68,9 +70,37 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-
-    origin: ["http://localhost:4200", "http://localhost:8100"], 
-    methods: ["GET", "POST"]
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:4200',
+            'http://localhost:8100',
+            'http://localhost:3000',
+            process.env.FRONTEND_URL,
+            /^https:\/\/.*\.vercel\.app$/,
+            /^https:\/\/.*\.render\.com$/
+        ].filter(Boolean);
+        
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (typeof allowed === 'string') {
+                return allowed === origin;
+            } else if (allowed instanceof RegExp) {
+                return allowed.test(origin);
+            }
+            return false;
+        });
+        
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 

@@ -78,7 +78,7 @@ En PostgreSQL, crea una nueva base de datos llamada `soufitdb`:
 CREATE DATABASE SouFit;
 ```
 
-Luego, ejecuta el archivo `SouFit.sql` incluido para crear las tablas y precargar datos.
+Luego, ejecuta el archivo `Soufit.sql` incluido en la carpeta `SouFit/` para crear las tablas y precargar datos.
 
 #### ⚙️ Configurar variables de entorno:
 Crea un archivo `.env` en la carpeta `BackEnd/` con el siguiente contenido:

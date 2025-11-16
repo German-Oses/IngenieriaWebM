@@ -28,7 +28,7 @@ SouFit/
 │   │   └── environments/ # Configuración de entornos
 │   └── .env             # Variables de entorno (NO se sube a Git)
 │
-├── database.sql                    # Script único de base de datos (esquema completo)
+├── Soufit.sql                      # Script único de base de datos (esquema completo)
 ├── migracion_mensajes_multimedia.sql  # Script de migración para soporte multimedia
 ├── docker-compose.yml              # Configuración Docker para desarrollo
 ├── DOCUMENTACION_TECNICA.md        # Documentación técnica completa
@@ -149,7 +149,7 @@ NODE_ENV=development
 Ejecutar el script SQL en el contenedor de PostgreSQL:
 ```bash
 docker-compose up -d postgres
-docker exec -i soufit-postgres psql -U soufit_user -d soufit_db < database.sql
+docker exec -i soufit-postgres psql -U soufit_user -d soufit_db < Soufit.sql
 ```
 
 4. **Construir y ejecutar todos los servicios**
@@ -234,15 +234,15 @@ createdb soufit_db
 
 Ejecutar el script SQL único (incluye todo el esquema):
 ```bash
-psql -U tu_usuario -d soufit_db -f ../database.sql
+psql -U tu_usuario -d soufit_db -f ../Soufit.sql
 ```
 
 O desde la línea de comandos de PostgreSQL:
 ```sql
-\i database.sql
+\i Soufit.sql
 ```
 
-**Nota:** El archivo `database.sql` contiene todo el esquema completo de la base de datos, incluyendo tablas, índices, datos iniciales de regiones/comunas y ejercicios del sistema.
+**Nota:** El archivo `Soufit.sql` contiene todo el esquema completo de la base de datos, incluyendo tablas, índices, datos iniciales de regiones/comunas y ejercicios del sistema.
 
 **Si ya tienes una base de datos existente**, ejecuta también el script de migración para agregar soporte multimedia:
 ```bash
@@ -409,7 +409,7 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 ### Script SQL Principal
 
-El proyecto utiliza un **único script SQL** (`database.sql`) que incluye:
+El proyecto utiliza un **único script SQL** (`Soufit.sql`) que incluye:
 - ✅ Esquema completo de todas las tablas
 - ✅ Índices para optimización
 - ✅ Datos iniciales (regiones, comunas de Chile)
@@ -421,18 +421,18 @@ El proyecto utiliza un **único script SQL** (`database.sql`) que incluye:
 
 **Opción 1: Desde línea de comandos**
 ```bash
-psql -U tu_usuario -d soufit_db -f database.sql
+psql -U tu_usuario -d soufit_db -f Soufit.sql
 ```
 
 **Opción 2: Desde psql**
 ```sql
 \c soufit_db
-\i database.sql
+\i Soufit.sql
 ```
 
 **Opción 3: Con Docker**
 ```bash
-docker exec -i soufit-postgres psql -U soufit_user -d soufit_db < database.sql
+docker exec -i soufit-postgres psql -U soufit_user -d soufit_db < Soufit.sql
 ```
 
 El script es **idempotente**, por lo que puede ejecutarse múltiples veces sin errores.
@@ -456,7 +456,7 @@ docker exec -i soufit-postgres psql -U soufit_user -d soufit_db < migracion_mens
 - Hace que `contenido` sea opcional (permite mensajes solo con archivo)
 - Agrega constraint para asegurar que haya contenido O archivo
 
-**Nota:** Si ejecutas `database.sql` desde cero, no necesitas ejecutar la migración ya que incluye todas las columnas.
+**Nota:** Si ejecutas `Soufit.sql` desde cero, no necesitas ejecutar la migración ya que incluye todas las columnas.
 
 ---
 
@@ -507,7 +507,7 @@ Todos los módulos principales (Posts, Ejercicios, Rutinas, Perfil) implementan 
 - Verifica que `FRONTEND_URL` en `.env` coincida con la URL del frontend
 - Revisa la configuración de CORS en `BackEnd/index.js`
 
-**Error al ejecutar `database.sql`**
+**Error al ejecutar `Soufit.sql`**
 - Asegúrate de tener permisos en PostgreSQL
 - Verifica que la base de datos exista antes de ejecutar el script
 - El script es idempotente, puedes ejecutarlo múltiples veces
@@ -558,7 +558,7 @@ Este proyecto es parte de un proyecto universitario.
 
 ## 📦 Archivos Importantes del Proyecto
 
-- **`database.sql`** - Script principal de base de datos (ejecutar primero en instalación nueva)
+- **`Soufit.sql`** - Script principal de base de datos (ejecutar primero en instalación nueva)
 - **`.env`** - Variables de entorno (NO se sube a Git, usar `.env.example` como plantilla)
 - **`docker-compose.yml`** - Configuración Docker para desarrollo
 - **`docker-compose.prod.yml`** - Configuración Docker para producción
@@ -573,7 +573,7 @@ Este proyecto es parte de un proyecto universitario.
 - [ ] Instalar PostgreSQL
 - [ ] Clonar repositorio
 - [ ] Crear base de datos `soufit_db`
-- [ ] Ejecutar `database.sql`
+- [ ] Ejecutar `Soufit.sql`
 - [ ] Configurar `.env` en `BackEnd/`
 - [ ] `npm install` en `BackEnd/`
 - [ ] `npm install` en `FrontEnd/`
@@ -586,5 +586,5 @@ Este proyecto es parte de un proyecto universitario.
 - [ ] Clonar repositorio
 - [ ] Crear `.env` en `BackEnd/`
 - [ ] `docker-compose up -d postgres`
-- [ ] Ejecutar `database.sql` en el contenedor
+- [ ] Ejecutar `Soufit.sql` en el contenedor
 - [ ] `docker-compose up -d --build`
