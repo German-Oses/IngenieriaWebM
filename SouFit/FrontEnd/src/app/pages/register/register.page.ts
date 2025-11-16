@@ -160,57 +160,103 @@ export class RegistroPage implements OnInit {
     };
 
     console.log('Datos del usuario a registrar:', { ...userData, password: '***' });
+    console.log('URL del API:', this.authService['apiUrl']); // Para debugging
 
     // Mostrar loading
-    const loading = await this.loadingController.create({
-      message: 'Creando cuenta...',
-      duration: 30000 // Timeout de 30 segundos
-    });
+    let loading: HTMLIonLoadingElement | null = null;
+    try {
+      loading = await this.loadingController.create({
+        message: 'Creando cuenta...',
+        duration: 30000 // Timeout de 30 segundos
+      });
+      
+      await loading.present();
+      console.log('Loading presentado');
+    } catch (loadingError) {
+      console.error('Error al mostrar loading:', loadingError);
+    }
     
-    await loading.present();
-    
-    this.authService.register(userData).subscribe({
-      next: async (response) => {
-        await loading.dismiss();
-        
-        console.log('Respuesta del registro:', response);
-        
-        // Asegurarse de que tenemos el email para navegar
-        const emailParaVerificar = response?.email || this.email?.trim();
-        
-        if (!emailParaVerificar) {
-          await this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación. Por favor, intenta nuevamente.');
-          return;
+    try {
+      console.log('Iniciando petición HTTP de registro...');
+      this.authService.register(userData).subscribe({
+        next: async (response) => {
+          console.log('✅ Respuesta del registro recibida:', response);
+          
+          if (loading) {
+            await loading.dismiss();
+            console.log('Loading cerrado');
+          }
+          
+          // Asegurarse de que tenemos el email para navegar
+          const emailParaVerificar = response?.email || this.email?.trim();
+          console.log('Email para verificar:', emailParaVerificar);
+          
+          if (!emailParaVerificar) {
+            console.error('❌ No se pudo obtener el email');
+            await this.presentAlert('Error', 'No se pudo obtener el correo electrónico para la verificación. Por favor, intenta nuevamente.');
+            return;
+          }
+          
+          console.log('🚀 Navegando a verificación de email con:', emailParaVerificar);
+          
+          // Navegar directamente a la pantalla de verificación (sin alert para mejor UX)
+          try {
+            await this.router.navigate(['/verificar-email'], { 
+              queryParams: { email: emailParaVerificar },
+              replaceUrl: true
+            });
+            console.log('✅ Navegación completada');
+          } catch (navError) {
+            console.error('❌ Error al navegar:', navError);
+            await this.presentAlert('Error', 'No se pudo navegar a la pantalla de verificación. Por favor, intenta acceder manualmente.');
+          }
+        },
+        error: async (err) => {
+          console.error('❌ Error en registro:', err);
+          console.error('Detalles del error:', {
+            status: err?.status,
+            statusText: err?.statusText,
+            error: err?.error,
+            message: err?.message,
+            url: err?.url
+          });
+          
+          if (loading) {
+            await loading.dismiss();
+          }
+          
+          // Extraer mensaje de error de diferentes formatos posibles
+          let errorMsg = 'No se pudo completar el registro. Por favor, verifica los datos e intenta nuevamente.';
+          if (err?.error) {
+            errorMsg = err.error.msg || err.error.error || err.error.message || errorMsg;
+          } else if (err?.message) {
+            errorMsg = err.message;
+          }
+          
+          // Si el error es de servidor (500), puede ser problema de email
+          if (err?.status === 500) {
+            errorMsg = 'Error del servidor. Por favor, verifica la configuración del servidor de correo o intenta más tarde.';
+          }
+          
+          // Si es error de red (0), puede ser CORS o conexión
+          if (err?.status === 0) {
+            errorMsg = 'Error de conexión. Por favor, verifica tu conexión a internet o intenta más tarde.';
+          }
+          
+          console.error('Mostrando alert de error:', errorMsg);
+          await this.presentAlert('Error de Registro', errorMsg);
+        },
+        complete: () => {
+          console.log('Observable de registro completado');
         }
-        
-        console.log('Navegando a verificación de email con:', emailParaVerificar);
-        
-        // Navegar directamente a la pantalla de verificación (sin alert para mejor UX)
-        this.router.navigate(['/verificar-email'], { 
-          queryParams: { email: emailParaVerificar },
-          replaceUrl: true
-        });
-      },
-      error: async (err) => {
-        await loading.dismiss();
-        console.error('Error en registro:', err);
-        
-        // Extraer mensaje de error de diferentes formatos posibles
-        let errorMsg = 'No se pudo completar el registro. Por favor, verifica los datos e intenta nuevamente.';
-        if (err?.error) {
-          errorMsg = err.error.msg || err.error.error || err.error.message || errorMsg;
-        } else if (err?.message) {
-          errorMsg = err.message;
-        }
-        
-        // Si el error es de servidor (500), puede ser problema de email
-        if (err?.status === 500) {
-          errorMsg = 'Error del servidor. Por favor, verifica la configuración del servidor de correo o intenta más tarde.';
-        }
-        
-        await this.presentAlert('Error de Registro', errorMsg);
+      });
+    } catch (subscribeError) {
+      console.error('❌ Error al suscribirse al observable:', subscribeError);
+      if (loading) {
+        loading.dismiss();
       }
-    });
+      await this.presentAlert('Error', 'Error inesperado al intentar registrar. Por favor, intenta nuevamente.');
+    }
   }
 
 

@@ -11,6 +11,17 @@ exports.register = async (req, res) => {
     
     const { username, email, password, nombre, apellido, fecha_nacimiento, id_region, id_comuna } = req.body;
     
+    logger.info('📝 Intento de registro recibido', { 
+        email, 
+        username, 
+        hasPassword: !!password,
+        hasNombre: !!nombre,
+        hasApellido: !!apellido,
+        hasFechaNacimiento: !!fecha_nacimiento,
+        hasRegion: !!id_region,
+        hasComuna: !!id_comuna
+    });
+    
     // Validar que fecha_nacimiento sea obligatoria
     if (!fecha_nacimiento || !fecha_nacimiento.trim()) {
         return res.status(400).json({ msg: 'La fecha de nacimiento es obligatoria' });
