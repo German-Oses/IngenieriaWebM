@@ -2,11 +2,39 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { sendRecoveryEmail, sendVerificationEmail } = require('../services/emailService');
+const { asyncHandler } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
 
 // FUNCIÓN DE REGISTRO 
 exports.register = async (req, res) => {
     
-    const { username, email, password, nombre, apellido, id_region, id_comuna } = req.body;
+    const { username, email, password, nombre, apellido, fecha_nacimiento, id_region, id_comuna } = req.body;
+    
+    // Validar que fecha_nacimiento sea obligatoria
+    if (!fecha_nacimiento || !fecha_nacimiento.trim()) {
+        return res.status(400).json({ msg: 'La fecha de nacimiento es obligatoria' });
+    }
+    
+    // Validar formato de fecha (YYYY-MM-DD)
+    const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!fechaRegex.test(fecha_nacimiento)) {
+        return res.status(400).json({ msg: 'Formato de fecha inválido. Use YYYY-MM-DD' });
+    }
+    
+    // Validar que la fecha no sea futura
+    const fechaNac = new Date(fecha_nacimiento);
+    const hoy = new Date();
+    if (fechaNac > hoy) {
+        return res.status(400).json({ msg: 'La fecha de nacimiento no puede ser futura' });
+    }
+    
+    // Validar edad mínima (por ejemplo, 13 años)
+    const edadMinima = new Date();
+    edadMinima.setFullYear(edadMinima.getFullYear() - 13);
+    if (fechaNac > edadMinima) {
+        return res.status(400).json({ msg: 'Debes tener al menos 13 años para registrarte' });
+    }
 
     try {
      
@@ -23,32 +51,70 @@ exports.register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt); 
 
-
+        // Crear usuario con email NO verificado inicialmente
         const newUser = await db.query(
-            'INSERT INTO usuario (username, email, password_hash, nombre, apellido, id_region, id_comuna) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_usuario, username, nombre, apellido, email',
-            [username, email, hashedPassword, nombre, apellido, id_region, id_comuna]
+            'INSERT INTO usuario (username, email, password_hash, nombre, apellido, fecha_nacimiento, id_region, id_comuna, email_verificado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FALSE) RETURNING id_usuario, username, nombre, apellido, email',
+            [username, email, hashedPassword, nombre, apellido, fecha_nacimiento, id_region, id_comuna]
         );
+
+        // Generar código de verificación de 6 dígitos
+        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Crear tabla de códigos de verificación si no existe
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS email_verification_codes (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(100) NOT NULL,
+                codigo VARCHAR(6) NOT NULL,
+                fecha_creacion TIMESTAMP DEFAULT NOW(),
+                fecha_expiracion TIMESTAMP DEFAULT (NOW() + INTERVAL '24 hours'),
+                usado BOOLEAN DEFAULT FALSE
+            )
+        `);
+        
+        // Eliminar códigos expirados o usados
+        await db.query('DELETE FROM email_verification_codes WHERE fecha_expiracion < NOW() OR usado = TRUE');
+        
+        // Guardar código de verificación
+        await db.query(
+            'INSERT INTO email_verification_codes (email, codigo) VALUES ($1, $2)',
+            [email, codigoVerificacion]
+        );
+        
+        // Enviar correo de verificación
+        const emailEnviado = await sendVerificationEmail(
+            email,
+            username,
+            nombre || username,
+            codigoVerificacion
+        );
+        
+        if (!emailEnviado) {
+            logger.warn('No se pudo enviar el correo de verificación. Mostrando código en consola.', { email });
+            logger.info(`CÓDIGO DE VERIFICACIÓN PARA ${email}: ${codigoVerificacion}`);
+        }
 
         const userData = {
             id: newUser.rows[0].id_usuario,
             username: newUser.rows[0].username,
             nombre: newUser.rows[0].nombre,
             apellido: newUser.rows[0].apellido,
-            email: newUser.rows[0].email
+            email: newUser.rows[0].email,
+            email_verificado: false
         };
 
-        const payload = { user: userData };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
-            if (err) throw err;
-            res.status(201).json({ 
-                token,
-                user: userData
-            });
+        // NO generar token JWT hasta que el email esté verificado
+        // El usuario deberá verificar su email primero
+        res.status(201).json({ 
+            message: 'Usuario registrado exitosamente. Por favor, verifica tu email para activar tu cuenta.',
+            emailEnviado: emailEnviado,
+            // En desarrollo, también devolver el código (solo para testing)
+            ...(process.env.NODE_ENV === 'development' && { codigoVerificacion: codigoVerificacion })
         });
 
     } catch (error) {
-        console.error(error.message);
-        res.status(500).send('Error en el servidor');
+        logger.error('Error en registro', error);
+        res.status(500).json({ error: 'Error en el servidor' });
     }
 };
 
@@ -56,18 +122,27 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
+        const user = await db.query(
+            'SELECT id_usuario, username, email, password_hash, nombre, apellido, email_verificado FROM usuario WHERE email = $1', 
+            [email]
+        );
         
-        
-            const user = await db.query('SELECT id_usuario, username, email, password_hash, nombre, apellido FROM usuario WHERE email = $1', [email]);
-            if (user.rows.length === 0) {
-                return res.status(400).json({ msg: 'Credenciales inválidas' }); // <--- PROBABLEMENTE ESTO
-            }
+        if (user.rows.length === 0) {
+            return res.status(400).json({ msg: 'Credenciales inválidas' });
+        }
 
-            
-            const isMatch = await bcrypt.compare(password, user.rows[0].password_hash);
-            if (!isMatch) {
-                return res.status(400).json({ msg: 'Credenciales inválidas' }); // <--- O ESTO
-            }
+        const isMatch = await bcrypt.compare(password, user.rows[0].password_hash);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Credenciales inválidas' });
+        }
+        
+        // Verificar que el email esté verificado
+        if (!user.rows[0].email_verificado) {
+            return res.status(403).json({ 
+                msg: 'Por favor, verifica tu correo electrónico antes de iniciar sesión',
+                emailNoVerificado: true
+            });
+        }
 
       
         const userData = {
@@ -89,8 +164,8 @@ exports.login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error.message);
-        res.status(500).send('Error en el servidor');
+        logger.error('Error en registro', error);
+        res.status(500).json({ error: 'Error en el servidor' });
     }
 };
 
@@ -317,8 +392,8 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
             return res.status(400).json({ error: 'El correo electrónico es requerido' });
         }
         
-        // Verificar que el usuario existe
-        const user = await db.query('SELECT id_usuario, email, nombre FROM usuario WHERE email = $1', [email]);
+        // Verificar que el usuario existe y obtener datos
+        const user = await db.query('SELECT id_usuario, email, nombre, username FROM usuario WHERE email = $1', [email]);
         
         if (user.rows.length === 0) {
             // Por seguridad, no revelar si el email existe o no
@@ -327,6 +402,8 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
                 // En producción, siempre devolver este mensaje
             });
         }
+        
+        const usuario = user.rows[0];
         
         // Generar código de 6 dígitos
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
@@ -356,20 +433,19 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
             [email, codigo]
         );
         
-        // En producción, aquí enviarías el correo con nodemailer
-        // Por ahora, solo loguear (en desarrollo)
-        console.log('========================================');
-        console.log(`CÓDIGO DE RECUPERACIÓN PARA ${email}:`);
-        console.log(`Código: ${codigo}`);
-        console.log('========================================');
+        // Enviar correo de recuperación personalizado
+        const emailEnviado = await sendRecoveryEmail(
+            email,
+            usuario.username,
+            usuario.nombre,
+            codigo
+        );
         
-        // En producción, usar nodemailer:
-        // const transporter = nodemailer.createTransport({...});
-        // await transporter.sendMail({
-        //   to: email,
-        //   subject: 'Código de recuperación - SouFit',
-        //   html: `<p>Tu código de recuperación es: <strong>${codigo}</strong></p><p>Válido por 15 minutos.</p>`
-        // });
+        if (!emailEnviado) {
+            // Si falla el envío, loguear para desarrollo
+            logger.warn('No se pudo enviar el correo. Mostrando código en consola.', { email });
+            logger.info(`CÓDIGO DE RECUPERACIÓN PARA ${email}: ${codigo}`);
+        }
         
         res.json({ 
             message: 'Si el correo existe, se enviará un código de recuperación',
@@ -378,7 +454,156 @@ exports.solicitarRecuperacionPassword = async (req, res) => {
         });
         
     } catch (err) {
-        console.error('Error al solicitar recuperación:', err.message);
+        logger.error('Error al solicitar recuperación de contraseña', err);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+};
+
+// Verificar código de verificación de email
+exports.verificarEmail = async (req, res) => {
+    const { email, codigo } = req.body;
+    
+    try {
+        if (!email || !codigo) {
+            return res.status(400).json({ error: 'Email y código son requeridos' });
+        }
+        
+        // Buscar código válido
+        const codigoValido = await db.query(
+            `SELECT * FROM email_verification_codes 
+             WHERE email = $1 AND codigo = $2 AND usado = FALSE AND fecha_expiracion > NOW()`,
+            [email, codigo]
+        );
+        
+        if (codigoValido.rows.length === 0) {
+            return res.status(400).json({ error: 'Código inválido o expirado' });
+        }
+        
+        // Marcar código como usado
+        await db.query(
+            'UPDATE email_verification_codes SET usado = TRUE WHERE email = $1 AND codigo = $2',
+            [email, codigo]
+        );
+        
+        // Marcar email como verificado en la tabla usuario
+        await db.query(
+            'UPDATE usuario SET email_verificado = TRUE WHERE email = $1',
+            [email]
+        );
+        
+        // Obtener datos del usuario para generar token
+        const user = await db.query(
+            'SELECT id_usuario, username, email, nombre, apellido FROM usuario WHERE email = $1',
+            [email]
+        );
+        
+        if (user.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        
+        const userData = {
+            id: user.rows[0].id_usuario,
+            username: user.rows[0].username,
+            nombre: user.rows[0].nombre,
+            apellido: user.rows[0].apellido,
+            email: user.rows[0].email
+        };
+        
+        // Generar token JWT ahora que el email está verificado
+        const payload = { user: userData };
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
+            if (err) {
+                logger.error('Error al generar token JWT', err);
+                return res.status(500).json({ error: 'Error al generar token' });
+            }
+            
+            res.json({
+                message: 'Email verificado exitosamente. Tu cuenta ha sido activada.',
+                token,
+                user: userData
+            });
+        });
+        
+    } catch (err) {
+        logger.error('Error al verificar email', err);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+};
+
+// Reenviar código de verificación
+exports.reenviarCodigoVerificacion = async (req, res) => {
+    const { email } = req.body;
+    
+    try {
+        if (!email) {
+            return res.status(400).json({ error: 'El correo electrónico es requerido' });
+        }
+        
+        // Verificar que el usuario existe
+        const user = await db.query(
+            'SELECT id_usuario, email, nombre, username FROM usuario WHERE email = $1',
+            [email]
+        );
+        
+        if (user.rows.length === 0) {
+            // Por seguridad, no revelar si el email existe
+            return res.json({ 
+                message: 'Si el correo existe, se enviará un nuevo código de verificación'
+            });
+        }
+        
+        // Verificar si el email ya está verificado
+        if (user.rows[0].email_verificado) {
+            return res.status(400).json({ error: 'Este correo electrónico ya está verificado' });
+        }
+        
+        const usuario = user.rows[0];
+        
+        // Generar nuevo código
+        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Crear tabla si no existe
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS email_verification_codes (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(100) NOT NULL,
+                codigo VARCHAR(6) NOT NULL,
+                fecha_creacion TIMESTAMP DEFAULT NOW(),
+                fecha_expiracion TIMESTAMP DEFAULT (NOW() + INTERVAL '24 hours'),
+                usado BOOLEAN DEFAULT FALSE
+            )
+        `);
+        
+        // Eliminar códigos anteriores para este email
+        await db.query('DELETE FROM email_verification_codes WHERE email = $1', [email]);
+        
+        // Guardar nuevo código
+        await db.query(
+            'INSERT INTO email_verification_codes (email, codigo) VALUES ($1, $2)',
+            [email, codigoVerificacion]
+        );
+        
+        // Enviar correo
+        const emailEnviado = await sendVerificationEmail(
+            email,
+            usuario.username,
+            usuario.nombre || usuario.username,
+            codigoVerificacion
+        );
+        
+        if (!emailEnviado) {
+            logger.warn('No se pudo enviar el correo de verificación. Mostrando código en consola.', { email });
+            logger.info(`CÓDIGO DE VERIFICACIÓN PARA ${email}: ${codigoVerificacion}`);
+        }
+        
+        res.json({ 
+            message: 'Si el correo existe, se enviará un nuevo código de verificación',
+            // En desarrollo, también devolver el código
+            ...(process.env.NODE_ENV === 'development' && { codigoVerificacion: codigoVerificacion })
+        });
+        
+    } catch (err) {
+        logger.error('Error al reenviar código de verificación', err);
         res.status(500).json({ error: 'Error del servidor' });
     }
 };

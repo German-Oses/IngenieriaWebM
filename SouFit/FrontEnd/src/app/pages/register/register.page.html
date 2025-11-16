@@ -61,9 +61,9 @@
 
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
     <ion-label position="floating" style="font-family: Inter; font-size: 14px; font-weight: 400; color: #555;">
-      Fecha de nacimiento
+      Fecha de nacimiento <span style="color: red;">*</span>
     </ion-label>
-    <ion-input type="date" [(ngModel)]="fecha_nacimiento"></ion-input>
+    <ion-input type="date" [(ngModel)]="fecha_nacimiento" required></ion-input>
   </ion-item>
 
   <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">

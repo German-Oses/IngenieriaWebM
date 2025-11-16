@@ -78,19 +78,9 @@
               <div class="post perfil-header" *ngIf="!editando">
                 <div class="perfil-contenido">
 
-                  <ion-avatar class="perfil-avatar" *ngIf="!editando">
+                  <ion-avatar class="perfil-avatar">
                     <img [src]="obtenerUrlArchivo(userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
                   </ion-avatar>
-                  
-                  <div class="perfil-avatar-editar" *ngIf="editando">
-                    <ion-avatar class="perfil-avatar">
-                      <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
-                    </ion-avatar>
-                    <button class="btn-cambiar-avatar" (click)="cambiarAvatar()">
-                      <ion-icon name="camera-outline"></ion-icon>
-                      Cambiar foto
-                    </button>
-                  </div>
 
                   <div class="perfil-info">
 
@@ -144,20 +134,24 @@
 
                 <div class="post-contenido">
 
+                  <!-- Avatar con botón de cambiar -->
+                  <div class="perfil-avatar-editar">
+                    <ion-avatar class="perfil-avatar">
+                      <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+                    </ion-avatar>
+                    <button class="btn-cambiar-avatar" (click)="cambiarAvatar()">
+                      <ion-icon name="camera-outline"></ion-icon>
+                      Cambiar foto
+                    </button>
+                  </div>
+
                   <ion-input [(ngModel)]="perfilEditado.nombre" placeholder="Nombre" class="input-editar"></ion-input>
 
                   <ion-input [(ngModel)]="perfilEditado.apellido" placeholder="Apellido" class="input-editar"></ion-input>
 
                   <ion-input [(ngModel)]="perfilEditado.username" placeholder="Username" class="input-editar"></ion-input>
 
-                  <ion-input [(ngModel)]="perfilEditado.email" type="email" placeholder="Email" class="input-editar"></ion-input>
-
                   <ion-textarea [(ngModel)]="perfilEditado.bio" placeholder="Biografía" rows="3" class="input-editar textarea-editar"></ion-textarea>
-
-                  <ion-input [(ngModel)]="perfilEditado.avatar" placeholder="URL de avatar (opcional)" class="input-editar"></ion-input>
-                  <p style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 16px;">
-                    O usa el botón "Cambiar foto" arriba para subir una imagen
-                  </p>
 
                   <ion-input type="date" [(ngModel)]="perfilEditado.fecha_nacimiento" placeholder="Fecha de nacimiento" class="input-editar"></ion-input>
 

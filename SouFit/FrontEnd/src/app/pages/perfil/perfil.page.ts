@@ -120,7 +120,6 @@ export class PerfilPage {
           nombre: data.nombre || '',
           apellido: data.apellido || '',
           username: data.username || '',
-          email: data.email || '',
           bio: data.bio || '',
           avatar: data.avatar || '',
           fecha_nacimiento: data.fecha_nacimiento || '',
@@ -200,7 +199,6 @@ export class PerfilPage {
         nombre: this.userProfile.nombre || '',
         apellido: this.userProfile.apellido || '',
         username: this.userProfile.username || '',
-        email: this.userProfile.email || '',
         bio: this.userProfile.bio || '',
         avatar: this.userProfile.avatar || '',
         fecha_nacimiento: this.userProfile.fecha_nacimiento || '',
@@ -217,6 +215,7 @@ export class PerfilPage {
 
   guardarPerfil() {
     // Solo enviar campos que realmente tienen valores (no vacíos)
+    // NO se permite cambiar el email
     const datosActualizar: any = {};
     
     if (this.perfilEditado.nombre && this.perfilEditado.nombre.trim()) {
@@ -227,9 +226,6 @@ export class PerfilPage {
     }
     if (this.perfilEditado.username && this.perfilEditado.username.trim()) {
       datosActualizar.username = this.perfilEditado.username.trim();
-    }
-    if (this.perfilEditado.email && this.perfilEditado.email.trim()) {
-      datosActualizar.email = this.perfilEditado.email.trim();
     }
     // Bio puede ser vacío (para borrarlo)
     if (this.perfilEditado.bio !== undefined) {

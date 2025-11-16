@@ -75,6 +75,12 @@ export class RegistroPage implements OnInit {
       this.presentAlert('Error', 'Debes seleccionar región y comuna.');
       return;
     }
+    
+    // Validar que fecha de nacimiento sea obligatoria
+    if (!this.fecha_nacimiento || !this.fecha_nacimiento.trim()) {
+      this.presentAlert('Error', 'La fecha de nacimiento es obligatoria.');
+      return;
+    }
 
     const userData: any = {
       nombre: this.nombre.trim(),
@@ -82,26 +88,20 @@ export class RegistroPage implements OnInit {
       username: this.username.trim(),
       email: this.email,
       password: this.password,
+      fecha_nacimiento: this.fecha_nacimiento.trim(),
       id_region: this.id_region,
       id_comuna: this.id_comuna
     };
-    
-    // Agregar fecha de nacimiento si está presente
-    if (this.fecha_nacimiento && this.fecha_nacimiento.trim()) {
-      userData.fecha_nacimiento = this.fecha_nacimiento.trim();
-    }
 
     this.authService.register(userData).subscribe({
       next: (response) => {
-        // Guardar el usuario en el storage
-        if (response.user) {
-          this.authService.saveUser(response.user);
-        }
-        this.presentAlert('¡Éxito!', 'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.');
-        this.router.navigate(['/login']);
+        // Navegar a la página de verificación de email con el email
+        this.router.navigate(['/verificar-email'], { 
+          queryParams: { email: response.email || this.email } 
+        });
       },
       error: (err) => {
-        const errorMsg = err?.error?.msg || 'No se pudo completar el registro.';
+        const errorMsg = err?.error?.msg || err?.error?.errors?.[0] || 'No se pudo completar el registro.';
         this.presentAlert('Error de Registro', errorMsg);
       }
     });

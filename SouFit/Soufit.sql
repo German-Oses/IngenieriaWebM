@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     fecha_nacimiento DATE,
     id_region INT REFERENCES region(id_region),
     id_comuna INT REFERENCES comuna(id_comuna),
+    email_verificado BOOLEAN DEFAULT FALSE,
     fecha_registro TIMESTAMP DEFAULT NOW()
 );
 
@@ -255,6 +256,21 @@ CREATE TABLE IF NOT EXISTS ejercicio_guardado (
 -- Índices en usuario
 CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
 CREATE INDEX IF NOT EXISTS idx_usuario_username ON usuario(username);
+CREATE INDEX IF NOT EXISTS idx_usuario_email_verificado ON usuario(email_verificado);
+
+-- Tabla para códigos de verificación de email
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+    codigo VARCHAR(6) NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_expiracion TIMESTAMP DEFAULT (NOW() + INTERVAL '24 hours'),
+    usado BOOLEAN DEFAULT FALSE
+);
+
+-- Índices para códigos de verificación
+CREATE INDEX IF NOT EXISTS idx_email_verification_email ON email_verification_codes(email);
+CREATE INDEX IF NOT EXISTS idx_email_verification_codigo ON email_verification_codes(codigo);
 
 -- Índices en seguimiento
 CREATE INDEX IF NOT EXISTS idx_seguimiento_seguidor ON seguimiento(id_seguidor);

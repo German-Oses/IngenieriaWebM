@@ -1,0 +1,123 @@
+.verificar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 20px;
+}
+
+ion-card {
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.icon-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  
+  ion-icon {
+    color: var(--ion-color-primary);
+    font-size: 64px;
+  }
+  
+  &.exito ion-icon {
+    color: var(--ion-color-success);
+  }
+}
+
+ion-card-title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.mensaje {
+  text-align: center;
+  color: var(--ion-color-medium);
+  margin-bottom: 16px;
+  line-height: 1.6;
+  
+  strong {
+    color: var(--ion-color-dark);
+  }
+}
+
+.instrucciones {
+  text-align: center;
+  color: var(--ion-color-medium);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.codigo-item {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  
+  ion-input {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 8px;
+    --padding-start: 16px;
+    --padding-end: 16px;
+  }
+}
+
+.btn-verificar {
+  margin-bottom: 24px;
+  --border-radius: 8px;
+  height: 48px;
+  font-weight: 600;
+}
+
+.reenviar-container {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.no-recibiste {
+  color: var(--ion-color-medium);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.btn-reenviar {
+  --color: var(--ion-color-primary);
+  margin: 0;
+}
+
+.btn-volver {
+  --color: var(--ion-color-medium);
+  margin-top: 16px;
+}
+
+.card-exito {
+  background: linear-gradient(135deg, rgba(56, 128, 255, 0.1) 0%, rgba(49, 113, 224, 0.1) 100%);
+}
+
+.mensaje-exito {
+  text-align: center;
+  color: var(--ion-color-success);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Modo oscuro */
+.dark {
+  .mensaje strong {
+    color: var(--ion-color-light);
+  }
+  
+  .instrucciones,
+  .no-recibiste {
+    color: var(--ion-color-step-400);
+  }
+  
+  .card-exito {
+    background: linear-gradient(135deg, rgba(56, 128, 255, 0.2) 0%, rgba(49, 113, 224, 0.2) 100%);
+  }
+}
+

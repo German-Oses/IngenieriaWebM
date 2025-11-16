@@ -1,17 +1,21 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "SouFit Backend API",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
     "start": "node index.js"
   },
-  "keywords": [],
+  "keywords": ["fitness", "social", "api"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "dependencies": {
     "axios": "^1.6.0",
     "bcryptjs": "^3.0.2",
@@ -21,6 +25,7 @@
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "nodemailer": "^6.9.8",
     "pg": "^8.16.3",
     "socket.io": "^4.8.1"
   },

@@ -8,6 +8,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const pool = require('./config/db');
 const { generalLimiter, sanitizeInput, securityHeaders } = require('./middleware/security');
+const { errorHandler } = require('./middleware/errorHandler');
+const logger = require('./utils/logger');
 
 const app = express();
 
@@ -21,15 +23,22 @@ const corsOptions = {
             'https://soufit.vercel.app',
             'https://ingenieria-web-m.vercel.app',
             process.env.FRONTEND_URL,
-            // Permitir todos los dominios de Vercel (preview deployments)
+            // Permitir todos los dominios de Vercel (producción y previews)
             /^https:\/\/.*\.vercel\.app$/,
-            // Permitir todos los dominios de Render
+            /^https:\/\/.*\.vercel\.dev$/,
+            // Permitir todos los dominios de Render (por si acaso)
             /^https:\/\/.*\.render\.com$/
         ].filter(Boolean);
         
-        // Permitir peticiones sin origin (ej: Postman, mobile apps)
-        if (!origin) {
+        // En desarrollo, permitir sin origin (Postman, mobile apps, etc.)
+        if (!origin && process.env.NODE_ENV !== 'production') {
             return callback(null, true);
+        }
+        
+        // En producción, si no hay origin, rechazar (más seguro)
+        if (!origin) {
+            logger.warn('Petición sin origin rechazada en producción');
+            return callback(new Error('Origin requerido en producción'), false);
         }
         
         // Verificar si el origin está en la lista o coincide con regex
@@ -45,7 +54,8 @@ const corsOptions = {
         if (isAllowed) {
             callback(null, true);
         } else {
-            callback(new Error('No permitido por CORS'));
+            logger.warn('Intento de acceso desde origen no permitido', { origin });
+            callback(new Error('No permitido por CORS'), false);
         }
     },
     credentials: true,
@@ -80,12 +90,21 @@ const io = new Server(server, {
             'https://soufit.vercel.app',
             'https://ingenieria-web-m.vercel.app',
             process.env.FRONTEND_URL,
+            // Permitir todos los dominios de Vercel (producción y previews)
             /^https:\/\/.*\.vercel\.app$/,
+            /^https:\/\/.*\.vercel\.dev$/,
+            // Permitir todos los dominios de Render (por si acaso)
             /^https:\/\/.*\.render\.com$/
         ].filter(Boolean);
         
-        if (!origin) {
+        // En desarrollo, permitir sin origin
+        if (!origin && process.env.NODE_ENV !== 'production') {
             return callback(null, true);
+        }
+        
+        // En producción, requerir origin válido
+        if (!origin) {
+            return callback(new Error('Origin requerido en producción'), false);
         }
         
         const isAllowed = allowedOrigins.some(allowed => {
@@ -100,7 +119,8 @@ const io = new Server(server, {
         if (isAllowed) {
             callback(null, true);
         } else {
-            callback(new Error('No permitido por CORS'));
+            logger.warn('Intento de conexión Socket.io desde origen no permitido', { origin });
+            callback(new Error('No permitido por CORS'), false);
         }
     },
     methods: ["GET", "POST"],
@@ -109,11 +129,11 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) =>{
-    console.log('Usuario conectado: ' + socket.id);
+    logger.info('Usuario conectado', { socketId: socket.id });
 
     socket.on('entrar_chat', (id_usuario) => {
         socket.join('usuario_' + id_usuario);
-        console.log(`El usuario ${id_usuario} ha entrado a su chat.`);
+        logger.debug(`Usuario ${id_usuario} ha entrado a su chat`, { socketId: socket.id });
     });
 
     socket.on('enviar_mensaje', async (data) => {
@@ -129,13 +149,18 @@ io.on('connection', (socket) =>{
             
             // También enviar al remitente para actualización inmediata
             io.to('usuario_' + id_remitente).emit('nuevo_mensaje', nuevoMensaje.rows[0]);
+            
+            logger.debug('Mensaje enviado', { 
+                remitente: id_remitente, 
+                destinatario: id_destinatario 
+            });
         } catch (err) {
-            console.error('Error al enviar mensaje:', err);
+            logger.error('Error al enviar mensaje por Socket.io', err);
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('Usuario desconectado: ' + socket.id);
+        logger.info('Usuario desconectado', { socketId: socket.id });
     });
 
 });
@@ -159,19 +184,83 @@ app.use('/api/posts', require('./routes/posts'));
 app.use('/api/notificaciones', require('./routes/notificaciones'));
 app.use('/api/external', require('./routes/external'));
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'ok', 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+// Health check endpoint mejorado
+app.get('/api/health', async (req, res) => {
+    try {
+        // Verificar conexión a la base de datos
+        await pool.query('SELECT 1');
+        
+        res.json({ 
+            status: 'ok', 
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            database: 'connected',
+            environment: process.env.NODE_ENV || 'development'
+        });
+    } catch (err) {
+        logger.error('Health check falló', err);
+        res.status(503).json({
+            status: 'error',
+            timestamp: new Date().toISOString(),
+            database: 'disconnected',
+            error: 'Database connection failed'
+        });
+    }
+});
+
+// Middleware de manejo de errores (debe ir al final, antes de iniciar el servidor)
+app.use(errorHandler);
+
+// Manejo de rutas no encontradas
+app.use('*', (req, res) => {
+    res.status(404).json({
+        error: 'Ruta no encontrada',
+        path: req.originalUrl
     });
 });
 
 
 
 
+// Render.com requiere PORT=10000, pero también acepta la variable PORT del entorno
 const PORT = process.env.PORT || 3000;
+
+// Manejo de errores no capturados
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection', { reason, promise });
+});
+
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception', error);
+    process.exit(1);
+});
+
+// Graceful shutdown
+const gracefulShutdown = (signal) => {
+    logger.info(`Recibida señal ${signal}, cerrando servidor...`);
+    
+    server.close(() => {
+        logger.info('Servidor HTTP cerrado');
+        
+        pool.end(() => {
+            logger.info('Pool de base de datos cerrado');
+            process.exit(0);
+        });
+    });
+    
+    // Forzar cierre después de 10 segundos
+    setTimeout(() => {
+        logger.error('Forzando cierre del servidor');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 server.listen(PORT, () => {
-    console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+    logger.info(`🚀 Servidor backend corriendo en http://localhost:${PORT}`, {
+        environment: process.env.NODE_ENV || 'development',
+        port: PORT
+    });
 });
