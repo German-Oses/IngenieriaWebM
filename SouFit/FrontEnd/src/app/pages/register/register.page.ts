@@ -378,8 +378,9 @@ export class RegistroPage implements OnInit {
       try {
         console.log('Iniciando petición HTTP de registro...');
         console.log('URL completa:', `${this.authService['apiUrl']}/register`);
+        console.log('Datos enviados:', { ...userData, password: '***' });
         
-        const subscription = this.authService.register(userData).subscribe({
+        this.authService.register(userData).subscribe({
           next: async (response) => {
             console.log('✅ Respuesta del registro recibida:', response);
             
@@ -394,20 +395,39 @@ export class RegistroPage implements OnInit {
             
             // Verificar que tenemos token y usuario
             if (response && response.token) {
-              console.log('✅ Token recibido, redirigiendo...');
-              await this.presentToast('¡Cuenta creada exitosamente!');
+              console.log('✅ Token recibido, redirigiendo al home...');
               
-              // Pequeño delay para que el toast se muestre
+              // Cerrar loading si existe
+              try {
+                if (loading) {
+                  await loading.dismiss();
+                }
+              } catch (e) {
+                console.error('Error al cerrar loading:', e);
+              }
+              
+              // Resetear estado inmediatamente
+              this.creando = false;
+              
+              // Mostrar toast (no esperar)
+              this.presentToast('¡Cuenta creada exitosamente!').catch(() => {});
+              
+              // Redirigir inmediatamente sin esperar
               setTimeout(() => {
                 this.router.navigate(['/home'], { replaceUrl: true });
-              }, 500);
+              }, 100);
             } else {
               console.error('❌ Respuesta sin token:', response);
-              await this.presentAlert('Error', 'No se recibió el token de autenticación. Por favor, intenta iniciar sesión.');
               this.creando = false;
+              try {
+                if (loading) {
+                  await loading.dismiss();
+                }
+              } catch (e) {
+                console.error('Error al cerrar loading:', e);
+              }
+              await this.presentAlert('Error', 'No se recibió el token de autenticación. Por favor, intenta iniciar sesión.');
             }
-            
-            subscription.unsubscribe();
           },
           error: async (err) => {
             console.error('❌ Error en registro:', err);
@@ -462,10 +482,8 @@ export class RegistroPage implements OnInit {
             }
             
             console.error('Mostrando alert de error:', errorMsg);
-            await this.presentAlert('Error de Registro', errorMsg);
-            
             this.creando = false;
-            subscription.unsubscribe();
+            await this.presentAlert('Error de Registro', errorMsg);
           },
           complete: () => {
             console.log('Observable de registro completado');

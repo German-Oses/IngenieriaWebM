@@ -271,7 +271,33 @@ app.use('/api/notas', require('./routes/notas'));
 app.use('/api/calendario', require('./routes/calendario'));
 app.use('/api/external', require('./routes/external'));
 
-// Health check endpoint mejorado
+// Health check endpoint en la raíz (para Render.com y otros servicios de monitoreo)
+app.get('/', async (req, res) => {
+    try {
+        // Verificar conexión a la base de datos
+        await pool.query('SELECT 1');
+        
+        res.json({ 
+            status: 'ok', 
+            service: 'SouFit API',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            database: 'connected',
+            environment: process.env.NODE_ENV || 'development'
+        });
+    } catch (err) {
+        logger.error('Health check falló', err);
+        res.status(503).json({
+            status: 'error',
+            service: 'SouFit API',
+            timestamp: new Date().toISOString(),
+            database: 'disconnected',
+            error: 'Database connection failed'
+        });
+    }
+});
+
+// Health check endpoint mejorado en /api/health
 app.get('/api/health', async (req, res) => {
     try {
         // Verificar conexión a la base de datos
@@ -300,7 +326,13 @@ app.use(errorHandler);
 
 // Manejo de rutas no encontradas (debe ir al final, después de todas las rutas)
 // En Express 5, no se puede usar '*' directamente, se usa sin ruta para capturar todo
+// Excluir métodos HEAD y GET en la raíz para health checks
 app.use((req, res) => {
+    // No loggear health checks de Render (HEAD y GET en /)
+    if ((req.method === 'HEAD' || req.method === 'GET') && req.originalUrl === '/') {
+        return res.status(200).json({ status: 'ok', service: 'SouFit API' });
+    }
+    
     logger.warn('⚠️ Ruta no encontrada', { 
         method: req.method, 
         path: req.originalUrl,
