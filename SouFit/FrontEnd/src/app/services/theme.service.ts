@@ -32,7 +32,15 @@ export class ThemeService {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     const shouldUseDark = theme === 'dark' || (theme === 'system' && prefersDark.matches);
     
+    // Aplicar clase dark al elemento html (Ionic lo requiere así)
+    document.documentElement.classList.toggle('dark', shouldUseDark);
     document.body.classList.toggle('dark', shouldUseDark);
+    
+    // También aplicar al ion-app si existe
+    const ionApp = document.querySelector('ion-app');
+    if (ionApp) {
+      ionApp.classList.toggle('dark', shouldUseDark);
+    }
   }
 
   getTheme(): Theme {

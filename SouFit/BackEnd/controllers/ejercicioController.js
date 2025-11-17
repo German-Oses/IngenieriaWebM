@@ -3,7 +3,7 @@ const db = require('../config/db');
 // Obtener todos los ejercicios (banco de ejercicios)
 exports.getEjercicios = async (req, res) => {
     try {
-        const { tipo, grupo_muscular, dificultad, busqueda, limit = 50, offset = 0 } = req.query;
+        const { tipo, grupo_muscular, dificultad, busqueda, nombre, duracion_max, equipamiento, ordenar_por = 'fecha', limit = 50, offset = 0 } = req.query;
         
         let query = `
             SELECT 
@@ -50,13 +50,38 @@ exports.getEjercicios = async (req, res) => {
             paramCount++;
         }
         
-        if (busqueda) {
+        if (busqueda || nombre) {
+            const termino = busqueda || nombre;
             query += ` AND (LOWER(e.nombre_ejercicio) LIKE LOWER($${paramCount}) OR LOWER(e.descripcion) LIKE LOWER($${paramCount}))`;
-            params.push(`%${busqueda}%`);
+            params.push(`%${termino}%`);
             paramCount++;
         }
         
-        query += ` GROUP BY e.id_ejercicio, u.username ORDER BY e.fecha_publicacion DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        if (duracion_max) {
+            query += ` AND e.duracion_minutos <= $${paramCount}`;
+            params.push(parseInt(duracion_max));
+            paramCount++;
+        }
+        
+        if (equipamiento) {
+            query += ` AND (LOWER(e.equipamiento) LIKE LOWER($${paramCount}) OR e.equipamiento IS NULL)`;
+            params.push(`%${equipamiento}%`);
+            paramCount++;
+        }
+        
+        // Ordenamiento
+        let orderBy = 'e.fecha_publicacion DESC';
+        if (ordenar_por === 'nombre') {
+            orderBy = 'e.nombre_ejercicio ASC';
+        } else if (ordenar_por === 'duracion') {
+            orderBy = 'e.duracion_minutos ASC';
+        } else if (ordenar_por === 'likes') {
+            orderBy = 'total_likes DESC';
+        } else if (ordenar_por === 'guardados') {
+            orderBy = 'total_guardados DESC';
+        }
+        
+        query += ` GROUP BY e.id_ejercicio, u.username ORDER BY ${orderBy} LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
         params.push(parseInt(limit), parseInt(offset));
         
         const result = await db.query(query, params);

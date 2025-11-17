@@ -2,33 +2,112 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { asyncHandler } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
 
 // FUNCIÓN DE REGISTRO 
 exports.register = async (req, res) => {
-    
-    const { username, email, password, nombre, apellido, id_region, id_comuna } = req.body;
-
     try {
-     
-        const emailExists = await db.query('SELECT * FROM usuario WHERE email = $1', [email]);
+        const { username, email, password, nombre, apellido, fecha_nacimiento, id_region, id_comuna } = req.body;
+        
+        logger.info('📝 Intento de registro recibido', { 
+            email, 
+            username, 
+            hasPassword: !!password,
+            hasNombre: !!nombre,
+            hasApellido: !!apellido,
+            hasFechaNacimiento: !!fecha_nacimiento,
+            hasRegion: !!id_region,
+            hasComuna: !!id_comuna,
+            bodyKeys: Object.keys(req.body)
+        });
+        
+        // Validaciones básicas
+        if (!username || !username.trim()) {
+            return res.status(400).json({ msg: 'El nombre de usuario es obligatorio' });
+        }
+        
+        if (!email || !email.trim()) {
+            return res.status(400).json({ msg: 'El correo electrónico es obligatorio' });
+        }
+        
+        if (!password || password.length < 6) {
+            return res.status(400).json({ msg: 'La contraseña debe tener al menos 6 caracteres' });
+        }
+        
+        if (!nombre || !nombre.trim()) {
+            return res.status(400).json({ msg: 'El nombre es obligatorio' });
+        }
+        
+        if (!apellido || !apellido.trim()) {
+            return res.status(400).json({ msg: 'El apellido es obligatorio' });
+        }
+        
+        // Validar que fecha_nacimiento sea obligatoria
+        if (!fecha_nacimiento || (typeof fecha_nacimiento === 'string' && !fecha_nacimiento.trim())) {
+            return res.status(400).json({ msg: 'La fecha de nacimiento es obligatoria' });
+        }
+        
+        // Validar formato de fecha (YYYY-MM-DD)
+        const fechaStr = String(fecha_nacimiento).trim();
+        const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!fechaRegex.test(fechaStr)) {
+            return res.status(400).json({ msg: 'Formato de fecha inválido. Use YYYY-MM-DD' });
+        }
+        
+        // Validar que la fecha no sea futura
+        const fechaNac = new Date(fechaStr);
+        const hoy = new Date();
+        hoy.setHours(23, 59, 59, 999); // Permitir hasta el final del día de hoy
+        if (fechaNac > hoy) {
+            return res.status(400).json({ msg: 'La fecha de nacimiento no puede ser futura' });
+        }
+        
+        // Validar edad mínima (13 años)
+        const edadMinima = new Date();
+        edadMinima.setFullYear(edadMinima.getFullYear() - 13);
+        if (fechaNac > edadMinima) {
+            return res.status(400).json({ msg: 'Debes tener al menos 13 años para registrarte' });
+        }
+        
+        // Validar región y comuna
+        if (!id_region || !id_comuna) {
+            return res.status(400).json({ msg: 'Debes seleccionar región y comuna' });
+        }
+
+        // Verificar si el email ya está registrado
+        const emailExists = await db.query('SELECT id_usuario FROM usuario WHERE email = $1', [email]);
         if (emailExists.rows.length > 0) {
             return res.status(400).json({ msg: 'El correo electrónico ya está registrado' });
         }
         
-        const usernameExists = await db.query('SELECT * FROM usuario WHERE username = $1', [username]);
+        // Verificar si el username ya está en uso
+        const usernameExists = await db.query('SELECT id_usuario FROM usuario WHERE username = $1', [username]);
         if (usernameExists.rows.length > 0) {
             return res.status(400).json({ msg: 'El nombre de usuario ya está en uso' });
         }
 
+        // Hashear contraseña
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt); 
-
-
+        const hashedPassword = await bcrypt.hash(password, salt);
+        
+        logger.info('Creando usuario en la base de datos...', { username, email });
+        
+        // CREAR LA CUENTA DIRECTAMENTE (sin verificación de email)
         const newUser = await db.query(
-            'INSERT INTO usuario (username, email, password_hash, nombre, apellido, id_region, id_comuna) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_usuario, username, nombre, apellido, email',
-            [username, email, hashedPassword, nombre, apellido, id_region, id_comuna]
+            `INSERT INTO usuario (username, email, password_hash, nombre, apellido, fecha_nacimiento, id_region, id_comuna, email_verificado) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE) 
+             RETURNING id_usuario, username, nombre, apellido, email`,
+            [username.trim(), email.trim(), hashedPassword, nombre.trim(), apellido.trim(), fechaStr, parseInt(id_region), parseInt(id_comuna)]
         );
-
+        
+        if (!newUser.rows || newUser.rows.length === 0) {
+            logger.error('Error: No se creó el usuario en la base de datos');
+            return res.status(500).json({ error: 'Error al crear el usuario en la base de datos' });
+        }
+        
+        logger.info('✅ Usuario creado exitosamente', { id_usuario: newUser.rows[0].id_usuario });
+        
         const userData = {
             id: newUser.rows[0].id_usuario,
             username: newUser.rows[0].username,
@@ -36,19 +115,77 @@ exports.register = async (req, res) => {
             apellido: newUser.rows[0].apellido,
             email: newUser.rows[0].email
         };
-
+        
+        // Generar token JWT inmediatamente
         const payload = { user: userData };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
-            if (err) throw err;
+            if (err) {
+                logger.error('Error al generar token JWT en registro', err);
+                return res.status(500).json({ error: 'Error al generar token' });
+            }
+            
+            logger.info('✅ Token generado, enviando respuesta al cliente');
+            
+            // Devolver éxito con token para login automático
             res.status(201).json({ 
+                message: 'Cuenta creada exitosamente',
                 token,
                 user: userData
             });
         });
 
     } catch (error) {
-        console.error(error.message);
-        res.status(500).send('Error en el servidor');
+        logger.error('Error en registro', { 
+            error: error.message, 
+            stack: error.stack,
+            code: error.code,
+            detail: error.detail
+        });
+        
+        // Mensaje de error más específico
+        let errorMessage = 'Error en el servidor';
+        if (error.code === '23505') { // Violación de constraint único
+            if (error.detail && error.detail.includes('email')) {
+                errorMessage = 'El correo electrónico ya está registrado';
+            } else if (error.detail && error.detail.includes('username')) {
+                errorMessage = 'El nombre de usuario ya está en uso';
+            }
+        } else if (error.code === '23503') { // Violación de foreign key
+            errorMessage = 'La región o comuna seleccionada no es válida';
+        }
+        
+        res.status(500).json({ error: errorMessage, details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    }
+};
+
+// Verificar disponibilidad de username
+exports.checkUsername = async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        if (!username || !username.trim()) {
+            return res.status(400).json({ available: false, message: 'El nombre de usuario es requerido' });
+        }
+        
+        // Validar formato de username (solo letras, números, guiones y guiones bajos, 3-20 caracteres)
+        const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+        if (!usernameRegex.test(username.trim())) {
+            return res.status(400).json({ 
+                available: false, 
+                message: 'El nombre de usuario debe tener entre 3 y 20 caracteres y solo puede contener letras, números, guiones y guiones bajos' 
+            });
+        }
+        
+        const usernameExists = await db.query('SELECT id_usuario FROM usuario WHERE LOWER(username) = LOWER($1)', [username.trim()]);
+        
+        if (usernameExists.rows.length > 0) {
+            return res.json({ available: false, message: 'Este nombre de usuario ya está en uso' });
+        }
+        
+        res.json({ available: true, message: 'Nombre de usuario disponible' });
+    } catch (error) {
+        logger.error('Error al verificar username', error);
+        res.status(500).json({ available: false, message: 'Error al verificar disponibilidad' });
     }
 };
 
@@ -56,18 +193,19 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
+        const user = await db.query(
+            'SELECT id_usuario, username, email, password_hash, nombre, apellido FROM usuario WHERE email = $1', 
+            [email]
+        );
         
-        
-            const user = await db.query('SELECT id_usuario, username, email, password_hash, nombre, apellido FROM usuario WHERE email = $1', [email]);
-            if (user.rows.length === 0) {
-                return res.status(400).json({ msg: 'Credenciales inválidas' }); // <--- PROBABLEMENTE ESTO
-            }
+        if (user.rows.length === 0) {
+            return res.status(400).json({ msg: 'Credenciales inválidas' });
+        }
 
-            
-            const isMatch = await bcrypt.compare(password, user.rows[0].password_hash);
-            if (!isMatch) {
-                return res.status(400).json({ msg: 'Credenciales inválidas' }); // <--- O ESTO
-            }
+        const isMatch = await bcrypt.compare(password, user.rows[0].password_hash);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Credenciales inválidas' });
+        }
 
       
         const userData = {
@@ -89,8 +227,8 @@ exports.login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error.message);
-        res.status(500).send('Error en el servidor');
+        logger.error('Error en registro', error);
+        res.status(500).json({ error: 'Error en el servidor' });
     }
 };
 
@@ -304,131 +442,6 @@ exports.changePassword = async (req, res) => {
         res.json({ message: 'Contraseña actualizada correctamente' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ error: 'Error del servidor' });
-    }
-};
-
-// Solicitar código de recuperación de contraseña
-exports.solicitarRecuperacionPassword = async (req, res) => {
-    const { email } = req.body;
-    
-    try {
-        if (!email) {
-            return res.status(400).json({ error: 'El correo electrónico es requerido' });
-        }
-        
-        // Verificar que el usuario existe
-        const user = await db.query('SELECT id_usuario, email, nombre FROM usuario WHERE email = $1', [email]);
-        
-        if (user.rows.length === 0) {
-            // Por seguridad, no revelar si el email existe o no
-            return res.json({ 
-                message: 'Si el correo existe, se enviará un código de recuperación',
-                // En producción, siempre devolver este mensaje
-            });
-        }
-        
-        // Generar código de 6 dígitos
-        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Guardar código en base de datos (crear tabla si no existe)
-        // Por ahora, usar una tabla temporal o almacenar en memoria (no recomendado para producción)
-        // En producción, crear tabla: password_reset_codes (email, codigo, fecha_expiracion)
-        
-        // Crear tabla si no existe
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS password_reset_codes (
-                id SERIAL PRIMARY KEY,
-                email VARCHAR(100) NOT NULL,
-                codigo VARCHAR(6) NOT NULL,
-                fecha_creacion TIMESTAMP DEFAULT NOW(),
-                fecha_expiracion TIMESTAMP DEFAULT (NOW() + INTERVAL '15 minutes'),
-                usado BOOLEAN DEFAULT FALSE
-            )
-        `);
-        
-        // Eliminar códigos expirados
-        await db.query('DELETE FROM password_reset_codes WHERE fecha_expiracion < NOW() OR usado = TRUE');
-        
-        // Guardar nuevo código
-        await db.query(
-            'INSERT INTO password_reset_codes (email, codigo) VALUES ($1, $2)',
-            [email, codigo]
-        );
-        
-        // En producción, aquí enviarías el correo con nodemailer
-        // Por ahora, solo loguear (en desarrollo)
-        console.log('========================================');
-        console.log(`CÓDIGO DE RECUPERACIÓN PARA ${email}:`);
-        console.log(`Código: ${codigo}`);
-        console.log('========================================');
-        
-        // En producción, usar nodemailer:
-        // const transporter = nodemailer.createTransport({...});
-        // await transporter.sendMail({
-        //   to: email,
-        //   subject: 'Código de recuperación - SouFit',
-        //   html: `<p>Tu código de recuperación es: <strong>${codigo}</strong></p><p>Válido por 15 minutos.</p>`
-        // });
-        
-        res.json({ 
-            message: 'Si el correo existe, se enviará un código de recuperación',
-            // En desarrollo, también devolver el código (solo para testing)
-            ...(process.env.NODE_ENV === 'development' && { codigo: codigo })
-        });
-        
-    } catch (err) {
-        console.error('Error al solicitar recuperación:', err.message);
-        res.status(500).json({ error: 'Error del servidor' });
-    }
-};
-
-// Validar código y resetear contraseña
-exports.resetearPassword = async (req, res) => {
-    const { email, codigo, nuevaPassword } = req.body;
-    
-    try {
-        if (!email || !codigo || !nuevaPassword) {
-            return res.status(400).json({ error: 'Email, código y nueva contraseña son requeridos' });
-        }
-        
-        if (nuevaPassword.length < 6) {
-            return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
-        }
-        
-        // Verificar código
-        const codigoValido = await db.query(
-            `SELECT * FROM password_reset_codes 
-             WHERE email = $1 AND codigo = $2 AND usado = FALSE AND fecha_expiracion > NOW() 
-             ORDER BY fecha_creacion DESC LIMIT 1`,
-            [email, codigo]
-        );
-        
-        if (codigoValido.rows.length === 0) {
-            return res.status(400).json({ error: 'Código inválido o expirado' });
-        }
-        
-        // Verificar que el usuario existe
-        const user = await db.query('SELECT id_usuario FROM usuario WHERE email = $1', [email]);
-        
-        if (user.rows.length === 0) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
-        
-        // Hashear nueva contraseña
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(nuevaPassword, salt);
-        
-        // Actualizar contraseña
-        await db.query('UPDATE usuario SET password_hash = $1 WHERE email = $2', [hashedPassword, email]);
-        
-        // Marcar código como usado
-        await db.query('UPDATE password_reset_codes SET usado = TRUE WHERE id = $1', [codigoValido.rows[0].id]);
-        
-        res.json({ message: 'Contraseña restablecida correctamente' });
-        
-    } catch (err) {
-        console.error('Error al resetear contraseña:', err.message);
         res.status(500).json({ error: 'Error del servidor' });
     }
 };

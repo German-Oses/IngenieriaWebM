@@ -13,7 +13,8 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { IonicStorageModule } from '@ionic/storage-angular';
 import { ServiceWorkerModule } from '@angular/service-worker';
 
-import { jwtInterceptor } from './app/interceptors/jwt-interceptor'; 
+import { jwtInterceptor } from './app/interceptors/jwt-interceptor';
+import { errorInterceptor } from './app/interceptors/error.interceptor'; 
 
 if (environment.production) {
   enableProdMode();
@@ -27,11 +28,15 @@ bootstrapApplication(AppComponent, {
     
     importProvidersFrom(
       IonicStorageModule.forRoot(),
-      ServiceWorkerModule.register('ngsw-worker.js', {
-        enabled: environment.production,
-        registrationStrategy: 'registerWhenStable:30000'
-      })
+      ...(environment.production ? [
+        ServiceWorkerModule.register('ngsw-worker.js', {
+          enabled: true,
+          registrationStrategy: 'registerWhenStable:30000'
+        })
+      ] : [])
     ), 
-    provideHttpClient(withInterceptors([jwtInterceptor])), 
+    provideHttpClient(
+      withInterceptors([jwtInterceptor, errorInterceptor])
+    ), 
   ],
 });

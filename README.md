@@ -5,17 +5,45 @@
 
 # SouFit - Plataforma Fitness Social
 
-**Prototipo**
+## 🌐 Aplicación en Producción
+
+**Frontend (Vercel):**  
+🔗 [https://soufit.vercel.app](https://soufit.vercel.app)
+
+**Backend API (Render):**  
+🔗 [https://soufit.onrender.com/api](https://soufit.onrender.com/api)
+
+**Health Check:**  
+🔗 [https://soufit.onrender.com/api/health](https://soufit.onrender.com/api/health)
+
+---
+
+**Prototipo (Figma):**  
 https://www.figma.com/proto/9t08ubjNySuxTx8rygZNhD/SouFit?node-id=105-2&t=KKxqOlVgdH00sgOZ-1
+
 ## Índice
 1. [Resumen del Proyecto](#resumen-del-proyecto)
 2. [Requerimientos](#requerimientos)
 3. [Arquitectura de la Información](#arquitectura-de-la-información)
 4. [Diseño de Prototipos](#diseño-de-prototipos)
 5. [Tecnologías Implementadas](#tecnologías-implementadas)
+6. [Configuración](#configuración)
 
 ## Resumen del Proyecto
 SouFit es una plataforma fitness social desarrollada con Ionic y Angular que permite a los usuarios gestionar sus rutinas de ejercicio, conectar con otros entusiastas del fitness y compartir su progreso. La aplicación incluye funciones de social networking específicas para el ámbito fitness.
+
+### 🆕 Funcionalidades Principales
+
+- ✅ **Registro e Inicio de Sesión**: Autenticación inmediata sin verificación de email
+- ✅ **Mensajería en Tiempo Real**: Chat con Socket.io, envío de imágenes y audio
+- ✅ **Feed Social**: Publicar ejercicios, rutinas y logros; reaccionar y comentar
+- ✅ **Sistema de Notificaciones**: Notificaciones push en tiempo real para likes, comentarios, mensajes y seguidores
+- ✅ **Búsqueda Avanzada**: Filtros por tipo, grupo muscular, dificultad, duración y equipamiento
+- ✅ **Estadísticas de Progreso**: Seguimiento de actividad, posts, rutinas y seguidores
+- ✅ **Recordatorios de Entrenamiento**: Crear recordatorios personalizados con hora y días de la semana
+- ✅ **Sistema de Favoritos**: Guardar ejercicios y rutinas como favoritos
+- ✅ **Modo Oscuro**: Toggle de tema claro/oscuro con persistencia
+- ✅ **Caché Inteligente**: Caché automático de respuestas API
 
 ---
 
@@ -118,6 +146,7 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 - **Node.js**
 - **Express**
 - **PostgreSQL**
+- **Nodemailer** (Email: MailerSend, Gmail, SMTP genérico)
 
 ### Librerías y Herramientas
 - **Ionic Components** (UI library nativa)
@@ -132,6 +161,26 @@ SouFit es una plataforma fitness social desarrollada con Ionic y Angular que per
 - **Guards** para protección de rutas
 - **Interceptors** para manejo de HTTP requests
 - **Storage nativo** para persistencia local
+
+---
+
+## Configuración
+
+### Email Service
+
+El sistema soporta múltiples proveedores de email:
+
+- **MailerSend** (Recomendado): 12,000 correos gratis/mes, sin dominio requerido
+- **Gmail**: 15,000 correos/mes, requiere contraseña de aplicación
+- **SMTP Genérico**: Cualquier proveedor SMTP
+
+**📖 Ver documentación completa:** `SouFit/BackEnd/CONFIGURACION_EMAIL.md`
+
+### Documentación Técnica
+
+Para información detallada sobre la arquitectura, API, base de datos y despliegue, consulta:
+
+**📚 [Documentación Técnica Completa](./DOCUMENTACION_TECNICA.md)**
 
 ---
 

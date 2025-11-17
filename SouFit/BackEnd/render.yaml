@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: soufit-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_POOL_MAX
+        value: 10
+      - key: DB_POOL_MIN
+        value: 2
+      - key: DB_POOL_IDLE_TIMEOUT
+        value: 30000
+      - key: DB_POOL_CONNECTION_TIMEOUT
+        value: 2000
+    healthCheckPath: /api/health
+

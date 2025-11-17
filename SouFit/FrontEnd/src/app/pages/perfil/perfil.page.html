@@ -6,6 +6,7 @@
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
     <h1>Perfil</h1>
+    <div style="width: 40px;"></div> <!-- Spacer para centrar -->
   </div>
   
   <ion-grid style="height: 100vh;">
@@ -78,19 +79,9 @@
               <div class="post perfil-header" *ngIf="!editando">
                 <div class="perfil-contenido">
 
-                  <ion-avatar class="perfil-avatar" *ngIf="!editando">
+                  <ion-avatar class="perfil-avatar">
                     <img [src]="obtenerUrlArchivo(userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
                   </ion-avatar>
-                  
-                  <div class="perfil-avatar-editar" *ngIf="editando">
-                    <ion-avatar class="perfil-avatar">
-                      <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
-                    </ion-avatar>
-                    <button class="btn-cambiar-avatar" (click)="cambiarAvatar()">
-                      <ion-icon name="camera-outline"></ion-icon>
-                      Cambiar foto
-                    </button>
-                  </div>
 
                   <div class="perfil-info">
 
@@ -120,6 +111,13 @@
                       </div>
                     </div>
 
+                    <div class="perfil-acciones">
+                      <button class="btn-estadisticas" (click)="toggleEstadisticas()">
+                        <ion-icon name="stats-chart-outline"></ion-icon>
+                        {{ mostrarEstadisticas ? 'Ocultar' : 'Ver' }} Estadísticas
+                      </button>
+                    </div>
+
                     <div class="perfil-descripcion">
                       <h3 class="perfil-nombre-completo">{{ userProfile.nombre || userProfile.username }}</h3>
 
@@ -144,20 +142,24 @@
 
                 <div class="post-contenido">
 
+                  <!-- Avatar con botón de cambiar -->
+                  <div class="perfil-avatar-editar">
+                    <ion-avatar class="perfil-avatar">
+                      <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+                    </ion-avatar>
+                    <button class="btn-cambiar-avatar" (click)="cambiarAvatar()">
+                      <ion-icon name="camera-outline"></ion-icon>
+                      Cambiar foto
+                    </button>
+                  </div>
+
                   <ion-input [(ngModel)]="perfilEditado.nombre" placeholder="Nombre" class="input-editar"></ion-input>
 
                   <ion-input [(ngModel)]="perfilEditado.apellido" placeholder="Apellido" class="input-editar"></ion-input>
 
                   <ion-input [(ngModel)]="perfilEditado.username" placeholder="Username" class="input-editar"></ion-input>
 
-                  <ion-input [(ngModel)]="perfilEditado.email" type="email" placeholder="Email" class="input-editar"></ion-input>
-
                   <ion-textarea [(ngModel)]="perfilEditado.bio" placeholder="Biografía" rows="3" class="input-editar textarea-editar"></ion-textarea>
-
-                  <ion-input [(ngModel)]="perfilEditado.avatar" placeholder="URL de avatar (opcional)" class="input-editar"></ion-input>
-                  <p style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 16px;">
-                    O usa el botón "Cambiar foto" arriba para subir una imagen
-                  </p>
 
                   <ion-input type="date" [(ngModel)]="perfilEditado.fecha_nacimiento" placeholder="Fecha de nacimiento" class="input-editar"></ion-input>
 
@@ -184,6 +186,131 @@
 
                 </div>
 
+              </div>
+
+              <!-- 🟦 ESTADÍSTICAS AVANZADAS -->
+              <div class="post estadisticas-card" *ngIf="!editando && mostrarEstadisticas">
+                <div class="post-header">
+                  <h2>
+                    <ion-icon name="stats-chart-outline"></ion-icon>
+                    Estadísticas Detalladas
+                  </h2>
+                </div>
+                <div class="post-contenido">
+                  <div *ngIf="cargandoEstadisticas" class="cargando-estadisticas">
+                    <p>Cargando estadísticas...</p>
+                  </div>
+                  
+                  <div *ngIf="!cargandoEstadisticas && estadisticas" class="estadisticas-grid">
+                    <div class="stat-card">
+                      <ion-icon name="document-text-outline"></ion-icon>
+                      <div class="stat-info">
+                        <strong>{{ estadisticas.total_posts || 0 }}</strong>
+                        <span>Posts</span>
+                      </div>
+                    </div>
+                    <div class="stat-card">
+                      <ion-icon name="barbell-outline"></ion-icon>
+                      <div class="stat-info">
+                        <strong>{{ estadisticas.total_rutinas || 0 }}</strong>
+                        <span>Rutinas</span>
+                      </div>
+                    </div>
+                    <div class="stat-card">
+                      <ion-icon name="heart-outline"></ion-icon>
+                      <div class="stat-info">
+                        <strong>{{ estadisticas.total_likes_posts || 0 }}</strong>
+                        <span>Likes</span>
+                      </div>
+                    </div>
+                    <div class="stat-card">
+                      <ion-icon name="chatbubble-outline"></ion-icon>
+                      <div class="stat-info">
+                        <strong>{{ estadisticas.total_comentarios_posts || 0 }}</strong>
+                        <span>Comentarios</span>
+                      </div>
+                    </div>
+                    <div class="stat-card">
+                      <ion-icon name="people-outline"></ion-icon>
+                      <div class="stat-info">
+                        <strong>{{ estadisticas.total_seguidores || 0 }}</strong>
+                        <span>Seguidores</span>
+                      </div>
+                    </div>
+                    <div class="stat-card">
+                      <ion-icon name="bookmark-outline"></ion-icon>
+                      <div class="stat-info">
+                        <strong>{{ estadisticas.total_rutinas_guardadas || 0 }}</strong>
+                        <span>Rutinas Guardadas</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Logros -->
+                  <div class="logros-section" *ngIf="logros.length > 0">
+                    <h3>
+                      <ion-icon name="trophy-outline"></ion-icon>
+                      Logros Obtenidos ({{ logros.length }})
+                    </h3>
+                    <div class="logros-grid">
+                      <div class="logro-item" *ngFor="let logro of logros">
+                        <ion-icon [name]="logro.icono || 'trophy-outline'"></ion-icon>
+                        <div class="logro-info">
+                          <strong>{{ logro.nombre_logro }}</strong>
+                          <span>{{ logro.descripcion }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Historial Reciente -->
+                  <div class="historial-section" *ngIf="historialReciente.length > 0">
+                    <h3>
+                      <ion-icon name="calendar-outline"></ion-icon>
+                      Entrenamientos Recientes
+                    </h3>
+                    <div class="historial-list">
+                      <div class="historial-item" *ngFor="let entrenamiento of historialReciente">
+                        <div class="historial-fecha">
+                          {{ entrenamiento.fecha_entrenamiento | date:'dd/MM/yyyy' }}
+                        </div>
+                        <div class="historial-info">
+                          <strong>{{ entrenamiento.nombre_rutina || entrenamiento.nombre_ejercicio || 'Entrenamiento' }}</strong>
+                          <span *ngIf="entrenamiento.duracion_minutos">{{ entrenamiento.duracion_minutos }} min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Progreso Físico -->
+                  <div class="progreso-section" *ngIf="progresoFisico">
+                    <h3>
+                      <ion-icon name="trending-up-outline"></ion-icon>
+                      Progreso Físico (Últimos 90 días)
+                    </h3>
+                    <div class="progreso-stats">
+                      <div class="progreso-item" *ngIf="progresoFisico.peso_actual">
+                        <strong>Peso Actual:</strong>
+                        <span>{{ progresoFisico.peso_actual }} kg</span>
+                      </div>
+                      <div class="progreso-item" *ngIf="progresoFisico.peso_inicial">
+                        <strong>Peso Inicial:</strong>
+                        <span>{{ progresoFisico.peso_inicial }} kg</span>
+                      </div>
+                      <div class="progreso-item" *ngIf="progresoFisico.peso_actual && progresoFisico.peso_inicial">
+                        <strong>Diferencia:</strong>
+                        <span [class.positivo]="(progresoFisico.peso_actual - progresoFisico.peso_inicial) < 0"
+                              [class.negativo]="(progresoFisico.peso_actual - progresoFisico.peso_inicial) > 0">
+                          {{ (progresoFisico.peso_actual - progresoFisico.peso_inicial) > 0 ? '+' : '' }}{{ (progresoFisico.peso_actual - progresoFisico.peso_inicial).toFixed(1) }} kg
+                        </span>
+                      </div>
+                      <div class="progreso-item">
+                        <strong>Total Registros:</strong>
+                        <span>{{ progresoFisico.total_registros }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- 🟥 GRID DE PUBLICACIONES -->

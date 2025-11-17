@@ -69,7 +69,19 @@ export class ChatService {
     }
   }
 
+  // Método público para obtener el socket (para notificaciones)
+  getSocket(): Socket | null {
+    return this.socket;
+  }
+
   private setupSocketListeners() {
+    // Escuchar nuevas notificaciones
+    this.socket.on('nueva_notificacion', (notificacion: any) => {
+      console.log('Nueva notificación recibida:', notificacion);
+      // Emitir evento para que otros componentes puedan suscribirse
+      // Esto se puede expandir con un Subject si es necesario
+    });
+    
     // Escuchar nuevos mensajes
     this.socket.on('nuevo_mensaje', (mensaje: Mensaje) => {
       const chatActivo = this.chatActivoSubject.value;
@@ -245,9 +257,27 @@ export class ChatService {
     return this.http.get<any[]>(`${this.apiUrl}/usuarios-disponibles`);
   }
 
-  // Buscar usuarios por username
+  // Buscar usuarios por username (compatibilidad)
   buscarUsuarioPorUsername(username: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/buscar-usuario/${username}`);
+  }
+
+  // Buscar usuarios con filtros avanzados
+  buscarUsuarios(filtros: {
+    username?: string;
+    nombre?: string;
+    id_region?: number;
+    limit?: number;
+    offset?: number;
+  }): Observable<any[]> {
+    const queryParams = new URLSearchParams();
+    Object.entries(filtros).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+    const query = queryParams.toString();
+    return this.http.get<any[]>(`${this.apiUrl}/buscar-usuario${query ? '?' + query : ''}`);
   }
 
   // Seguir a un usuario

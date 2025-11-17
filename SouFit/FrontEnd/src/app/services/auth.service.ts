@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, from, of } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap, catchError } from 'rxjs/operators';
 import { Storage } from '@ionic/storage-angular';
 import { Router } from '@angular/router';
 import { ChatService } from './chat.service';
@@ -63,7 +63,29 @@ export class AuthService {
   }
 
   register(userData: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/register`, userData);
+    return this.http.post<{token: string, user: any, message: string}>(`${this.apiUrl}/register`, userData);
+  }
+
+  // Método para guardar datos después del registro
+  async guardarDatosSesion(token: string, user: any): Promise<void> {
+    try {
+      // Esperar storage si es necesario (máximo 2 segundos)
+      if (!this.storageReady.value) {
+        const maxWait = 2000;
+        const startTime = Date.now();
+        while (!this.storageReady.value && (Date.now() - startTime) < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      await this.storage.set('token', token);
+      if (user) {
+        await this.saveUser(user);
+      }
+      this.isAuthenticated.next(true);
+    } catch (error) {
+      // Silenciar errores de storage, no bloquear el flujo
+    }
   }
 
   getUserProfile(): Observable<any> {
@@ -119,17 +141,9 @@ export class AuthService {
     }
   }
   
-  // Solicitar código de recuperación
-  solicitarRecuperacionPassword(email: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/solicitar-recuperacion`, { email });
+  // Verificar disponibilidad de username
+  checkUsername(username: string): Observable<{available: boolean, message: string}> {
+    return this.http.get<{available: boolean, message: string}>(`${this.apiUrl}/check-username/${encodeURIComponent(username)}`);
   }
   
-  // Resetear contraseña con código
-  resetearPassword(email: string, codigo: string, nuevaPassword: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/resetear-password`, {
-      email,
-      codigo,
-      nuevaPassword
-    });
-  }
 }

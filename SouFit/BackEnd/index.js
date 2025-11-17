@@ -8,6 +8,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const pool = require('./config/db');
 const { generalLimiter, sanitizeInput, securityHeaders } = require('./middleware/security');
+const { errorHandler } = require('./middleware/errorHandler');
+const logger = require('./utils/logger');
 
 const app = express();
 
@@ -21,36 +23,64 @@ const corsOptions = {
             'https://soufit.vercel.app',
             'https://ingenieria-web-m.vercel.app',
             process.env.FRONTEND_URL,
-            // Permitir todos los dominios de Vercel (preview deployments)
+            // Permitir todos los dominios de Vercel (producción y previews)
             /^https:\/\/.*\.vercel\.app$/,
-            // Permitir todos los dominios de Render
+            /^https:\/\/.*\.vercel\.dev$/,
+            // Permitir todos los dominios de Render (por si acaso)
             /^https:\/\/.*\.render\.com$/
         ].filter(Boolean);
         
-        // Permitir peticiones sin origin (ej: Postman, mobile apps)
+        // Permitir peticiones sin origin:
+        // - En desarrollo: siempre permitir (Postman, mobile apps, etc.)
+        // - En producción: permitir (Render health checks, herramientas de monitoreo)
+        // Las peticiones desde navegadores siempre tienen origin, así que esto es seguro
         if (!origin) {
+            // En desarrollo, siempre permitir
+            if (process.env.NODE_ENV !== 'production') {
+                logger.debug('Permitiendo petición sin origin (desarrollo)');
+                return callback(null, true);
+            }
+            
+            // En producción, permitir peticiones sin origin
+            // Render y otros servicios hacen health checks sin origin
+            // Esto es seguro porque las peticiones desde navegadores siempre tienen origin
+            logger.info('Permitiendo petición sin origin (probablemente health check o herramienta de monitoreo)');
             return callback(null, true);
         }
+        
+        // Log para debugging (info en producción para diagnosticar)
+        logger.info('Verificando origin CORS', { origin, allowedOrigins: allowedOrigins.filter(o => typeof o === 'string') });
         
         // Verificar si el origin está en la lista o coincide con regex
         const isAllowed = allowedOrigins.some(allowed => {
             if (typeof allowed === 'string') {
-                return allowed === origin;
+                const matches = allowed === origin;
+                if (matches) logger.info(`Origin permitido (string match): ${origin}`);
+                return matches;
             } else if (allowed instanceof RegExp) {
-                return allowed.test(origin);
+                const matches = allowed.test(origin);
+                if (matches) logger.info(`Origin permitido (regex match): ${origin}`);
+                return matches;
             }
             return false;
         });
         
         if (isAllowed) {
+            logger.info(`✅ Origin permitido: ${origin}`);
             callback(null, true);
         } else {
-            callback(new Error('No permitido por CORS'));
+            logger.error('❌ Intento de acceso desde origen no permitido', { 
+                origin, 
+                allowedOrigins: allowedOrigins.filter(o => typeof o === 'string'),
+                frontendUrl: process.env.FRONTEND_URL 
+            });
+            callback(new Error('No permitido por CORS'), false);
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Content-Type', 'Authorization'],
     preflightContinue: false,
     optionsSuccessStatus: 204
 };
@@ -80,40 +110,71 @@ const io = new Server(server, {
             'https://soufit.vercel.app',
             'https://ingenieria-web-m.vercel.app',
             process.env.FRONTEND_URL,
+            // Permitir todos los dominios de Vercel (producción y previews)
             /^https:\/\/.*\.vercel\.app$/,
+            /^https:\/\/.*\.vercel\.dev$/,
+            // Permitir todos los dominios de Render (por si acaso)
             /^https:\/\/.*\.render\.com$/
         ].filter(Boolean);
         
+        // Permitir peticiones sin origin (health checks de Render, herramientas de monitoreo)
+        // Las peticiones desde navegadores siempre tienen origin, así que esto es seguro
         if (!origin) {
+            logger.info('Permitiendo petición Socket.io sin origin (probablemente health check)');
             return callback(null, true);
         }
         
+        logger.info('Verificando origin Socket.io CORS', { origin });
+        
         const isAllowed = allowedOrigins.some(allowed => {
             if (typeof allowed === 'string') {
-                return allowed === origin;
+                const matches = allowed === origin;
+                if (matches) logger.info(`Origin Socket.io permitido (string match): ${origin}`);
+                return matches;
             } else if (allowed instanceof RegExp) {
-                return allowed.test(origin);
+                const matches = allowed.test(origin);
+                if (matches) logger.info(`Origin Socket.io permitido (regex match): ${origin}`);
+                return matches;
             }
             return false;
         });
         
         if (isAllowed) {
+            logger.info(`✅ Origin Socket.io permitido: ${origin}`);
             callback(null, true);
         } else {
-            callback(new Error('No permitido por CORS'));
+            logger.error('❌ Intento de conexión Socket.io desde origen no permitido', { 
+                origin,
+                allowedOrigins: allowedOrigins.filter(o => typeof o === 'string'),
+                frontendUrl: process.env.FRONTEND_URL
+            });
+            callback(new Error('No permitido por CORS'), false);
         }
     },
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With', 'Accept']
   }
 });
 
+// Almacenar instancia de io para acceso desde otros módulos
+ioInstance = io;
+
+// Exportar función para obtener io desde otros módulos
+module.exports.getIO = () => ioInstance;
+
 io.on('connection', (socket) =>{
-    console.log('Usuario conectado: ' + socket.id);
+    logger.info('Usuario conectado', { socketId: socket.id });
 
     socket.on('entrar_chat', (id_usuario) => {
         socket.join('usuario_' + id_usuario);
-        console.log(`El usuario ${id_usuario} ha entrado a su chat.`);
+        logger.debug(`Usuario ${id_usuario} ha entrado a su chat`, { socketId: socket.id });
+    });
+    
+    // Permitir que los usuarios se unan a su sala de notificaciones
+    socket.on('unirse_notificaciones', (id_usuario) => {
+        socket.join('usuario_' + id_usuario);
+        logger.debug(`Usuario ${id_usuario} se unió a sus notificaciones`, { socketId: socket.id });
     });
 
     socket.on('enviar_mensaje', async (data) => {
@@ -129,13 +190,18 @@ io.on('connection', (socket) =>{
             
             // También enviar al remitente para actualización inmediata
             io.to('usuario_' + id_remitente).emit('nuevo_mensaje', nuevoMensaje.rows[0]);
+            
+            logger.debug('Mensaje enviado', { 
+                remitente: id_remitente, 
+                destinatario: id_destinatario 
+            });
         } catch (err) {
-            console.error('Error al enviar mensaje:', err);
+            logger.error('Error al enviar mensaje por Socket.io', err);
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('Usuario desconectado: ' + socket.id);
+        logger.info('Usuario desconectado', { socketId: socket.id });
     });
 
 });
@@ -144,34 +210,184 @@ io.on('connection', (socket) =>{
 
 
 // Definir y usar las rutas
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/ubicacion', require('./routes/ubicacion'));
-app.use('/api/profile', require('./routes/profile'));
+logger.info('🔧 Montando rutas...');
+try {
+    const authRoutes = require('./routes/auth');
+    app.use('/api/auth', (req, res, next) => {
+        logger.info('📥 Petición recibida en /api/auth', { 
+            method: req.method, 
+            path: req.path,
+            originalUrl: req.originalUrl,
+            url: req.url
+        });
+        authRoutes(req, res, next);
+    });
+    logger.info('✅ Ruta /api/auth montada correctamente');
+} catch (error) {
+    logger.error('❌ Error al montar ruta /api/auth', error);
+    throw error; // Re-lanzar para que el servidor no inicie con rutas rotas
+}
+
+try {
+    app.use('/api/ubicacion', require('./routes/ubicacion'));
+    logger.info('✅ Ruta /api/ubicacion montada correctamente');
+} catch (error) {
+    logger.error('❌ Error al montar ruta /api/ubicacion', error);
+}
+
+try {
+    app.use('/api/profile', require('./routes/profile'));
+    logger.info('✅ Ruta /api/profile montada correctamente');
+} catch (error) {
+    logger.error('❌ Error al montar ruta /api/profile', error);
+}
 
 // Configurar io en la ruta de mensajes antes de usarla
 const mensajesRouter = require('./routes/mensajes');
 mensajesRouter.setIO(io);
 app.use('/api', mensajesRouter);
 
+// Configurar helper de notificaciones
+const NotificationHelper = require('./utils/notificationHelper');
+const notificationHelper = new NotificationHelper(io);
+
+// Configurar helper en los controladores que lo necesiten
+const postController = require('./controllers/postController');
+postController.setNotificationHelper(notificationHelper);
+
+const rutinaController = require('./controllers/rutinaController');
+rutinaController.setNotificationHelper(notificationHelper);
+
 app.use('/api/ejercicios', require('./routes/ejercicios'));
 app.use('/api/rutinas', require('./routes/rutinas'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/notificaciones', require('./routes/notificaciones'));
+app.use('/api/estadisticas', require('./routes/estadisticas'));
+app.use('/api/recordatorios', require('./routes/recordatorios'));
+app.use('/api/logros', require('./routes/logros'));
+app.use('/api/historial', require('./routes/historial'));
+app.use('/api/progreso', require('./routes/progreso'));
+app.use('/api/notas', require('./routes/notas'));
+app.use('/api/calendario', require('./routes/calendario'));
 app.use('/api/external', require('./routes/external'));
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'ok', 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+// Health check endpoint en la raíz (para Render.com y otros servicios de monitoreo)
+app.get('/', async (req, res) => {
+    try {
+        // Verificar conexión a la base de datos
+        await pool.query('SELECT 1');
+        
+        res.json({ 
+            status: 'ok', 
+            service: 'SouFit API',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            database: 'connected',
+            environment: process.env.NODE_ENV || 'development'
+        });
+    } catch (err) {
+        logger.error('Health check falló', err);
+        res.status(503).json({
+            status: 'error',
+            service: 'SouFit API',
+            timestamp: new Date().toISOString(),
+            database: 'disconnected',
+            error: 'Database connection failed'
+        });
+    }
+});
+
+// Health check endpoint mejorado en /api/health
+app.get('/api/health', async (req, res) => {
+    try {
+        // Verificar conexión a la base de datos
+        await pool.query('SELECT 1');
+        
+        res.json({ 
+            status: 'ok', 
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            database: 'connected',
+            environment: process.env.NODE_ENV || 'development'
+        });
+    } catch (err) {
+        logger.error('Health check falló', err);
+        res.status(503).json({
+            status: 'error',
+            timestamp: new Date().toISOString(),
+            database: 'disconnected',
+            error: 'Database connection failed'
+        });
+    }
+});
+
+// Middleware de manejo de errores (debe ir al final, antes de iniciar el servidor)
+app.use(errorHandler);
+
+// Manejo de rutas no encontradas (debe ir al final, después de todas las rutas)
+// En Express 5, no se puede usar '*' directamente, se usa sin ruta para capturar todo
+// Excluir métodos HEAD y GET en la raíz para health checks
+app.use((req, res) => {
+    // No loggear health checks de Render (HEAD y GET en /)
+    if ((req.method === 'HEAD' || req.method === 'GET') && req.originalUrl === '/') {
+        return res.status(200).json({ status: 'ok', service: 'SouFit API' });
+    }
+    
+    logger.warn('⚠️ Ruta no encontrada', { 
+        method: req.method, 
+        path: req.originalUrl,
+        url: req.url,
+        baseUrl: req.baseUrl
+    });
+    res.status(404).json({
+        error: 'Ruta no encontrada',
+        path: req.originalUrl,
+        method: req.method
     });
 });
 
 
 
 
+// Render.com requiere PORT=10000, pero también acepta la variable PORT del entorno
 const PORT = process.env.PORT || 3000;
+
+// Manejo de errores no capturados
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection', { reason, promise });
+});
+
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception', error);
+    process.exit(1);
+});
+
+// Graceful shutdown
+const gracefulShutdown = (signal) => {
+    logger.info(`Recibida señal ${signal}, cerrando servidor...`);
+    
+    server.close(() => {
+        logger.info('Servidor HTTP cerrado');
+        
+        pool.end(() => {
+            logger.info('Pool de base de datos cerrado');
+            process.exit(0);
+        });
+    });
+    
+    // Forzar cierre después de 10 segundos
+    setTimeout(() => {
+        logger.error('Forzando cierre del servidor');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 server.listen(PORT, () => {
-    console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+    logger.info(`🚀 Servidor backend corriendo en http://localhost:${PORT}`, {
+        environment: process.env.NODE_ENV || 'development',
+        port: PORT
+    });
 });

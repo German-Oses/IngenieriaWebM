@@ -278,7 +278,66 @@ router.get('/usuarios-disponibles', auth, async (req, res) => {
     }
 });
 
-// Buscar usuarios por username
+// Buscar usuarios (mejorado con filtros)
+router.get('/buscar-usuario', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { username, nombre, id_region, limit = 20, offset = 0 } = req.query;
+        
+        if (!username && !nombre) {
+            return res.status(400).json({ error: 'Debe proporcionar username o nombre para buscar' });
+        }
+        
+        let query = `
+            SELECT 
+                u.id_usuario,
+                u.username,
+                u.nombre,
+                u.apellido,
+                u.avatar,
+                u.bio,
+                (SELECT COUNT(*) FROM seguimiento WHERE id_seguido = u.id_usuario) as total_seguidores,
+                (SELECT COUNT(*) FROM seguimiento WHERE id_seguidor = u.id_usuario) as total_siguiendo,
+                (SELECT COUNT(*) FROM post WHERE id_usuario = u.id_usuario) as total_posts,
+                CASE WHEN s.id_seguimiento IS NOT NULL THEN true ELSE false END as siguiendo
+            FROM usuario u
+            LEFT JOIN seguimiento s ON s.id_seguidor = $1 AND s.id_seguido = u.id_usuario
+            WHERE u.id_usuario != $1
+        `;
+        
+        const params = [userId];
+        let paramCount = 2;
+        
+        if (username) {
+            query += ` AND LOWER(u.username) LIKE LOWER($${paramCount})`;
+            params.push(`%${username}%`);
+            paramCount++;
+        }
+        
+        if (nombre) {
+            query += ` AND (LOWER(u.nombre) LIKE LOWER($${paramCount}) OR LOWER(u.apellido) LIKE LOWER($${paramCount}))`;
+            params.push(`%${nombre}%`);
+            paramCount++;
+        }
+        
+        if (id_region) {
+            query += ` AND u.id_region = $${paramCount}`;
+            params.push(parseInt(id_region));
+            paramCount++;
+        }
+        
+        query += ` ORDER BY u.username ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        params.push(parseInt(limit), parseInt(offset));
+        
+        const result = await db.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al buscar usuarios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Buscar usuarios por username (compatibilidad)
 router.get('/buscar-usuario/:username', auth, async (req, res) => {
     try {
         const username = req.params.username.toLowerCase();
@@ -347,6 +406,34 @@ router.post('/seguir/:userId', auth, async (req, res) => {
         const result = await db.query(query, [seguidorId, seguidoId]);
         
         if (result.rows.length > 0) {
+            // Crear notificación para el usuario seguido
+            const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [seguidorId]);
+            const username = usuario.rows[0]?.username || 'Un usuario';
+            
+            await db.query(
+                'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
+                [
+                    seguidoId,
+                    'nuevo_seguidor',
+                    'Nuevo seguidor',
+                    `${username} comenzó a seguirte`,
+                    seguidorId,
+                    'usuario'
+                ]
+            );
+            
+            // Emitir notificación por Socket.io si está disponible
+            const ioInstance = require('../index').getIO();
+            if (ioInstance) {
+                ioInstance.to(`usuario_${seguidoId}`).emit('nueva_notificacion', {
+                    tipo_notificacion: 'nuevo_seguidor',
+                    titulo: 'Nuevo seguidor',
+                    contenido: `${username} comenzó a seguirte`,
+                    id_referencia: seguidorId,
+                    tipo_referencia: 'usuario'
+                });
+            }
+            
             res.json({ message: 'Usuario seguido correctamente', siguiendo: true });
         } else {
             res.json({ message: 'Ya sigues a este usuario', siguiendo: true });

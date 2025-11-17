@@ -16,7 +16,6 @@ variables_entorno.txt
 # Logs
 logs/
 *.log
-*.log
 
 # Build
 dist/

@@ -147,6 +147,37 @@ export class NotificationService {
   }
 
   /**
+   * Mostrar notificación de nueva interacción (like, comentario, etc.)
+   */
+  async showInteractionNotification(
+    title: string,
+    body: string,
+    onClick?: () => void
+  ): Promise<Notification | null> {
+    const notification = await this.showNotification(
+      title,
+      {
+        body: body.length > 100 ? body.substring(0, 100) + '...' : body,
+        icon: '/assets/icon/SouFitLogo.png',
+        badge: '/assets/icon/SouFitLogo.png',
+        tag: `interaction-${Date.now()}`,
+        requireInteraction: false
+      }
+    );
+
+    if (notification && onClick) {
+      notification.onclick = (event) => {
+        event.preventDefault();
+        onClick();
+        notification.close();
+        window.focus();
+      };
+    }
+
+    return notification;
+  }
+
+  /**
    * Verificar si las notificaciones están disponibles
    */
   isAvailable(): boolean {

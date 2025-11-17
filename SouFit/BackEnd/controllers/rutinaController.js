@@ -1,4 +1,10 @@
 const db = require('../config/db');
+let notificationHelper = null;
+
+// Función para establecer el helper de notificaciones
+exports.setNotificationHelper = (helper) => {
+    notificationHelper = helper;
+};
 
 // Obtener todas las rutinas públicas
 exports.getRutinas = async (req, res) => {
@@ -256,6 +262,14 @@ exports.createRutina = async (req, res) => {
         }
         
         await client.query('COMMIT');
+        
+        // Verificar logros después de crear una rutina
+        if (notificationHelper) {
+            notificationHelper.verificarYOtorgarLogros(userId).catch(err => {
+                console.error('Error al verificar logros:', err);
+            });
+        }
+        
         res.status(201).json(rutinaResult.rows[0]);
     } catch (error) {
         await client.query('ROLLBACK');
@@ -349,9 +363,31 @@ exports.guardarRutina = async (req, res) => {
         const result = await db.query(query, [userId, id]);
         
         if (result.rows.length > 0) {
-            res.json({ message: 'Rutina guardada', guardada: true });
+            // Crear notificación para el creador de la rutina usando el helper
+            if (notificationHelper) {
+                await notificationHelper.notificarRutinaGuardada(id, userId);
+            } else {
+                // Fallback: crear notificación directamente
+                const rutina = await db.query('SELECT id_usuario FROM rutina WHERE id_rutina = $1', [id]);
+                if (rutina.rows.length > 0 && rutina.rows[0].id_usuario !== userId) {
+                    const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
+                    await db.query(
+                        'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
+                        [
+                            rutina.rows[0].id_usuario,
+                            'rutina_guardada',
+                            'Tu rutina fue guardada',
+                            `${usuario.rows[0]?.username || 'Un usuario'} guardó tu rutina`,
+                            id,
+                            'rutina'
+                        ]
+                    );
+                }
+            }
+            
+            res.json({ message: 'Rutina guardada como favorita', guardada: true });
         } else {
-            res.json({ message: 'Rutina ya estaba guardada', guardada: true });
+            res.json({ message: 'La rutina ya está guardada', guardada: true });
         }
     } catch (error) {
         console.error('Error al guardar rutina:', error);
@@ -441,21 +477,37 @@ exports.compartirRutina = async (req, res) => {
         
         const result = await db.query(query, [userId, id]);
         
-        // Crear notificación para el creador de la rutina
-        const rutina = await db.query('SELECT id_usuario FROM rutina WHERE id_rutina = $1', [id]);
-        if (rutina.rows.length > 0 && rutina.rows[0].id_usuario !== userId) {
-            const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
-            await db.query(
-                'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
-                [
+        // Crear notificación para el creador de la rutina usando el helper
+        if (notificationHelper) {
+            const rutina = await db.query('SELECT id_usuario FROM rutina WHERE id_rutina = $1', [id]);
+            if (rutina.rows.length > 0 && rutina.rows[0].id_usuario !== userId) {
+                const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
+                await notificationHelper.crearNotificacion(
                     rutina.rows[0].id_usuario,
                     'nuevo_compartido',
                     'Tu rutina fue compartida',
                     `${usuario.rows[0]?.username || 'Un usuario'} compartió tu rutina`,
                     id,
                     'rutina'
-                ]
-            );
+                );
+            }
+        } else {
+            // Fallback: crear notificación directamente
+            const rutina = await db.query('SELECT id_usuario FROM rutina WHERE id_rutina = $1', [id]);
+            if (rutina.rows.length > 0 && rutina.rows[0].id_usuario !== userId) {
+                const usuario = await db.query('SELECT username FROM usuario WHERE id_usuario = $1', [userId]);
+                await db.query(
+                    'INSERT INTO notificacion (id_usuario, tipo_notificacion, titulo, contenido, id_referencia, tipo_referencia) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [
+                        rutina.rows[0].id_usuario,
+                        'nuevo_compartido',
+                        'Tu rutina fue compartida',
+                        `${usuario.rows[0]?.username || 'Un usuario'} compartió tu rutina`,
+                        id,
+                        'rutina'
+                    ]
+                );
+            }
         }
         
         res.json({ message: 'Rutina compartida', compartido: true });

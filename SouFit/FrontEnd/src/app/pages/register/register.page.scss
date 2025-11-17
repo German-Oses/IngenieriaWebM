@@ -1,0 +1,200 @@
+// Estilos para el modal de verificación
+.modal-verificacion-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.icono-email {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  
+  ion-icon {
+    color: white;
+    font-size: 40px;
+  }
+}
+
+.titulo-modal {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.mensaje-modal {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 8px 0;
+}
+
+.email-modal {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #8B0000;
+  margin: 0 0 16px 0;
+}
+
+.instrucciones-modal {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #888;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.codigo-item-modal {
+  --border-radius: 12px;
+  --border-width: 2px;
+  --border-color: #E0E0E0;
+  --background: #f8f9fa;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  
+  ion-label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .codigo-input {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 8px;
+    text-align: center;
+    color: #1a1a1a;
+  }
+}
+
+.btn-verificar-modal {
+  --background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%);
+  --background-activated: #6B0000;
+  --border-radius: 12px;
+  height: 50px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+  
+  &:disabled {
+    --background: #cccccc;
+    --opacity: 0.6;
+  }
+}
+
+.reenviar-container-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.no-recibiste-modal {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.btn-reenviar-modal {
+  --color: #8B0000;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  
+  &:disabled {
+    --color: #cccccc;
+    --opacity: 0.6;
+  }
+}
+
+// Estilos para el modal en general
+ion-modal {
+  --width: 90%;
+  --max-width: 500px;
+  --border-radius: 20px;
+  --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+ion-modal ion-header ion-toolbar {
+  --background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%);
+  --color: white;
+  
+  ion-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+  }
+  
+  ion-button {
+    --color: white;
+  }
+}
+
+ion-modal ion-content {
+  --background: #ffffff;
+}
+
+// Estilos para validación en tiempo real
+ion-item.valid {
+  --border-color: #10b981;
+  --border-width: 2px;
+  border-color: #10b981 !important;
+  border-width: 2px !important;
+}
+
+ion-item.invalid {
+  --border-color: #ef4444;
+  --border-width: 2px;
+  border-color: #ef4444 !important;
+  border-width: 2px !important;
+}
+
+// Animaciones suaves
+ion-item {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Estilos para el botón de registro
+ion-button {
+  transition: all 0.3s ease;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.4);
+  }
+}
+
+// Responsive design
+@media (max-width: 480px) {
+  ion-item {
+    margin-bottom: 12px !important;
+  }
+  
+  ion-text {
+    font-size: 11px !important;
+  }
+}

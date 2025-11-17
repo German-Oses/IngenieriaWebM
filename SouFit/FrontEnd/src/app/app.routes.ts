@@ -34,8 +34,4 @@ export const routes: Routes = [
     path: 'buscar',
     loadComponent: () => import('./pages/buscar/buscar.page').then( m => m.BuscarPage)
   },
-  {
-    path: 'recuperar-password',
-    loadComponent: () => import('./pages/recuperar-password/recuperar-password.page').then( m => m.RecuperarPasswordPage)
-  },
 ];

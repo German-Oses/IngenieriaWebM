@@ -1,0 +1,23 @@
+# Archivos y directorios a ignorar en Vercel
+node_modules/
+.angular/
+dist/
+www/
+*.log
+.env
+.env.*
+.git/
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+*.old
+.cache/
+coverage/
+.nyc_output/
+README.md
+DESPLIEGUE_VERCEL.md
+
