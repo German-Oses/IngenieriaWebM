@@ -6,7 +6,6 @@ import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
 import { CommonModule } from '@angular/common';
 import { IonInput } from '@ionic/angular/standalone';
-import { LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { checkmarkCircle, closeCircle, eye, eyeOff } from 'ionicons/icons';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
@@ -68,7 +67,6 @@ export class RegistroPage implements OnInit {
     private ubicacionService: UbicacionService,
     private router: Router,
     private alertController: AlertController,
-    private loadingController: LoadingController,
     private toastController: ToastController
   ) {
     addIcons({ checkmarkCircle, closeCircle, eye, eyeOff });
@@ -254,91 +252,36 @@ export class RegistroPage implements OnInit {
   }
 
   async createAccount(): Promise<void> {
-    console.log('🚀 Iniciando creación de cuenta...');
-    
-    // Prevenir múltiples clics
-    if (this.creando) {
-      console.log('⚠️ Ya se está creando una cuenta, ignorando clic...');
-      return;
-    }
-    
-    this.creando = true;
+    if (this.creando) return;
     
     // Validaciones básicas
     if (!this.acceptTerms) {
       await this.presentAlert('Atención', 'Debes aceptar los términos y condiciones.');
-      this.creando = false;
       return;
     }
 
-    if (!this.nombre || !this.nombre.trim()) {
-      await this.presentAlert('Error', 'El nombre es obligatorio.');
-      this.creando = false;
-      return;
-    }
-    
-    if (!this.apellido || !this.apellido.trim()) {
-      await this.presentAlert('Error', 'El apellido es obligatorio.');
-      this.creando = false;
+    if (!this.nombre || !this.nombre.trim() || !this.apellido || !this.apellido.trim() || 
+        !this.username || !this.username.trim() || !this.email || !this.email.includes('@') ||
+        !this.password || this.password.length < 6 || this.password !== this.confirmPassword ||
+        !this.id_region || !this.id_comuna || !this.fecha_nacimiento) {
+      await this.presentAlert('Error', 'Por favor completa todos los campos correctamente.');
       return;
     }
 
-    if (!this.username || !this.username.trim()) {
-      await this.presentAlert('Error', 'El nombre de usuario es obligatorio.');
-      this.creando = false;
-      return;
-    }
-
-    if (!this.email || !this.email.includes('@')) {
-      await this.presentAlert('Error', 'Debes ingresar un correo electrónico válido.');
-      this.creando = false;
-      return;
-    }
-
-    if (!this.password || this.password.length < 6) {
-      await this.presentAlert('Error', 'La contraseña debe tener al menos 6 caracteres.');
-      this.creando = false;
-      return;
-    }
-
-    if (this.password !== this.confirmPassword) {
-      await this.presentAlert('Error', 'Las contraseñas no coinciden.');
-      this.creando = false;
-      return;
-    }
-
-    if (!this.id_region || !this.id_comuna) {
-      await this.presentAlert('Error', 'Debes seleccionar región y comuna.');
-      this.creando = false;
-      return;
-    }
-    
-    if (!this.fecha_nacimiento) {
-      await this.presentAlert('Error', 'La fecha de nacimiento es obligatoria.');
-      this.creando = false;
-      return;
-    }
+    this.creando = true;
 
     // Formatear fecha
     let fechaFormateada = '';
-    if (this.fecha_nacimiento) {
-      if (typeof this.fecha_nacimiento === 'string') {
-        if (this.fecha_nacimiento.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          fechaFormateada = this.fecha_nacimiento;
-        } else {
-          const fecha = new Date(this.fecha_nacimiento);
-          if (!isNaN(fecha.getTime())) {
-            fechaFormateada = fecha.toISOString().split('T')[0];
-          } else {
-            fechaFormateada = this.fecha_nacimiento.trim();
-          }
-        }
-      } else {
-        fechaFormateada = String(this.fecha_nacimiento).trim();
+    if (typeof this.fecha_nacimiento === 'string' && this.fecha_nacimiento.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      fechaFormateada = this.fecha_nacimiento;
+    } else if (this.fecha_nacimiento) {
+      const fecha = new Date(this.fecha_nacimiento);
+      if (!isNaN(fecha.getTime())) {
+        fechaFormateada = fecha.toISOString().split('T')[0];
       }
     }
 
-    const userData: any = {
+    const userData = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
       username: this.username.trim(),
@@ -348,128 +291,31 @@ export class RegistroPage implements OnInit {
       id_region: this.id_region,
       id_comuna: this.id_comuna
     };
-
-    console.log('📋 Datos a registrar:', { ...userData, password: '***' });
-
-    // Mostrar loading
-    let loading: HTMLIonLoadingElement | null = null;
-    try {
-      loading = await this.loadingController.create({
-        message: 'Creando cuenta...',
-        duration: 30000
-      });
-      await loading.present();
-      console.log('⏳ Loading mostrado');
-    } catch (loadingError) {
-      console.error('❌ Error al mostrar loading:', loadingError);
-    }
     
-    try {
-      console.log('📡 Enviando petición HTTP...');
-      
-      this.authService.register(userData).subscribe({
-        next: (response) => {
-          console.log('✅ [Register] Respuesta recibida:', response);
-          
-          // Verificar respuesta
-          if (response && response.token) {
-            console.log('✅ [Register] Token recibido');
-            console.log('✅ [Register] Usuario recibido:', response.user);
-            
-            // Cerrar loading inmediatamente
-            if (loading) {
-              loading.dismiss().catch(e => console.error('Error al cerrar loading:', e));
-            }
-            
-            // Resetear estado inmediatamente
-            this.creando = false;
-            
-            // Guardar datos de sesión de forma asíncrona (no bloquear)
-            this.authService.guardarDatosSesion(response.token, response.user)
-              .then(() => {
-                console.log('✅ [Register] Datos guardados correctamente');
-              })
-              .catch((saveError) => {
-                console.error('❌ [Register] Error al guardar datos:', saveError);
-                // Continuar aunque falle el guardado
-              });
-            
-            // Mostrar toast
-            this.presentToast('¡Cuenta creada exitosamente!').catch(() => {});
-            
-            // Redirigir inmediatamente
-            console.log('🔄 [Register] Redirigiendo al home...');
-            setTimeout(() => {
-              this.router.navigate(['/home'], { replaceUrl: true });
-            }, 200);
-          } else {
-            console.error('❌ [Register] Respuesta sin token:', response);
-            this.creando = false;
-            if (loading) {
-              loading.dismiss().catch(e => console.error('Error al cerrar loading:', e));
-            }
-            this.presentAlert('Error', 'No se recibió el token. Intenta iniciar sesión.').catch(() => {});
-          }
-        },
-        error: (err) => {
-          console.error('❌ Error en registro:', err);
-          console.error('❌ Detalles del error:', {
-            status: err?.status,
-            statusText: err?.statusText,
-            error: err?.error,
-            message: err?.message,
-            url: err?.url
-          });
-          
-          // Cerrar loading
-          if (loading) {
-            loading.dismiss().catch(e => console.error('Error al cerrar loading:', e));
-          }
-          
-          // Extraer mensaje de error
-          let errorMsg = 'No se pudo completar el registro. Verifica los datos e intenta nuevamente.';
-          
-          if (err?.error) {
-            if (Array.isArray(err.error.errors)) {
-              errorMsg = err.error.errors.join(', ');
-            } else if (err.error.msg) {
-              errorMsg = err.error.msg;
-            } else if (err.error.error) {
-              errorMsg = err.error.error;
-            } else if (err.error.message) {
-              errorMsg = err.error.message;
-            }
-          } else if (err?.message) {
-            errorMsg = err.message;
-          }
-          
-          if (err?.status === 500) {
-            errorMsg = 'Error del servidor. Intenta más tarde.';
-          }
-          
-          if (err?.status === 0 || err?.status === undefined) {
-            errorMsg = 'Error de conexión. Verifica tu internet.';
-          }
+    this.authService.register(userData).subscribe({
+      next: (response) => {
+        if (response && response.token) {
+          // Guardar datos en segundo plano
+          this.authService.guardarDatosSesion(response.token, response.user).catch(() => {});
           
           this.creando = false;
-          this.presentAlert('Error de Registro', errorMsg).catch(() => {});
-        },
-        complete: () => {
-          console.log('✅ Observable completado');
+          
+          // Mostrar alerta de éxito
+          this.presentAlert('¡Éxito!', 'Cuenta creada exitosamente. Serás redirigido al inicio.').then(() => {
+            this.router.navigate(['/home'], { replaceUrl: true });
+          });
+        } else {
+          this.creando = false;
+          this.presentAlert('Error', 'No se pudo crear la cuenta. Intenta nuevamente.');
         }
-      });
-    } catch (error) {
-      console.error('❌ Error inesperado:', error);
-      try {
-        if (loading) {
-          loading.dismiss();
-        }
-      } catch (e) {
-        console.error('Error al cerrar loading:', e);
+      },
+      error: (err) => {
+        this.creando = false;
+        const errorMsg = err?.error?.msg || err?.error?.error || err?.error?.message || 
+                        'No se pudo completar el registro. Verifica los datos e intenta nuevamente.';
+        this.presentAlert('Error de Registro', errorMsg);
       }
-      this.creando = false;
-      await this.presentAlert('Error', 'Error inesperado. Intenta nuevamente.');
-    }
+    });
   }
 
   async presentAlert(header: string, message: string): Promise<void> {
