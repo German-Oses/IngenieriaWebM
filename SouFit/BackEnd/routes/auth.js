@@ -23,20 +23,12 @@ router.post('/login', authLimiter, authController.login);
 // GET /api/auth/check-username/:username (Público) - Verificar disponibilidad de username
 router.get('/check-username/:username', authLimiter, authController.checkUsername);
 
-// POST /api/auth/solicitar-recuperacion (Público)
-router.post('/solicitar-recuperacion', authLimiter, authController.solicitarRecuperacionPassword);
-
-// POST /api/auth/resetear-password (Público)
-router.post('/resetear-password', authLimiter, authController.resetearPassword);
-
 // Log todas las rutas registradas
 logger.info('✅ Rutas de autenticación configuradas:', {
     routes: [
         'POST /register',
         'POST /login',
-        'GET /check-username/:username',
-        'POST /solicitar-recuperacion',
-        'POST /resetear-password'
+        'GET /check-username/:username'
     ]
 });
 

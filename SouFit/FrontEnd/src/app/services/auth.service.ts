@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, from, of } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap, catchError } from 'rxjs/operators';
 import { Storage } from '@ionic/storage-angular';
 import { Router } from '@angular/router';
 import { ChatService } from './chat.service';
@@ -63,49 +63,43 @@ export class AuthService {
   }
 
   register(userData: any): Observable<any> {
-    return this.http.post<{token: string, user: any, message: string}>(`${this.apiUrl}/register`, userData).pipe(
-      switchMap((res) => {
-        // Convertir la promesa en Observable
-        return from(this.guardarDatosRegistro(res));
-      })
-    );
+    console.log('📤 [AuthService] Enviando petición de registro...');
+    
+    // Simplemente hacer la petición HTTP sin procesar la respuesta aquí
+    // El componente se encargará de guardar el token
+    return this.http.post<{token: string, user: any, message: string}>(`${this.apiUrl}/register`, userData);
   }
 
-  private async guardarDatosRegistro(res: {token: string, user: any, message: string}): Promise<any> {
-    // Esperar a que el storage esté listo (máximo 5 segundos)
-    if (!this.storageReady.value) {
-      const waitPromise = new Promise<void>((resolve) => {
-        const subscription = this.storageReady.subscribe(ready => {
-          if (ready) {
-            subscription.unsubscribe();
-            resolve();
-          }
-        });
-        // Timeout de seguridad
-        setTimeout(() => {
-          subscription.unsubscribe();
-          resolve();
-        }, 5000);
-      });
-      await waitPromise;
-    }
+  // Método separado para guardar datos después del registro
+  async guardarDatosSesion(token: string, user: any): Promise<void> {
+    console.log('💾 [AuthService] Guardando datos de sesión...');
     
-    if (res.token) {
-      // Guardar token y usuario automáticamente
-      try {
-        await this.storage.set('token', res.token);
-        if (res.user) {
-          await this.saveUser(res.user);
-        }
-        this.isAuthenticated.next(true);
-        console.log('✅ Datos guardados en storage correctamente');
-      } catch (error) {
-        console.error('Error al guardar en storage:', error);
-        // Continuar aunque falle el storage
+    // Esperar a que el storage esté listo
+    if (!this.storageReady.value) {
+      console.log('⏳ [AuthService] Esperando storage...');
+      const maxWait = 5000;
+      const startTime = Date.now();
+      
+      while (!this.storageReady.value && (Date.now() - startTime) < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     
-    return res;
+    try {
+      await this.storage.set('token', token);
+      console.log('✅ [AuthService] Token guardado');
+      
+      if (user) {
+        await this.saveUser(user);
+        console.log('✅ [AuthService] Usuario guardado');
+      }
+      
+      this.isAuthenticated.next(true);
+      console.log('✅ [AuthService] Sesión iniciada');
+    } catch (error) {
+      console.error('❌ [AuthService] Error al guardar:', error);
+      throw error;
+    }
   }
 
   getUserProfile(): Observable<any> {
@@ -159,20 +153,6 @@ export class AuthService {
       this.isAuthenticated.next(false);
       this.router.navigate(['/login'], { replaceUrl: true });
     }
-  }
-  
-  // Solicitar código de recuperación
-  solicitarRecuperacionPassword(email: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/solicitar-recuperacion`, { email });
-  }
-  
-  // Resetear contraseña con código
-  resetearPassword(email: string, codigo: string, nuevaPassword: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/resetear-password`, {
-      email,
-      codigo,
-      nuevaPassword
-    });
   }
   
   // Verificar disponibilidad de username

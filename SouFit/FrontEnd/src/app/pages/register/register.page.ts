@@ -1,6 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController, ModalController, ToastController } from '@ionic/angular'; 
+import { IonicModule, AlertController, ToastController } from '@ionic/angular'; 
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UbicacionService } from '../../services/ubicacion.service';
@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { IonInput } from '@ionic/angular/standalone';
 import { LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { mailOutline, refreshOutline, close, checkmarkCircle, closeCircle, eye, eyeOff } from 'ionicons/icons';
+import { checkmarkCircle, closeCircle, eye, eyeOff } from 'ionicons/icons';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { Subject, of } from 'rxjs';
 
@@ -254,259 +254,228 @@ export class RegistroPage implements OnInit {
   }
 
   async createAccount(): Promise<void> {
-    console.log('Iniciando creación de cuenta...');
+    console.log('🚀 Iniciando creación de cuenta...');
     
     // Prevenir múltiples clics
     if (this.creando) {
-      console.log('Ya se está creando una cuenta, ignorando clic...');
+      console.log('⚠️ Ya se está creando una cuenta, ignorando clic...');
       return;
     }
     
     this.creando = true;
     
-    try {
-      // Validar términos y condiciones
-      if (!this.acceptTerms) {
-        await this.presentAlert('Atención', 'Debes aceptar los términos y condiciones.');
-        this.creando = false;
-        return;
-      }
-
-      // Validar nombre y apellido
-      if (!this.nombre || !this.nombre.trim()) {
-        await this.presentAlert('Error', 'El nombre es obligatorio.');
-        this.creando = false;
-        return;
-      }
-      
-      if (!this.apellido || !this.apellido.trim()) {
-        await this.presentAlert('Error', 'El apellido es obligatorio.');
-        this.creando = false;
-        return;
-      }
-
-      // Validar username
-      if (!this.username || !this.username.trim()) {
-        await this.presentAlert('Error', 'El nombre de usuario es obligatorio.');
-        this.creando = false;
-        return;
-      }
-
-      // Validar email
-      if (!this.email || !this.email.includes('@')) {
-        await this.presentAlert('Error', 'Debes ingresar un correo electrónico válido.');
-        this.creando = false;
-        return;
-      }
-
-      // Validar contraseña
-      if (!this.password || this.password.length < 6) {
-        await this.presentAlert('Error', 'La contraseña debe tener al menos 6 caracteres.');
-        this.creando = false;
-        return;
-      }
-
-      if (this.password !== this.confirmPassword) {
-        await this.presentAlert('Error', 'Las contraseñas no coinciden.');
-        this.creando = false;
-        return;
-      }
-
-      // Validar región y comuna
-      if (!this.id_region || !this.id_comuna) {
-        await this.presentAlert('Error', 'Debes seleccionar región y comuna.');
-        this.creando = false;
-        return;
-      }
-      
-      // Validar fecha de nacimiento
-      if (!this.fecha_nacimiento) {
-        await this.presentAlert('Error', 'La fecha de nacimiento es obligatoria.');
-        this.creando = false;
-        return;
-      }
-
-      // El input type="date" ya devuelve el formato YYYY-MM-DD directamente
-      let fechaFormateada = '';
-      if (this.fecha_nacimiento) {
-        if (typeof this.fecha_nacimiento === 'string') {
-          // El input type="date" devuelve directamente YYYY-MM-DD
-          if (this.fecha_nacimiento.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            fechaFormateada = this.fecha_nacimiento;
-          } else {
-            // Si viene en otro formato, intentar parsearlo
-            const fecha = new Date(this.fecha_nacimiento);
-            if (!isNaN(fecha.getTime())) {
-              fechaFormateada = fecha.toISOString().split('T')[0];
-            } else {
-              fechaFormateada = this.fecha_nacimiento.trim();
-            }
-          }
-        } else {
-          fechaFormateada = String(this.fecha_nacimiento).trim();
-        }
-      }
-
-      const userData: any = {
-        nombre: this.nombre.trim(),
-        apellido: this.apellido.trim(),
-        username: this.username.trim(),
-        email: this.email,
-        password: this.password,
-        fecha_nacimiento: fechaFormateada,
-        id_region: this.id_region,
-        id_comuna: this.id_comuna
-      };
-
-      console.log('Datos del usuario a registrar:', { ...userData, password: '***' });
-      console.log('URL del API:', this.authService['apiUrl']); // Para debugging
-
-      // Mostrar loading
-      let loading: HTMLIonLoadingElement | null = null;
-      try {
-        loading = await this.loadingController.create({
-          message: 'Creando cuenta...',
-          duration: 30000 // Timeout de 30 segundos
-        });
-        
-        await loading.present();
-        console.log('Loading presentado');
-      } catch (loadingError) {
-        console.error('Error al mostrar loading:', loadingError);
-      }
-      
-      try {
-        console.log('Iniciando petición HTTP de registro...');
-        console.log('URL completa:', `${this.authService['apiUrl']}/register`);
-        console.log('Datos enviados:', { ...userData, password: '***' });
-        
-        this.authService.register(userData).subscribe({
-          next: async (response) => {
-            console.log('✅ Respuesta del registro recibida:', response);
-            
-            try {
-              if (loading) {
-                await loading.dismiss();
-                console.log('Loading cerrado');
-              }
-            } catch (dismissError) {
-              console.error('Error al cerrar loading:', dismissError);
-            }
-            
-            // Verificar que tenemos token y usuario
-            if (response && response.token) {
-              console.log('✅ Token recibido, redirigiendo al home...');
-              
-              // Cerrar loading si existe
-              try {
-                if (loading) {
-                  await loading.dismiss();
-                }
-              } catch (e) {
-                console.error('Error al cerrar loading:', e);
-              }
-              
-              // Resetear estado inmediatamente
-              this.creando = false;
-              
-              // Mostrar toast (no esperar)
-              this.presentToast('¡Cuenta creada exitosamente!').catch(() => {});
-              
-              // Redirigir inmediatamente sin esperar
-              setTimeout(() => {
-                this.router.navigate(['/home'], { replaceUrl: true });
-              }, 100);
-            } else {
-              console.error('❌ Respuesta sin token:', response);
-              this.creando = false;
-              try {
-                if (loading) {
-                  await loading.dismiss();
-                }
-              } catch (e) {
-                console.error('Error al cerrar loading:', e);
-              }
-              await this.presentAlert('Error', 'No se recibió el token de autenticación. Por favor, intenta iniciar sesión.');
-            }
-          },
-          error: async (err) => {
-            console.error('❌ Error en registro:', err);
-            console.error('Detalles del error:', {
-              status: err?.status,
-              statusText: err?.statusText,
-              error: err?.error,
-              message: err?.message,
-              url: err?.url,
-              name: err?.name
-            });
-            
-            try {
-              if (loading) {
-                await loading.dismiss();
-              }
-            } catch (dismissError) {
-              console.error('Error al cerrar loading en error:', dismissError);
-            }
-            
-            // Extraer mensaje de error de diferentes formatos posibles
-            let errorMsg = 'No se pudo completar el registro. Por favor, verifica los datos e intenta nuevamente.';
-            
-            if (err?.error) {
-              // Si es un array de errores (del validator)
-              if (Array.isArray(err.error.errors)) {
-                errorMsg = err.error.errors.join(', ');
-              } else if (err.error.msg) {
-                errorMsg = err.error.msg;
-              } else if (err.error.error) {
-                errorMsg = err.error.error;
-              } else if (err.error.message) {
-                errorMsg = err.error.message;
-              }
-            } else if (err?.message) {
-              errorMsg = err.message;
-            }
-            
-            // Si el error es de servidor (500)
-            if (err?.status === 500) {
-              errorMsg = 'Error del servidor. Por favor, intenta más tarde.';
-            }
-            
-            // Si es error de red (0), puede ser CORS o conexión
-            if (err?.status === 0 || err?.status === undefined) {
-              errorMsg = 'Error de conexión. Por favor, verifica tu conexión a internet o intenta más tarde.';
-            }
-            
-            // Si es error 400, puede ser validación
-            if (err?.status === 400) {
-              // El mensaje ya debería estar en errorMsg
-            }
-            
-            console.error('Mostrando alert de error:', errorMsg);
-            this.creando = false;
-            await this.presentAlert('Error de Registro', errorMsg);
-          },
-          complete: () => {
-            console.log('Observable de registro completado');
-          }
-        });
-      } catch (subscribeError) {
-        console.error('❌ Error al suscribirse al observable:', subscribeError);
-        try {
-          if (loading) {
-            loading.dismiss();
-          }
-        } catch (dismissError) {
-          console.error('Error al cerrar loading en catch:', dismissError);
-        }
-        await this.presentAlert('Error', 'Error inesperado al intentar registrar. Por favor, intenta nuevamente.');
-        this.creando = false;
-      }
-    } catch (error) {
-      console.error('Error general en createAccount:', error);
+    // Validaciones básicas
+    if (!this.acceptTerms) {
+      await this.presentAlert('Atención', 'Debes aceptar los términos y condiciones.');
       this.creando = false;
+      return;
+    }
+
+    if (!this.nombre || !this.nombre.trim()) {
+      await this.presentAlert('Error', 'El nombre es obligatorio.');
+      this.creando = false;
+      return;
+    }
+    
+    if (!this.apellido || !this.apellido.trim()) {
+      await this.presentAlert('Error', 'El apellido es obligatorio.');
+      this.creando = false;
+      return;
+    }
+
+    if (!this.username || !this.username.trim()) {
+      await this.presentAlert('Error', 'El nombre de usuario es obligatorio.');
+      this.creando = false;
+      return;
+    }
+
+    if (!this.email || !this.email.includes('@')) {
+      await this.presentAlert('Error', 'Debes ingresar un correo electrónico válido.');
+      this.creando = false;
+      return;
+    }
+
+    if (!this.password || this.password.length < 6) {
+      await this.presentAlert('Error', 'La contraseña debe tener al menos 6 caracteres.');
+      this.creando = false;
+      return;
+    }
+
+    if (this.password !== this.confirmPassword) {
+      await this.presentAlert('Error', 'Las contraseñas no coinciden.');
+      this.creando = false;
+      return;
+    }
+
+    if (!this.id_region || !this.id_comuna) {
+      await this.presentAlert('Error', 'Debes seleccionar región y comuna.');
+      this.creando = false;
+      return;
+    }
+    
+    if (!this.fecha_nacimiento) {
+      await this.presentAlert('Error', 'La fecha de nacimiento es obligatoria.');
+      this.creando = false;
+      return;
+    }
+
+    // Formatear fecha
+    let fechaFormateada = '';
+    if (this.fecha_nacimiento) {
+      if (typeof this.fecha_nacimiento === 'string') {
+        if (this.fecha_nacimiento.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          fechaFormateada = this.fecha_nacimiento;
+        } else {
+          const fecha = new Date(this.fecha_nacimiento);
+          if (!isNaN(fecha.getTime())) {
+            fechaFormateada = fecha.toISOString().split('T')[0];
+          } else {
+            fechaFormateada = this.fecha_nacimiento.trim();
+          }
+        }
+      } else {
+        fechaFormateada = String(this.fecha_nacimiento).trim();
+      }
+    }
+
+    const userData: any = {
+      nombre: this.nombre.trim(),
+      apellido: this.apellido.trim(),
+      username: this.username.trim(),
+      email: this.email.trim(),
+      password: this.password,
+      fecha_nacimiento: fechaFormateada,
+      id_region: this.id_region,
+      id_comuna: this.id_comuna
+    };
+
+    console.log('📋 Datos a registrar:', { ...userData, password: '***' });
+
+    // Mostrar loading
+    let loading: HTMLIonLoadingElement | null = null;
+    try {
+      loading = await this.loadingController.create({
+        message: 'Creando cuenta...',
+        duration: 30000
+      });
+      await loading.present();
+      console.log('⏳ Loading mostrado');
+    } catch (loadingError) {
+      console.error('❌ Error al mostrar loading:', loadingError);
+    }
+    
+    try {
+      console.log('📡 Enviando petición HTTP...');
+      
+      this.authService.register(userData).subscribe({
+        next: async (response) => {
+          console.log('✅ [Register] Respuesta recibida:', response);
+          
+          // Verificar respuesta
+          if (response && response.token) {
+            console.log('✅ [Register] Token recibido');
+            console.log('✅ [Register] Usuario recibido:', response.user);
+            
+            // Cerrar loading
+            try {
+              if (loading) {
+                await loading.dismiss();
+                console.log('✅ [Register] Loading cerrado');
+              }
+            } catch (e) {
+              console.error('Error al cerrar loading:', e);
+            }
+            
+            // Guardar datos de sesión
+            try {
+              await this.authService.guardarDatosSesion(response.token, response.user);
+              console.log('✅ [Register] Datos guardados correctamente');
+            } catch (saveError) {
+              console.error('❌ [Register] Error al guardar datos:', saveError);
+              // Continuar aunque falle el guardado
+            }
+            
+            // Resetear estado
+            this.creando = false;
+            
+            // Mostrar toast
+            this.presentToast('¡Cuenta creada exitosamente!').catch(() => {});
+            
+            // Redirigir
+            console.log('🔄 [Register] Redirigiendo al home...');
+            setTimeout(() => {
+              this.router.navigate(['/home'], { replaceUrl: true });
+            }, 300);
+          } else {
+            console.error('❌ [Register] Respuesta sin token:', response);
+            this.creando = false;
+            try {
+              if (loading) {
+                await loading.dismiss();
+              }
+            } catch (e) {
+              console.error('Error al cerrar loading:', e);
+            }
+            await this.presentAlert('Error', 'No se recibió el token. Intenta iniciar sesión.');
+          }
+        },
+        error: async (err) => {
+          console.error('❌ Error en registro:', err);
+          
+          // Cerrar loading
+          try {
+            if (loading) {
+              await loading.dismiss();
+            }
+          } catch (e) {
+            console.error('Error al cerrar loading:', e);
+          }
+          
+          // Extraer mensaje de error
+          let errorMsg = 'No se pudo completar el registro. Verifica los datos e intenta nuevamente.';
+          
+          if (err?.error) {
+            if (Array.isArray(err.error.errors)) {
+              errorMsg = err.error.errors.join(', ');
+            } else if (err.error.msg) {
+              errorMsg = err.error.msg;
+            } else if (err.error.error) {
+              errorMsg = err.error.error;
+            } else if (err.error.message) {
+              errorMsg = err.error.message;
+            }
+          } else if (err?.message) {
+            errorMsg = err.message;
+          }
+          
+          if (err?.status === 500) {
+            errorMsg = 'Error del servidor. Intenta más tarde.';
+          }
+          
+          if (err?.status === 0 || err?.status === undefined) {
+            errorMsg = 'Error de conexión. Verifica tu internet.';
+          }
+          
+          this.creando = false;
+          await this.presentAlert('Error de Registro', errorMsg);
+        },
+        complete: () => {
+          console.log('✅ Observable completado');
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error inesperado:', error);
+      try {
+        if (loading) {
+          loading.dismiss();
+        }
+      } catch (e) {
+        console.error('Error al cerrar loading:', e);
+      }
+      this.creando = false;
+      await this.presentAlert('Error', 'Error inesperado. Intenta nuevamente.');
     }
   }
-
 
   async presentAlert(header: string, message: string): Promise<void> {
     const alert = await this.alertController.create({
@@ -515,17 +484,19 @@ export class RegistroPage implements OnInit {
       buttons: ['OK'],
     });
     await alert.present();
-    await alert.onDidDismiss();
   }
 
-
-  async presentToast(message: string) {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      position: 'bottom',
-      color: 'success'
-    });
-    await toast.present();
+  async presentToast(message: string): Promise<void> {
+    try {
+      const toast = await this.toastController.create({
+        message,
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      await toast.present();
+    } catch (error) {
+      console.error('Error al mostrar toast:', error);
+    }
   }
 }

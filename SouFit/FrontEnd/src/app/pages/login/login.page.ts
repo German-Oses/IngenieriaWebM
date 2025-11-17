@@ -45,8 +45,4 @@ export class LoginPage {
     });
     await alert.present();
   }
-
-  forgotPassword() {
-    this.router.navigate(['/recuperar-password']);
-  }
 }
