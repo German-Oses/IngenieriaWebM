@@ -11,55 +11,125 @@
 }
 
 /* ===============================
+   LAYOUT GENERAL
+================================= */
+
+ion-content {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+/* ===============================
    MENÚ LATERAL
 ================================= */
 
 .menu-lateral {
-  width: 80px;
-  background: #ffffff;
-  border-right: 1px solid #e6e6e6;
+  width: 80px !important;
+  max-width: 80px !important;
+  min-width: 80px !important;
+  background-color: white;
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 15px 0;
-  gap: 15px;
+  border-right: 1px solid #e6e6e6;
   
   @media (max-width: 768px) {
     display: none !important;
   }
 }
 
-.logo img {
-  width: 32px;
-  height: 32px;
+.logo {
+  margin-bottom: 30px;
+  
+  img {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .boton-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  cursor: pointer;
   width: 100%;
   text-align: center;
   padding: 12px 0;
-  cursor: pointer;
   transition: 0.2s ease;
   color: #444;
 
   ion-icon {
     font-size: 22px;
+    color: #666;
+    margin-bottom: 5px;
   }
 
   p {
     font-size: 12px;
-    margin: 4px 0 0;
+    color: #666;
+    margin: 0;
   }
 
   &:hover {
     background: #f2f2f2;
   }
+  
+  &.activo {
+    background: #000;
+    color: #fff;
+    border-radius: 10px;
+    
+    ion-icon {
+      color: #fff;
+    }
+    
+    p {
+      color: #fff;
+    }
+  }
 }
 
-.boton-menu.activo {
-  background: #000;
-  color: #fff;
-  border-radius: 10px;
+/* Header móvil */
+.header-movil {
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: white;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #333;
+      font-weight: 600;
+    }
+    
+    .btn-menu-hamburguesa {
+      background: none;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      ion-icon {
+        font-size: 24px;
+        color: #333;
+      }
+    }
+  }
 }
 
 /* ===============================
@@ -86,8 +156,11 @@
   align-items: center;
   border-bottom: 1px solid #e0e0e0;
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 
   h1 {
     margin: 0;
@@ -103,19 +176,7 @@
   }
 
   @media (max-width: 768px) {
-    padding: 12px 16px;
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-
-    h1 {
-      font-size: 20px;
-    }
-
-    .botones-header {
-      justify-content: center;
-      gap: 8px;
-    }
+    display: none;
   }
 }
 
@@ -184,6 +245,10 @@
   display: flex;
   justify-content: center;
   max-width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 }
 
 .posts-contenedor-inner {
@@ -192,6 +257,10 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
 }
 
 /* ===============================
@@ -238,6 +307,7 @@
 
   @media (max-width: 768px) {
     padding: 20px 16px;
+    margin-bottom: 16px;
   }
 }
 
@@ -459,6 +529,16 @@
   padding: 8px 12px;
   --padding-start: 12px;
   --padding-end: 12px;
+  --color: #333;
+  --placeholder-color: #999;
+  
+  &::part(native) {
+    color: #333 !important;
+  }
+  
+  input {
+    color: #333 !important;
+  }
 }
 
 .textarea-editar {
@@ -466,6 +546,39 @@
   border: 1px solid #dbdbdb;
   border-radius: 4px;
   padding: 8px 12px;
+  --color: #333;
+  --placeholder-color: #999;
+  
+  &::part(native) {
+    color: #333 !important;
+  }
+  
+  textarea {
+    color: #333 !important;
+  }
+}
+
+/* Estilos para ion-select e ion-item en edición */
+ion-item {
+  --color: #333;
+  --placeholder-color: #999;
+  
+  ion-select {
+    --color: #333;
+    --placeholder-color: #999;
+    
+    &::part(text) {
+      color: #333 !important;
+    }
+    
+    &::part(placeholder) {
+      color: #999 !important;
+    }
+  }
+  
+  &::part(native) {
+    color: #333 !important;
+  }
 }
 
 .btn-guardar {
