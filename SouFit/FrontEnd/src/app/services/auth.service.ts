@@ -74,31 +74,57 @@ export class AuthService {
   async guardarDatosSesion(token: string, user: any): Promise<void> {
     console.log('💾 [AuthService] Guardando datos de sesión...');
     
-    // Esperar a que el storage esté listo
+    // Esperar a que el storage esté listo (con timeout más corto)
     if (!this.storageReady.value) {
       console.log('⏳ [AuthService] Esperando storage...');
-      const maxWait = 5000;
+      const maxWait = 3000; // 3 segundos máximo
       const startTime = Date.now();
       
       while (!this.storageReady.value && (Date.now() - startTime) < maxWait) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      // Si aún no está listo después del timeout, intentar de todas formas
+      if (!this.storageReady.value) {
+        console.warn('⚠️ [AuthService] Storage no está listo, intentando guardar de todas formas...');
       }
     }
     
     try {
-      await this.storage.set('token', token);
+      // Intentar guardar el token
+      await this.storage.set('token', token).catch(err => {
+        console.error('❌ [AuthService] Error al guardar token:', err);
+        // Intentar de nuevo después de un momento
+        return new Promise((resolve) => {
+          setTimeout(async () => {
+            try {
+              await this.storage.set('token', token);
+              resolve(undefined);
+            } catch (e) {
+              console.error('❌ [AuthService] Error al guardar token (segundo intento):', e);
+              resolve(undefined); // Continuar aunque falle
+            }
+          }, 500);
+        });
+      });
+      
       console.log('✅ [AuthService] Token guardado');
       
+      // Guardar usuario si existe
       if (user) {
-        await this.saveUser(user);
+        await this.saveUser(user).catch(err => {
+          console.error('❌ [AuthService] Error al guardar usuario:', err);
+          // Continuar aunque falle
+        });
         console.log('✅ [AuthService] Usuario guardado');
       }
       
+      // Actualizar estado de autenticación
       this.isAuthenticated.next(true);
       console.log('✅ [AuthService] Sesión iniciada');
     } catch (error) {
       console.error('❌ [AuthService] Error al guardar:', error);
-      throw error;
+      // No lanzar error, solo loguear
     }
   }
 

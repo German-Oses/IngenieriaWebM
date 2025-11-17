@@ -368,7 +368,7 @@ export class RegistroPage implements OnInit {
       console.log('📡 Enviando petición HTTP...');
       
       this.authService.register(userData).subscribe({
-        next: async (response) => {
+        next: (response) => {
           console.log('✅ [Register] Respuesta recibida:', response);
           
           // Verificar respuesta
@@ -376,59 +376,54 @@ export class RegistroPage implements OnInit {
             console.log('✅ [Register] Token recibido');
             console.log('✅ [Register] Usuario recibido:', response.user);
             
-            // Cerrar loading
-            try {
-              if (loading) {
-                await loading.dismiss();
-                console.log('✅ [Register] Loading cerrado');
-              }
-            } catch (e) {
-              console.error('Error al cerrar loading:', e);
+            // Cerrar loading inmediatamente
+            if (loading) {
+              loading.dismiss().catch(e => console.error('Error al cerrar loading:', e));
             }
             
-            // Guardar datos de sesión
-            try {
-              await this.authService.guardarDatosSesion(response.token, response.user);
-              console.log('✅ [Register] Datos guardados correctamente');
-            } catch (saveError) {
-              console.error('❌ [Register] Error al guardar datos:', saveError);
-              // Continuar aunque falle el guardado
-            }
-            
-            // Resetear estado
+            // Resetear estado inmediatamente
             this.creando = false;
+            
+            // Guardar datos de sesión de forma asíncrona (no bloquear)
+            this.authService.guardarDatosSesion(response.token, response.user)
+              .then(() => {
+                console.log('✅ [Register] Datos guardados correctamente');
+              })
+              .catch((saveError) => {
+                console.error('❌ [Register] Error al guardar datos:', saveError);
+                // Continuar aunque falle el guardado
+              });
             
             // Mostrar toast
             this.presentToast('¡Cuenta creada exitosamente!').catch(() => {});
             
-            // Redirigir
+            // Redirigir inmediatamente
             console.log('🔄 [Register] Redirigiendo al home...');
             setTimeout(() => {
               this.router.navigate(['/home'], { replaceUrl: true });
-            }, 300);
+            }, 200);
           } else {
             console.error('❌ [Register] Respuesta sin token:', response);
             this.creando = false;
-            try {
-              if (loading) {
-                await loading.dismiss();
-              }
-            } catch (e) {
-              console.error('Error al cerrar loading:', e);
+            if (loading) {
+              loading.dismiss().catch(e => console.error('Error al cerrar loading:', e));
             }
-            await this.presentAlert('Error', 'No se recibió el token. Intenta iniciar sesión.');
+            this.presentAlert('Error', 'No se recibió el token. Intenta iniciar sesión.').catch(() => {});
           }
         },
-        error: async (err) => {
+        error: (err) => {
           console.error('❌ Error en registro:', err);
+          console.error('❌ Detalles del error:', {
+            status: err?.status,
+            statusText: err?.statusText,
+            error: err?.error,
+            message: err?.message,
+            url: err?.url
+          });
           
           // Cerrar loading
-          try {
-            if (loading) {
-              await loading.dismiss();
-            }
-          } catch (e) {
-            console.error('Error al cerrar loading:', e);
+          if (loading) {
+            loading.dismiss().catch(e => console.error('Error al cerrar loading:', e));
           }
           
           // Extraer mensaje de error
@@ -457,7 +452,7 @@ export class RegistroPage implements OnInit {
           }
           
           this.creando = false;
-          await this.presentAlert('Error de Registro', errorMsg);
+          this.presentAlert('Error de Registro', errorMsg).catch(() => {});
         },
         complete: () => {
           console.log('✅ Observable completado');
