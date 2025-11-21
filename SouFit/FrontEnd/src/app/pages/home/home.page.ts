@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonGrid, IonRow, IonCol, IonButton, IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner } from '@ionic/angular/standalone';
+import { IonContent, IonGrid, IonRow, IonCol, IonButton, IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons } from '@ionic/angular/standalone';
 import { IonIcon } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { PostService, Post, Comentario } from '../../services/post.service';
@@ -646,9 +646,11 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   // Manejar errores de carga de imágenes
-  handleImageError(event: any) {
-    const img = event.target;
-    img.src = 'assets/icon/SouFitLogo.png';
-    img.onerror = null; // Prevenir loops infinitos
+  handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.src = 'assets/icon/SouFitLogo.png';
+      img.onerror = null; // Prevenir loops infinitos
+    }
   }
 }
