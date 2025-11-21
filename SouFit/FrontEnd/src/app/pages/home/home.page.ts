@@ -191,21 +191,27 @@ export class HomePage implements OnInit, OnDestroy {
         this.cargandoMas = true;
       }
     
-    const cacheKey = `feed_${this.filtroTipo}_${this.filtroOrden}_${this.offset}`;
-    
-    // Intentar obtener del caché solo si es la primera carga
-    if (resetear && this.offset === 0) {
-      this.cacheService.get<any[]>(cacheKey).then(cached => {
-        if (cached) {
-          this.posts = cached;
-          this.cargando = false;
-          this.hayMasPosts = cached.length >= this.limit;
-          return;
-        }
+      const cacheKey = `feed_${this.filtroTipo}_${this.filtroOrden}_${this.offset}`;
+      
+      // Intentar obtener del caché solo si es la primera carga
+      if (resetear && this.offset === 0) {
+        this.cacheService.get<any[]>(cacheKey).then(cached => {
+          if (cached) {
+            this.posts = cached;
+            this.cargando = false;
+            this.hayMasPosts = cached.length >= this.limit;
+            return;
+          }
+          this.cargarFeedDesdeAPI(resetear, cacheKey);
+        });
+      } else {
         this.cargarFeedDesdeAPI(resetear, cacheKey);
-      });
-    } else {
-      this.cargarFeedDesdeAPI(resetear, cacheKey);
+      }
+    } catch (error) {
+      console.error('Error en cargarFeed:', error);
+      this.cargando = false;
+      this.cargandoMas = false;
+      this.presentErrorToast('Error al cargar el feed');
     }
   }
   
@@ -250,12 +256,6 @@ export class HomePage implements OnInit, OnDestroy {
         this.presentErrorToast('Error al cargar el feed. Por favor, intenta de nuevo.');
       }
     });
-    } catch (error) {
-      console.error('Error en cargarFeed:', error);
-      this.cargando = false;
-      this.cargandoMas = false;
-      this.presentErrorToast('Error al cargar el feed');
-    }
   }
   
   aplicarFiltros() {

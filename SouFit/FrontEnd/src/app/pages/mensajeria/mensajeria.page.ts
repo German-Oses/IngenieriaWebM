@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonAvatar, IonCol, IonContent, IonGrid, IonIcon, IonRow } from '@ionic/angular/standalone';
+import { IonAvatar, IonCol, IonContent, IonGrid, IonIcon, IonRow, AlertController, ToastController } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { ChatService, Chat, Mensaje } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
@@ -40,7 +40,9 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private chatService: ChatService,
-    private authService: AuthService
+    private authService: AuthService,
+    private alertController: AlertController,
+    private toastController: ToastController
   ) {
     addIcons({ arrowBackOutline, addOutline, closeOutline });
   }
@@ -78,9 +80,33 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       
       this.subscriptions.push(
         this.chatService.mensajes$.subscribe(mensajes => {
-          console.log('Mensajes actualizados:', mensajes.length);
+          const mensajesAnteriores = this.mensajes.length;
+          const ultimoMensajeAnterior = this.mensajes[this.mensajes.length - 1]?.id;
+          const ultimoMensajeNuevo = mensajes[mensajes.length - 1]?.id;
+          
+          console.log('💬 Mensajes actualizados:', mensajes.length, '(antes:', mensajesAnteriores + ')');
+          
+          // Actualizar mensajes
           this.mensajes = mensajes;
-          setTimeout(() => this.scrollToBottom(), 100);
+          
+          // Scroll automático solo si estamos cerca del final o hay nuevos mensajes
+          setTimeout(() => {
+            const container = this.mensajesContainer?.nativeElement;
+            if (container) {
+              const scrollHeight = container.scrollHeight;
+              const scrollTop = container.scrollTop;
+              const clientHeight = container.clientHeight;
+              const isNearBottom = scrollHeight - scrollTop <= clientHeight + 300;
+              const hayNuevosMensajes = mensajes.length > mensajesAnteriores || ultimoMensajeNuevo !== ultimoMensajeAnterior;
+              
+              if (isNearBottom || hayNuevosMensajes) {
+                this.scrollToBottom();
+              }
+            } else {
+              // Si no hay container aún, intentar de nuevo
+              setTimeout(() => this.scrollToBottom(), 200);
+            }
+          }, 150);
         })
       );
       
@@ -125,16 +151,24 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
   
   cargarMensajesDelChat(otroUsuarioId: number) {
-    this.chatService.cargarMensajes(otroUsuarioId).subscribe({
-      next: (mensajes) => {
-        this.mensajes = mensajes;
-        setTimeout(() => this.scrollToBottom(), 100);
-        // Marcar mensajes como leídos
-        this.chatService.marcarMensajesLeidos(otroUsuarioId).subscribe();
-      },
-      error: (error) => {
-        console.error('Error al cargar mensajes:', error);
-      }
+    console.log('📥 Cargando mensajes del chat con usuario:', otroUsuarioId);
+    // El servicio ya carga los mensajes automáticamente cuando se selecciona un chat
+    // Este método es solo para asegurar que se carguen si no se han cargado aún
+    if (this.mensajes.length === 0) {
+      this.chatService.cargarMensajes(otroUsuarioId).subscribe({
+        next: (mensajes) => {
+          console.log('✅ Mensajes cargados inicialmente:', mensajes.length);
+          // Los mensajes se actualizarán automáticamente vía el observable mensajes$
+        },
+        error: (error) => {
+          console.error('❌ Error al cargar mensajes:', error);
+        }
+      });
+    }
+    // Marcar mensajes como leídos
+    this.chatService.marcarMensajesLeidos(otroUsuarioId).subscribe({
+      next: () => console.log('✅ Mensajes marcados como leídos'),
+      error: (err) => console.error('Error al marcar como leído:', err)
     });
   }
 
@@ -150,9 +184,11 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
 
   seleccionarChat(chat: Chat) {
+    console.log('💬 Seleccionando chat desde página:', chat.id_usuario);
     this.chatActivo = chat;
+    // El servicio ya carga los mensajes automáticamente
     this.chatService.seleccionarChat(chat);
-    // Cargar mensajes del chat seleccionado
+    // También cargar mensajes localmente para asegurar que se muestren
     this.cargarMensajesDelChat(chat.id_usuario);
   }
 
@@ -173,9 +209,19 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('Enviando mensaje a:', this.chatActivo.id_usuario, 'Contenido:', this.nuevoMensaje.trim());
-    this.chatService.enviarMensaje(this.chatActivo.id_usuario, this.nuevoMensaje.trim());
+    const contenido = this.nuevoMensaje.trim();
+    console.log('Enviando mensaje a:', this.chatActivo.id_usuario, 'Contenido:', contenido);
+    
+    // Limpiar el input inmediatamente para mejor UX
     this.nuevoMensaje = '';
+    
+    // Enviar mensaje (se actualizará automáticamente vía socket)
+    this.chatService.enviarMensaje(this.chatActivo.id_usuario, contenido);
+    
+    // Scroll al final después de un breve delay para que el mensaje se agregue
+    setTimeout(() => {
+      this.scrollToBottom();
+    }, 100);
   }
 
   enviarMensajeConArchivo() {
@@ -189,13 +235,16 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       this.nuevoMensaje.trim() || undefined
     ).subscribe({
       next: (mensaje) => {
+        console.log('✅ Archivo enviado:', mensaje);
         // El mensaje ya se agregará automáticamente por el socket
         this.limpiarArchivo();
         this.nuevoMensaje = '';
+        // Scroll al final
+        setTimeout(() => this.scrollToBottom(), 200);
       },
       error: (error) => {
-        console.error('Error al enviar archivo:', error);
-        alert('Error al enviar el archivo. Por favor, intenta de nuevo.');
+        console.error('❌ Error al enviar archivo:', error);
+        this.presentErrorToast('No se pudo enviar el archivo. Por favor, intenta de nuevo.');
       }
     });
   }
@@ -206,13 +255,13 @@ export class MensajeriaPage implements OnInit, OnDestroy {
 
     // Validar tipo de archivo
     if (!file.type.startsWith('image/') && !file.type.startsWith('audio/')) {
-      alert('Solo se permiten archivos de imagen o audio');
+      this.presentErrorToast('Solo se permiten archivos de imagen o audio');
       return;
     }
 
     // Validar tamaño (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('El archivo es demasiado grande. Máximo 10MB');
+      this.presentErrorToast('El archivo es demasiado grande. Máximo 10MB');
       return;
     }
 
@@ -301,10 +350,14 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     });
   }
 
-  private scrollToBottom(): void {
+  scrollToBottom(): void {
     try {
-      if (this.mensajesContainer) {
-        this.mensajesContainer.nativeElement.scrollTop = this.mensajesContainer.nativeElement.scrollHeight;
+      if (this.mensajesContainer && this.mensajesContainer.nativeElement) {
+        const container = this.mensajesContainer.nativeElement;
+        // Usar requestAnimationFrame para asegurar que el DOM esté actualizado
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+        });
       }
     } catch(err) {
       console.error('Error al hacer scroll:', err);

@@ -54,7 +54,14 @@ export class ChatService {
   constructor(
     private http: HttpClient
   ) {
-    this.socket = io(this.socketUrl);
+    this.socket = io(this.socketUrl, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+      timeout: 20000,
+      transports: ['websocket', 'polling']
+    });
     this.setupSocketListeners();
   }
 
@@ -77,23 +84,26 @@ export class ChatService {
   private setupSocketListeners() {
     // Escuchar nuevas notificaciones
     this.socket.on('nueva_notificacion', (notificacion: any) => {
-      console.log('Nueva notificación recibida:', notificacion);
+      console.log('📬 Nueva notificación recibida:', notificacion);
       // Emitir evento para que otros componentes puedan suscribirse
       // Esto se puede expandir con un Subject si es necesario
     });
     
-    // Escuchar nuevos mensajes
+    // Escuchar nuevos mensajes en tiempo real
     this.socket.on('nuevo_mensaje', (mensaje: Mensaje) => {
+      console.log('💬 Nuevo mensaje recibido:', mensaje);
       const chatActivo = this.chatActivoSubject.value;
       const esMensajeParaMi = mensaje.id_destinatario === this.usuarioActual?.id;
+      const esMensajeMio = mensaje.id_remitente === this.usuarioActual?.id;
       
       // Si el mensaje es para mí y no estoy en ese chat, emitir notificación
       if (esMensajeParaMi && (!chatActivo || chatActivo.id_usuario !== mensaje.id_remitente)) {
+        console.log('📨 Mensaje nuevo de usuario no activo, mostrando notificación');
         this.nuevoMensajeSubject.next(mensaje);
         this.actualizarContadorNoLeidos();
         
         // Mostrar notificación push si está disponible
-        if (this.notificationService && document.hidden) {
+        if (this.notificationService) {
           const remitenteNombre = (mensaje as any).remitente_nombre || 'Usuario';
           const contenido = mensaje.contenido || 'Nuevo mensaje';
           this.notificationService.showMessageNotification(
@@ -103,22 +113,44 @@ export class ChatService {
         }
       }
       
-      // Si el mensaje es del chat activo, agregarlo a los mensajes
+      // Si el mensaje es del chat activo o es mi mensaje, agregarlo a los mensajes
       if (chatActivo && 
           (mensaje.id_remitente === chatActivo.id_usuario || mensaje.id_destinatario === chatActivo.id_usuario)) {
         const mensajesActuales = this.mensajesSubject.value;
         // Verificar que el mensaje no esté ya en la lista
         const existe = mensajesActuales.some(m => m.id === mensaje.id);
         if (!existe) {
-          this.mensajesSubject.next([...mensajesActuales, mensaje]);
+          console.log('✅ Agregando mensaje al chat activo');
+          
+          // Si hay un mensaje optimista con el mismo contenido y remitente, reemplazarlo
+          const mensajeOptimistaIndex = mensajesActuales.findIndex(m => 
+            m.id && m.id > 1000000000000 && // IDs temporales son timestamps grandes
+            m.id_remitente === mensaje.id_remitente &&
+            m.contenido === mensaje.contenido &&
+            Math.abs(new Date(m.fecha_envio || '').getTime() - new Date(mensaje.fecha_envio || '').getTime()) < 5000
+          );
+          
+          if (mensajeOptimistaIndex !== -1) {
+            // Reemplazar mensaje optimista con el real
+            const nuevosMensajes = [...mensajesActuales];
+            nuevosMensajes[mensajeOptimistaIndex] = mensaje;
+            this.mensajesSubject.next(nuevosMensajes);
+          } else {
+            // Agregar nuevo mensaje
+            this.mensajesSubject.next([...mensajesActuales, mensaje]);
+          }
+          
           // Si es mi mensaje o estoy viendo el chat, marcar como leído
           if (mensaje.id_destinatario === this.usuarioActual?.id) {
-            this.marcarMensajesLeidos(mensaje.id_remitente).subscribe();
+            this.marcarMensajesLeidos(mensaje.id_remitente).subscribe({
+              next: () => console.log('✅ Mensajes marcados como leídos'),
+              error: (err) => console.error('Error al marcar como leído:', err)
+            });
           }
         }
       }
       
-      // Actualizar la lista de chats siempre
+      // Actualizar la lista de chats siempre para reflejar el último mensaje
       this.actualizarListaChats();
     });
     
@@ -147,12 +179,33 @@ export class ChatService {
       if (this.usuarioActual) {
         console.log('Usuario actual detectado, entrando al chat...');
         this.entrarChat(this.usuarioActual.id);
+        // Unirse también a la sala de notificaciones
+        this.socket.emit('unirse_notificaciones', this.usuarioActual.id);
+      }
+    });
+    
+    // Manejar reconexión
+    this.socket.on('reconnect', (attemptNumber: number) => {
+      console.log(`🔄 Reconectado al servidor de chat (intento ${attemptNumber})`);
+      if (this.usuarioActual) {
+        this.entrarChat(this.usuarioActual.id);
+        this.socket.emit('unirse_notificaciones', this.usuarioActual.id);
+      }
+    });
+    
+    // Manejar desconexión
+    this.socket.on('disconnect', (reason: string) => {
+      console.warn('⚠️ Desconectado del servidor de chat:', reason);
+      if (reason === 'io server disconnect') {
+        // El servidor desconectó el socket, reconectar manualmente
+        this.socket.connect();
       }
     });
     
     // Manejar errores de conexión
     this.socket.on('connect_error', (error) => {
       console.error('❌ Error de conexión al servidor de chat:', error);
+      // El socket.io se reconectará automáticamente
     });
 
     this.socket.on('disconnect', () => {
@@ -228,40 +281,63 @@ export class ChatService {
   // Enviar mensaje
   enviarMensaje(idDestinatario: number, contenido: string) {
     if (!this.usuarioActual) {
-      console.error('No hay usuario actual para enviar mensaje');
+      console.error('❌ No hay usuario actual para enviar mensaje');
       return;
     }
 
-    if (!this.socket || !this.socket.connected) {
-      console.error('Socket no conectado, no se puede enviar mensaje');
+    if (!this.socket) {
+      console.error('❌ Socket no inicializado');
+      return;
+    }
+
+    if (!this.socket.connected) {
+      console.warn('⚠️ Socket no conectado, intentando reconectar...');
       // Intentar reconectar
-      if (this.socket) {
-        this.socket.connect();
-        this.socket.once('connect', () => {
-          console.log('Socket reconectado, enviando mensaje...');
-          this.enviarMensaje(idDestinatario, contenido);
-        });
-      }
+      this.socket.connect();
+      this.socket.once('connect', () => {
+        console.log('✅ Socket reconectado, enviando mensaje...');
+        this.enviarMensaje(idDestinatario, contenido);
+      });
       return;
     }
 
     const mensaje = {
       id_remitente: this.usuarioActual.id,
       id_destinatario: idDestinatario,
-      contenido: contenido
+      contenido: contenido.trim()
     };
 
-    console.log('Enviando mensaje via socket:', mensaje);
-    this.socket.emit('enviar_mensaje', mensaje);
+    console.log('📤 Enviando mensaje via socket:', mensaje);
     
-    // Agregar el mensaje enviado a la lista local
-    const mensajeLocal: Mensaje = {
-      ...mensaje,
-      fecha_envio: new Date().toISOString()
+    // Crear mensaje optimista (para mostrar inmediatamente)
+    const mensajeOptimista: Mensaje = {
+      id: Date.now(), // ID temporal
+      id_remitente: this.usuarioActual.id,
+      id_destinatario: idDestinatario,
+      contenido: contenido.trim(),
+      fecha_envio: new Date().toISOString(),
+      leido: false
     };
     
-    const mensajesActuales = this.mensajesSubject.value;
-    this.mensajesSubject.next([...mensajesActuales, mensajeLocal]);
+    // Agregar mensaje optimista a la lista si estamos en ese chat
+    const chatActivo = this.chatActivoSubject.value;
+    if (chatActivo && chatActivo.id_usuario === idDestinatario) {
+      const mensajesActuales = this.mensajesSubject.value;
+      // Verificar que no exista ya
+      const existe = mensajesActuales.some(m => m.id === mensajeOptimista.id);
+      if (!existe) {
+        this.mensajesSubject.next([...mensajesActuales, mensajeOptimista]);
+      }
+    }
+    
+    // Enviar mensaje al servidor
+    this.socket.emit('enviar_mensaje', mensaje);
+    
+    // El servidor responderá con 'nuevo_mensaje' que reemplazará el mensaje optimista
+    // Actualizar lista de chats después de enviar
+    setTimeout(() => {
+      this.actualizarListaChats();
+    }, 500);
   }
 
   // Enviar mensaje con archivo (imagen o audio)
@@ -280,7 +356,7 @@ export class ChatService {
   cargarMensajes(idOtroUsuario: number): Observable<Mensaje[]> {
     return this.http.get<Mensaje[]>(`${this.apiUrl}/mensajes/${idOtroUsuario}`);
   }
-
+  
   // Cargar lista de chats del usuario
   cargarChats(): Observable<Chat[]> {
     return this.http.get<Chat[]>(`${this.apiUrl}/chats`);
@@ -334,22 +410,6 @@ export class ChatService {
     return this.http.get<any[]>(`${this.apiUrl}/seguidores`);
   }
 
-  // Seleccionar un chat activo
-  seleccionarChat(chat: Chat) {
-    this.chatActivoSubject.next(chat);
-    
-    // Cargar mensajes del chat seleccionado
-    if (this.usuarioActual) {
-      this.cargarMensajes(chat.id_usuario).subscribe({
-        next: (mensajes) => {
-          this.mensajesSubject.next(mensajes);
-        },
-        error: (error) => {
-          console.error('Error al cargar mensajes:', error);
-        }
-      });
-    }
-  }
 
   // Actualizar la lista de chats después de un nuevo mensaje
   private actualizarListaChats() {
