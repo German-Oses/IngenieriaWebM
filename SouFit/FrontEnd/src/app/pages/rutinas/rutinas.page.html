@@ -334,7 +334,7 @@
           <ion-button 
             expand="block" 
             (click)="actualizarRutina()" 
-            [disabled]="editandoRutina || !rutinaEditando.nombre_rutina?.trim()"
+            [disabled]="editandoRutina || !rutinaEditando.nombre_rutina.trim()"
             class="btn-actualizar-rutina-modal">
             <ion-spinner *ngIf="editandoRutina" name="crescent" slot="start"></ion-spinner>
             <ion-icon *ngIf="!editandoRutina" name="checkmark-outline" slot="start"></ion-icon>
