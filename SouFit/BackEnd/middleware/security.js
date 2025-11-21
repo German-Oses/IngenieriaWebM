@@ -25,8 +25,11 @@ const rateLimit = (windowMs, max) => {
         }
         
         if (record.count >= max) {
+            const remainingTime = Math.ceil((record.resetTime - now) / 1000 / 60);
             return res.status(429).json({ 
-                error: 'Demasiadas solicitudes, intenta de nuevo más tarde' 
+                error: 'Demasiadas solicitudes, intenta de nuevo más tarde',
+                message: `Has excedido el límite de solicitudes. Por favor, espera ${remainingTime} minuto(s) antes de intentar nuevamente.`,
+                retryAfter: Math.ceil((record.resetTime - now) / 1000)
             });
         }
         
@@ -35,11 +38,11 @@ const rateLimit = (windowMs, max) => {
     };
 };
 
-// Rate limiting para autenticación
+// Rate limiting para autenticación (más permisivo para permitir múltiples intentos de login)
 const authLimiter =
     process.env.NODE_ENV === "production"
-        ? rateLimit(15 * 60 * 1000,100)  
-        : (req, res, next) => next();  
+        ? rateLimit(15 * 60 * 1000, 200)  // 200 requests cada 15 minutos (más permisivo para login)
+        : rateLimit(60 * 1000, 1000);     // desarrollo: 1000 requests por minuto  
 
 
 // Rate limiting general (más permisivo en desarrollo)

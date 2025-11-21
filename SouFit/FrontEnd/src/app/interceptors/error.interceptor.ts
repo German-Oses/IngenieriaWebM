@@ -39,7 +39,15 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = error.error?.error || 'El recurso ya existe';
             break;
           case 429:
-            errorMessage = 'Demasiadas solicitudes. Por favor, espera un momento';
+            // Mostrar mensaje más detallado si está disponible
+            if (error.error?.message) {
+              errorMessage = error.error.message;
+            } else if (error.error?.retryAfter) {
+              const minutes = Math.ceil(error.error.retryAfter / 60);
+              errorMessage = `Demasiadas solicitudes. Por favor, espera ${minutes} minuto(s) antes de intentar nuevamente`;
+            } else {
+              errorMessage = 'Demasiadas solicitudes. Por favor, espera un momento antes de intentar nuevamente';
+            }
             break;
           case 500:
             errorMessage = 'Error interno del servidor. Por favor, intenta más tarde';
