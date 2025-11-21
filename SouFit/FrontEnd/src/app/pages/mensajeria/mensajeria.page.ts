@@ -433,4 +433,33 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     // Limpiar mensajes (nueva conversación)
     this.chatService.limpiarMensajes();
   }
+
+  async presentErrorToast(message: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      position: 'bottom',
+      color: 'danger'
+    });
+    await toast.present();
+  }
+  
+  async presentSuccessToast(message: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      position: 'bottom',
+      color: 'success'
+    });
+    await toast.present();
+  }
+  
+  async presentAlert(header: string, message: string) {
+    const alert = await this.alertController.create({
+      header,
+      message,
+      buttons: ['OK']
+    });
+    await alert.present();
+  }
 }
