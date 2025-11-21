@@ -215,19 +215,42 @@ router.put('/mensajes/marcar-leidos/:otroUsuarioId', auth, async (req, res) => {
 // Obtener contador de mensajes no leídos
 router.get('/mensajes/contador-no-leidos', auth, async (req, res) => {
     try {
+        // Validar que el usuario esté autenticado
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: 'Usuario no autenticado' });
+        }
+        
         const userId = req.user.id;
+        
+        // Validar que userId sea un número válido
+        if (isNaN(userId) || userId <= 0) {
+            return res.status(400).json({ error: 'ID de usuario inválido' });
+        }
         
         const query = `
             SELECT COUNT(*) as total
             FROM mensaje
-            WHERE id_destinatario = $1 AND leido = false
+            WHERE id_destinatario = $1 AND (leido = false OR leido IS NULL)
         `;
         
         const result = await db.query(query, [userId]);
-        res.json({ total: parseInt(result.rows[0].total) });
+        
+        // Validar que el resultado sea válido
+        if (!result || !result.rows || result.rows.length === 0) {
+            return res.json({ total: 0 });
+        }
+        
+        const total = parseInt(result.rows[0].total) || 0;
+        res.json({ total });
     } catch (error) {
         console.error('Error al obtener contador de mensajes no leídos:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        // Si es un error de base de datos, devolver 500
+        // Si es un error de validación, devolver 400
+        if (error.code === '23505' || error.code === '23503') {
+            res.status(400).json({ error: 'Error de validación en la base de datos' });
+        } else {
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
     }
 });
 

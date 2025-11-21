@@ -183,8 +183,9 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
   
   cargarMensajesDelChat(otroUsuarioId: number) {
-    if (!otroUsuarioId || isNaN(otroUsuarioId)) {
+    if (!otroUsuarioId || isNaN(otroUsuarioId) || otroUsuarioId <= 0) {
       console.error('❌ ID de usuario inválido para cargar mensajes:', otroUsuarioId);
+      this.presentErrorToast('Error: ID de usuario inválido');
       return;
     }
     
@@ -199,8 +200,9 @@ export class MensajeriaPage implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('❌ Error al cargar mensajes:', error);
-          if (error.error?.error === 'ID de usuario inválido') {
-            this.presentErrorToast('Error: ID de usuario inválido');
+          // No mostrar toast para errores de validación que ya se manejaron
+          if (error.status !== 400 && error.status !== 401) {
+            this.presentErrorToast('Error al cargar los mensajes');
           }
         }
       });
@@ -208,7 +210,12 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     // Marcar mensajes como leídos
     this.chatService.marcarMensajesLeidos(otroUsuarioId).subscribe({
       next: () => console.log('✅ Mensajes marcados como leídos'),
-      error: (err) => console.error('Error al marcar como leído:', err)
+      error: (err) => {
+        // Solo loggear errores que no sean de validación
+        if (err.status !== 400 && err.status !== 401) {
+          console.error('Error al marcar como leído:', err);
+        }
+      }
     });
   }
 

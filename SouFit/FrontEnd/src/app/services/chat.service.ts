@@ -455,37 +455,60 @@ export class ChatService {
   
   // Actualizar contador de mensajes no leídos
   private actualizarContadorNoLeidos() {
-    if (!this.usuarioActual) return;
+    if (!this.usuarioActual || !this.usuarioActual.id) {
+      return;
+    }
     
-    // Usar el endpoint del backend para obtener el contador real
-    this.http.get<{ total: number }>(`${this.apiUrl}/mensajes/contador-no-leidos`).subscribe({
-      next: (response) => {
-        this.contadorNoLeidosSubject.next(response.total || 0);
-      },
-      error: (error) => {
-        console.error('Error al actualizar contador:', error);
-        // Fallback: contar desde los chats
-        this.cargarChats().subscribe({
-          next: (chats) => {
-            let contador = 0;
-            const chatActivo = this.chatActivoSubject.value;
-            
-            chats.forEach(chat => {
-              if (chat.fecha_ultimo_mensaje && 
-                  chat.id_usuario !== chatActivo?.id_usuario &&
-                  new Date(chat.fecha_ultimo_mensaje) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
-                contador++;
-              }
-            });
-            
-            this.contadorNoLeidosSubject.next(contador);
-          },
-          error: () => {
+    // Agregar un pequeño delay para evitar llamadas muy rápidas después de enviar mensajes
+    setTimeout(() => {
+      // Usar el endpoint del backend para obtener el contador real
+      this.http.get<{ total: number }>(`${this.apiUrl}/mensajes/contador-no-leidos`).subscribe({
+        next: (response) => {
+          if (response && typeof response.total === 'number') {
+            this.contadorNoLeidosSubject.next(response.total);
+          } else {
             this.contadorNoLeidosSubject.next(0);
           }
-        });
-      }
-    });
+        },
+        error: (error) => {
+          // Loggear el error para debugging
+          if (error.status === 401) {
+            console.warn('No autenticado al obtener contador de mensajes no leídos');
+            this.contadorNoLeidosSubject.next(0);
+            return;
+          }
+          
+          if (error.status === 400) {
+            console.warn('Error 400 al obtener contador de mensajes no leídos:', error.error?.error || error.error?.msg);
+            // Intentar fallback solo si es un error 400
+            this.contadorNoLeidosSubject.next(0);
+            return;
+          }
+          
+          console.error('Error al actualizar contador:', error);
+          // Fallback: contar desde los chats solo para errores que no sean 400 o 401
+          this.cargarChats().subscribe({
+            next: (chats) => {
+              let contador = 0;
+              const chatActivo = this.chatActivoSubject.value;
+              
+              chats.forEach(chat => {
+                if (chat.fecha_ultimo_mensaje && 
+                    chat.id_usuario !== chatActivo?.id_usuario &&
+                    new Date(chat.fecha_ultimo_mensaje) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+                  contador++;
+                }
+              });
+              
+              this.contadorNoLeidosSubject.next(contador);
+            },
+            error: () => {
+              this.contadorNoLeidosSubject.next(0);
+            }
+          });
+        }
+      });
+    }, 500); // Esperar 500ms antes de actualizar el contador
   }
   
   // Marcar mensajes como leídos

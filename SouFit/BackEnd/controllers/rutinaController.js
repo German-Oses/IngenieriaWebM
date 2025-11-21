@@ -464,6 +464,87 @@ exports.reaccionarRutina = async (req, res) => {
 };
 
 // Compartir una rutina
+exports.compartirRutina = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        
+        // Verificar que la rutina existe
+        const rutina = await db.query('SELECT id_rutina FROM rutina WHERE id_rutina = $1', [id]);
+        
+        if (rutina.rows.length === 0) {
+            return res.status(404).json({ error: 'Rutina no encontrada' });
+        }
+        
+        // Aquí puedes agregar lógica para compartir (por ejemplo, incrementar contador)
+        res.json({ message: 'Rutina compartida' });
+    } catch (error) {
+        console.error('Error al compartir rutina:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
+// Crear un día para una rutina
+exports.createRutinaDia = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id_rutina } = req.params;
+        const { numero_dia, nombre_dia, descripcion, orden } = req.body;
+        
+        // Validar que la rutina existe y pertenece al usuario
+        const rutina = await db.query('SELECT id_usuario FROM rutina WHERE id_rutina = $1', [id_rutina]);
+        
+        if (rutina.rows.length === 0) {
+            return res.status(404).json({ error: 'Rutina no encontrada' });
+        }
+        
+        if (rutina.rows[0].id_usuario !== userId) {
+            return res.status(403).json({ error: 'No tienes permiso para modificar esta rutina' });
+        }
+        
+        // Validar número de día
+        if (!numero_dia || numero_dia < 1) {
+            return res.status(400).json({ error: 'El número de día debe ser mayor a 0' });
+        }
+        
+        // Obtener el siguiente orden si no se proporciona
+        let diaOrden = orden;
+        if (diaOrden === undefined || diaOrden === null) {
+            const ordenResult = await db.query(
+                'SELECT COALESCE(MAX(orden), 0) + 1 as siguiente_orden FROM rutina_dia WHERE id_rutina = $1',
+                [id_rutina]
+            );
+            diaOrden = ordenResult.rows[0].siguiente_orden;
+        }
+        
+        // Crear el día
+        const query = `
+            INSERT INTO rutina_dia (id_rutina, numero_dia, nombre_dia, descripcion, orden)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *
+        `;
+        
+        const result = await db.query(query, [
+            id_rutina,
+            numero_dia,
+            nombre_dia || `Día ${numero_dia}`,
+            descripcion || null,
+            diaOrden
+        ]);
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error al crear día de rutina:', error);
+        
+        // Manejar errores de duplicados
+        if (error.code === '23505') {
+            return res.status(409).json({ error: 'Ya existe un día con este número en esta rutina' });
+        }
+        
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
 // Agregar ejercicio a un día de rutina
 exports.agregarEjercicioARutina = async (req, res) => {
     try {

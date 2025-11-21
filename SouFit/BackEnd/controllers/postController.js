@@ -112,7 +112,7 @@ exports.createPost = async (req, res) => {
         const { tipo_post, contenido, url_media, id_ejercicio, id_rutina } = req.body;
         
         // Validar campos requeridos
-        if (!tipo_post || !contenido || !contenido.trim()) {
+        if (!tipo_post) {
             // Si se subió un archivo pero hay error, eliminarlo
             if (req.file) {
                 const fs = require('fs');
@@ -123,7 +123,38 @@ exports.createPost = async (req, res) => {
                     console.error('Error al eliminar archivo:', err);
                 }
             }
-            return res.status(400).json({ error: 'Tipo de post y contenido son requeridos' });
+            return res.status(400).json({ error: 'Tipo de post es requerido' });
+        }
+        
+        // El contenido puede ser opcional si hay una imagen o URL de media
+        const tieneContenido = contenido && contenido.trim().length > 0;
+        const tieneMedia = req.file || (url_media && url_media.trim().length > 0);
+        
+        if (!tieneContenido && !tieneMedia) {
+            // Si se subió un archivo pero hay error, eliminarlo
+            if (req.file) {
+                const fs = require('fs');
+                try {
+                    fs.unlinkSync(req.file.path);
+                    console.log('Archivo eliminado por error de validación');
+                } catch (err) {
+                    console.error('Error al eliminar archivo:', err);
+                }
+            }
+            return res.status(400).json({ error: 'El post debe tener contenido o una imagen' });
+        }
+        
+        // Si hay contenido, validar longitud
+        if (tieneContenido && contenido.trim().length > 1000) {
+            if (req.file) {
+                const fs = require('fs');
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (err) {
+                    console.error('Error al eliminar archivo:', err);
+                }
+            }
+            return res.status(400).json({ error: 'El contenido no puede exceder 1000 caracteres' });
         }
         
         // Si se subió un archivo, usar su URL en lugar de url_media del body
@@ -154,10 +185,12 @@ exports.createPost = async (req, res) => {
             RETURNING *
         `;
         
+        const contenidoFinal = tieneContenido ? contenido.trim() : '';
+        
         console.log('💾 Insertando post en BD:', {
             userId,
             tipo_post,
-            contenido: contenido.substring(0, 50) + '...',
+            contenido: contenidoFinal ? contenidoFinal.substring(0, 50) + '...' : '(vacío)',
             mediaUrl: mediaUrl || 'null',
             ejercicioId: ejercicioId || 'null',
             rutinaId: rutinaId || 'null'
@@ -165,8 +198,8 @@ exports.createPost = async (req, res) => {
         
         const result = await db.query(query, [
             userId, 
-            tipo_post, 
-            contenido.trim(), 
+            tipo_post,
+            contenidoFinal, 
             mediaUrl, 
             ejercicioId, 
             rutinaId

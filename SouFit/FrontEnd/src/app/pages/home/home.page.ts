@@ -469,19 +469,25 @@ export class HomePage implements OnInit, OnDestroy {
 
   async crearPost() {
     // Validaciones
-    if (!this.nuevoPost.contenido || !this.nuevoPost.contenido.trim()) {
-      this.presentErrorToast('El contenido del post es requerido');
+    // El contenido puede ser opcional si hay una imagen o archivo
+    const tieneContenido = this.nuevoPost.contenido && this.nuevoPost.contenido.trim().length > 0;
+    const tieneImagen = this.archivoSeleccionado || (this.nuevoPost.url_media && this.nuevoPost.url_media.trim().length > 0);
+    
+    if (!tieneContenido && !tieneImagen) {
+      this.presentErrorToast('El post debe tener contenido o una imagen');
       return;
     }
     
-    if (this.nuevoPost.contenido.trim().length > 1000) {
-      this.presentErrorToast('El contenido no puede exceder 1000 caracteres');
-      return;
-    }
+    if (tieneContenido) {
+      if (this.nuevoPost.contenido.trim().length > 1000) {
+        this.presentErrorToast('El contenido no puede exceder 1000 caracteres');
+        return;
+      }
 
-    if (this.nuevoPost.contenido.trim().length < 3) {
-      this.presentErrorToast('El contenido debe tener al menos 3 caracteres');
-      return;
+      if (this.nuevoPost.contenido.trim().length < 3) {
+        this.presentErrorToast('El contenido debe tener al menos 3 caracteres');
+        return;
+      }
     }
     
     // Validar tipo de post específico
@@ -500,7 +506,7 @@ export class HomePage implements OnInit, OnDestroy {
     // Preparar datos del post
     const postData: any = {
       tipo_post: this.nuevoPost.tipo_post || 'texto',
-      contenido: this.nuevoPost.contenido.trim()
+      contenido: tieneContenido ? this.nuevoPost.contenido.trim() : ''
     };
 
     // Agregar ejercicio o rutina si corresponde

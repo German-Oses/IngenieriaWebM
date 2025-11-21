@@ -17,6 +17,7 @@ router.post('/:id/guardar', auth, rutinaController.guardarRutina);
 router.delete('/:id/guardar', auth, rutinaController.quitarRutinaGuardada);
 router.post('/:id/reaccionar', auth, rutinaController.reaccionarRutina);
 router.post('/:id/compartir', auth, rutinaController.compartirRutina);
+router.post('/:id_rutina/dias', auth, rutinaController.createRutinaDia);
 router.post('/:id_rutina/ejercicios', auth, rutinaController.agregarEjercicioARutina);
 
 module.exports = router;
