@@ -879,3 +879,111 @@
     color: #999;
   }
 }
+
+/* ===============================
+   MENÚ LATERAL DESKTOP
+================================= */
+
+.menu-lateral-desktop {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 80px;
+  height: 100vh;
+  background-color: var(--soufit-bg-white);
+  border-right: 1px solid var(--soufit-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  z-index: 100;
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.dark .menu-lateral-desktop {
+  background-color: var(--soufit-bg-white);
+  border-right-color: var(--soufit-border);
+}
+
+.logo-desktop {
+  margin-bottom: 30px;
+  
+  img {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.boton-menu-desktop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  padding: 12px 0;
+  transition: 0.2s ease;
+  color: var(--soufit-text-secondary);
+  border: none;
+  background: none;
+  
+  ion-icon {
+    font-size: 22px;
+    color: var(--soufit-text-secondary);
+    margin-bottom: 5px;
+  }
+  
+  span {
+    font-size: 11px;
+    color: var(--soufit-text-secondary);
+    margin: 0;
+  }
+  
+  &:hover {
+    background: rgba(56, 128, 255, 0.05);
+  }
+  
+  &.activo {
+    background: #3880ff;
+    color: #fff;
+    border-radius: 10px;
+    
+    ion-icon {
+      color: #fff;
+    }
+    
+    span {
+      color: #fff;
+    }
+  }
+}
+
+.dark .boton-menu-desktop {
+  color: var(--soufit-text-secondary);
+  
+  ion-icon {
+    color: var(--soufit-text-secondary);
+  }
+  
+  span {
+    color: var(--soufit-text-secondary);
+  }
+  
+  &:hover {
+    background: rgba(56, 128, 255, 0.1);
+  }
+  
+  &.activo {
+    background: #3880ff;
+    color: #fff;
+    
+    ion-icon,
+    span {
+      color: #fff;
+    }
+  }
+}

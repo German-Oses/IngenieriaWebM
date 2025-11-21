@@ -233,7 +233,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-        <div *ngIf="ejercicioSeleccionado">
+      <div *ngIf="ejercicioSeleccionado">
           <h3>{{ ejercicioSeleccionado.nombre_ejercicio }}</h3>
           <p>{{ ejercicioSeleccionado.descripcion || 'Sin descripción' }}</p>
         </div>
@@ -282,14 +282,58 @@
           </ion-text>
         </div>
 
+        <!-- Configuración del ejercicio -->
+        <div *ngIf="rutinaSeleccionada && rutinaSeleccionada.dias && rutinaSeleccionada.dias.length > 0 && diaSeleccionado" class="ion-margin-top">
+          <h4>Configuración del ejercicio:</h4>
+          
+          <ion-item>
+            <ion-label position="stacked">Series</ion-label>
+            <ion-input 
+              type="number" 
+              [(ngModel)]="ejercicioConfig.series" 
+              min="1" 
+              placeholder="3">
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Repeticiones</ion-label>
+            <ion-input 
+              type="text" 
+              [(ngModel)]="ejercicioConfig.repeticiones" 
+              placeholder="10-12">
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Peso recomendado (kg)</ion-label>
+            <ion-input 
+              type="number" 
+              [(ngModel)]="ejercicioConfig.peso_recomendado" 
+              min="0" 
+              placeholder="0 (opcional)">
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Descanso (segundos)</ion-label>
+            <ion-input 
+              type="number" 
+              [(ngModel)]="ejercicioConfig.descanso_segundos" 
+              min="0" 
+              placeholder="60">
+            </ion-input>
+          </ion-item>
+        </div>
+
         <div class="ion-margin-top">
           <ion-button 
             expand="block" 
             (click)="confirmarAgregarEjercicio()"
-            [disabled]="!rutinaSeleccionada || (rutinaSeleccionada.dias && rutinaSeleccionada.dias.length > 0 && !diaSeleccionado)">
+            [disabled]="!rutinaSeleccionada || (rutinaSeleccionada.dias && rutinaSeleccionada.dias.length > 0 && !diaSeleccionado) || !ejercicioConfig.series || !ejercicioConfig.repeticiones">
             Agregar Ejercicio
           </ion-button>
         </div>
-      </ion-content>
-    </ion-modal>
+    </ion-content>
+  </ion-modal>
 

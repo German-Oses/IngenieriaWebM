@@ -276,16 +276,20 @@ export class RutinasPage implements OnInit {
       return;
     }
 
+    if (!this.nuevoDia.numero_dia || this.nuevoDia.numero_dia < 1) {
+      this.presentToast('El número de día debe ser mayor a 0', 'warning');
+      return;
+    }
+
     if (!this.nuevoDia.nombre_dia?.trim()) {
       this.nuevoDia.nombre_dia = `Día ${this.nuevoDia.numero_dia}`;
     }
 
-    // Crear el día usando el servicio
+    // Crear el día usando el servicio (no incluir id_rutina en el body, se pasa en la URL)
     const diaData = {
-      id_rutina: this.rutinaParaAgregarDia.id_rutina,
       numero_dia: this.nuevoDia.numero_dia,
       nombre_dia: this.nuevoDia.nombre_dia.trim(),
-      descripcion: this.nuevoDia.descripcion || undefined
+      descripcion: this.nuevoDia.descripcion?.trim() || undefined
     };
 
     this.rutinaService.createRutinaDia(this.rutinaParaAgregarDia.id_rutina, diaData).subscribe({

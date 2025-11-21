@@ -418,7 +418,13 @@ export class HomePage implements OnInit, OnDestroy {
 
   cerrarModalCrearPost() {
     this.mostrarModalCrearPost = false;
-    this.nuevoPost = { tipo_post: 'texto', contenido: '', url_media: '' };
+    this.nuevoPost = { 
+      tipo_post: 'texto', 
+      contenido: '', 
+      url_media: '',
+      id_ejercicio: undefined,
+      id_rutina: undefined
+    };
     this.archivoSeleccionado = null;
     this.previewImagen = null;
     this.ejercicioSeleccionado = null;
