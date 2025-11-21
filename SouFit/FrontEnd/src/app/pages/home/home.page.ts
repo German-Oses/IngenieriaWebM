@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonGrid, IonRow, IonCol, IonButton, IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons } from '@ionic/angular/standalone';
+import { IonContent, IonGrid, IonRow, IonCol, IonButton, IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons, IonSelect, IonItem, IonSelectOption } from '@ionic/angular/standalone';
 import { IonIcon } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { PostService, Post, Comentario } from '../../services/post.service';
 import { EjercicioService } from '../../services/ejercicio.service';
+import { RutinaService } from '../../services/rutina.service';
 import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { addIcons } from 'ionicons';
@@ -23,7 +24,7 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./home.page.scss'],
   standalone: true,
   imports: [IonContent, CommonModule, FormsModule, IonGrid, IonRow, IonCol, IonIcon, IonButton,
-  IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons]
+  IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons, IonSelect, IonItem, IonSelectOption]
 })
 export class HomePage implements OnInit, OnDestroy {
   @ViewChild('postsContainer', { static: false }) postsContainer!: ElementRef;
@@ -39,13 +40,24 @@ export class HomePage implements OnInit, OnDestroy {
   
   // Modal crear post
   mostrarModalCrearPost = false;
-  nuevoPost = {
-    tipo_post: 'texto' as 'texto' | 'ejercicio' | 'rutina' | 'logro',
+  creandoPost = false;
+  nuevoPost: {
+    tipo_post: 'texto' | 'ejercicio' | 'rutina' | 'logro';
+    contenido: string;
+    url_media: string;
+    id_ejercicio?: number;
+    id_rutina?: number;
+  } = {
+    tipo_post: 'texto',
     contenido: '',
     url_media: ''
   };
   archivoSeleccionado: File | null = null;
   previewImagen: string | null = null;
+  ejerciciosDisponibles: any[] = [];
+  rutinasDisponibles: any[] = [];
+  ejercicioSeleccionado: any = null;
+  rutinaSeleccionada: any = null;
   
   // Comentarios
   postComentariosAbierto: number | null = null;
@@ -66,6 +78,7 @@ export class HomePage implements OnInit, OnDestroy {
     private router: Router,
     private postService: PostService,
     private ejercicioService: EjercicioService,
+    private rutinaService: RutinaService,
     private authService: AuthService,
     private chatService: ChatService,
     private toastController: ToastController,
@@ -259,7 +272,15 @@ export class HomePage implements OnInit, OnDestroy {
   }
   
   aplicarFiltros() {
+    this.offset = 0;
+    this.hayMasPosts = true;
     this.cargarFeed(true);
+  }
+
+  limpiarFiltros() {
+    this.filtroTipo = 'todos';
+    this.filtroOrden = 'recientes';
+    this.aplicarFiltros();
   }
   
   cargarMasPosts() {
@@ -391,6 +412,8 @@ export class HomePage implements OnInit, OnDestroy {
 
   abrirModalCrearPost() {
     this.mostrarModalCrearPost = true;
+    this.cargarEjerciciosParaPost();
+    this.cargarRutinasParaPost();
   }
 
   cerrarModalCrearPost() {
@@ -398,25 +421,90 @@ export class HomePage implements OnInit, OnDestroy {
     this.nuevoPost = { tipo_post: 'texto', contenido: '', url_media: '' };
     this.archivoSeleccionado = null;
     this.previewImagen = null;
+    this.ejercicioSeleccionado = null;
+    this.rutinaSeleccionada = null;
+    this.creandoPost = false;
   }
 
-  crearPost() {
+  cargarEjerciciosParaPost() {
+    if (this.nuevoPost.tipo_post === 'ejercicio') {
+      this.ejercicioService.getEjercicios({ limit: 50 }).subscribe({
+        next: (ejercicios) => {
+          this.ejerciciosDisponibles = ejercicios;
+        },
+        error: (error) => {
+          console.error('Error al cargar ejercicios:', error);
+        }
+      });
+    }
+  }
+
+  cargarRutinasParaPost() {
+    if (this.nuevoPost.tipo_post === 'rutina') {
+      this.rutinaService.getMisRutinas().subscribe({
+        next: (rutinas: any[]) => {
+          this.rutinasDisponibles = rutinas;
+        },
+        error: (error) => {
+          console.error('Error al cargar rutinas:', error);
+        }
+      });
+    }
+  }
+
+  onTipoPostChange() {
+    this.ejercicioSeleccionado = null;
+    this.rutinaSeleccionada = null;
+    this.nuevoPost.id_ejercicio = undefined;
+    this.nuevoPost.id_rutina = undefined;
+    this.cargarEjerciciosParaPost();
+    this.cargarRutinasParaPost();
+  }
+
+  async crearPost() {
     // Validaciones
     if (!this.nuevoPost.contenido || !this.nuevoPost.contenido.trim()) {
       this.presentErrorToast('El contenido del post es requerido');
       return;
     }
     
-    if (this.nuevoPost.contenido.length > 500) {
-      this.presentErrorToast('El contenido no puede exceder 500 caracteres');
+    if (this.nuevoPost.contenido.trim().length > 1000) {
+      this.presentErrorToast('El contenido no puede exceder 1000 caracteres');
       return;
     }
+
+    if (this.nuevoPost.contenido.trim().length < 3) {
+      this.presentErrorToast('El contenido debe tener al menos 3 caracteres');
+      return;
+    }
+    
+    // Validar tipo de post específico
+    if (this.nuevoPost.tipo_post === 'ejercicio' && !this.ejercicioSeleccionado) {
+      this.presentErrorToast('Debes seleccionar un ejercicio');
+      return;
+    }
+
+    if (this.nuevoPost.tipo_post === 'rutina' && !this.rutinaSeleccionada) {
+      this.presentErrorToast('Debes seleccionar una rutina');
+      return;
+    }
+    
+    this.creandoPost = true;
     
     // Preparar datos del post
     const postData: any = {
       tipo_post: this.nuevoPost.tipo_post || 'texto',
       contenido: this.nuevoPost.contenido.trim()
     };
+
+    // Agregar ejercicio o rutina si corresponde
+    if (this.nuevoPost.tipo_post === 'ejercicio' && this.ejercicioSeleccionado) {
+      postData.id_ejercicio = this.ejercicioSeleccionado.id_ejercicio;
+    }
+
+    if (this.nuevoPost.tipo_post === 'rutina' && this.rutinaSeleccionada) {
+      postData.id_rutina = this.rutinaSeleccionada.id_rutina;
+    }
     
     // Si hay archivo seleccionado, subirlo
     if (this.archivoSeleccionado) {
@@ -424,12 +512,14 @@ export class HomePage implements OnInit, OnDestroy {
       this.postService.createPostConImagen(postData, this.archivoSeleccionado).subscribe({
         next: (post) => {
           console.log('✅ Post creado con imagen:', post);
+          this.creandoPost = false;
           this.cargarFeed(true);
           this.cerrarModalCrearPost();
-          this.presentSuccessToast('Post creado exitosamente');
+          this.presentSuccessToast('✅ Post creado exitosamente');
         },
         error: (error) => {
           console.error('❌ Error al crear post con imagen:', error);
+          this.creandoPost = false;
           const errorMsg = error.error?.error || error.error?.message || 'Error al crear el post. Por favor, intenta de nuevo.';
           this.presentErrorToast(errorMsg);
         }
@@ -444,12 +534,14 @@ export class HomePage implements OnInit, OnDestroy {
       this.postService.createPost(postData).subscribe({
         next: (post) => {
           console.log('✅ Post creado:', post);
+          this.creandoPost = false;
           this.cargarFeed(true);
           this.cerrarModalCrearPost();
-          this.presentSuccessToast('Post creado exitosamente');
+          this.presentSuccessToast('✅ Post creado exitosamente');
         },
         error: (error) => {
           console.error('❌ Error al crear post:', error);
+          this.creandoPost = false;
           const errorMsg = error.error?.error || error.error?.message || 'Error al crear el post. Por favor, intenta de nuevo.';
           this.presentErrorToast(errorMsg);
         }

@@ -100,23 +100,32 @@
         </div>
         
         <!-- Filtros -->
-        <div class="filtros-feed">
-          <div class="filtro-grupo">
-            <label>Tipo:</label>
-            <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="filtro-select">
-              <option value="todos">Todos</option>
-              <option value="texto">Texto</option>
-              <option value="ejercicio">Ejercicio</option>
-              <option value="rutina">Rutina</option>
-              <option value="logro">Logro</option>
-            </select>
-          </div>
-          <div class="filtro-grupo">
-            <label>Orden:</label>
-            <select [(ngModel)]="filtroOrden" (change)="aplicarFiltros()" class="filtro-select">
-              <option value="recientes">Recientes</option>
-              <option value="populares">Populares</option>
-            </select>
+        <div class="filtros-feed-modernos">
+          <div class="filtros-container">
+            <div class="filtro-grupo-moderno">
+              <label>Tipo:</label>
+              <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="filtro-select-moderno">
+                <option value="todos">📋 Todos</option>
+                <option value="texto">📝 Texto</option>
+                <option value="ejercicio">💪 Ejercicio</option>
+                <option value="rutina">🏋️ Rutina</option>
+                <option value="logro">🏆 Logro</option>
+              </select>
+            </div>
+            <div class="filtro-grupo-moderno">
+              <label>Orden:</label>
+              <select [(ngModel)]="filtroOrden" (change)="aplicarFiltros()" class="filtro-select-moderno">
+                <option value="recientes">🕐 Recientes</option>
+                <option value="populares">🔥 Populares</option>
+              </select>
+            </div>
+            <button 
+              *ngIf="filtroTipo !== 'todos' || filtroOrden !== 'recientes'"
+              class="btn-limpiar-filtros"
+              (click)="limpiarFiltros()"
+              title="Limpiar filtros">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
           </div>
         </div>
 
@@ -311,44 +320,85 @@
           <button 
             class="btn-tipo-post-moderno" 
             [class.activo]="nuevoPost.tipo_post === 'texto'"
-            (click)="nuevoPost.tipo_post = 'texto'">
+            (click)="nuevoPost.tipo_post = 'texto'; onTipoPostChange()">
             <ion-icon name="document-text-outline"></ion-icon>
             <span>Texto</span>
           </button>
           <button 
             class="btn-tipo-post-moderno" 
             [class.activo]="nuevoPost.tipo_post === 'logro'"
-            (click)="nuevoPost.tipo_post = 'logro'">
+            (click)="nuevoPost.tipo_post = 'logro'; onTipoPostChange()">
             <ion-icon name="trophy-outline"></ion-icon>
             <span>Logro</span>
           </button>
           <button 
             class="btn-tipo-post-moderno" 
             [class.activo]="nuevoPost.tipo_post === 'ejercicio'"
-            (click)="nuevoPost.tipo_post = 'ejercicio'">
+            (click)="nuevoPost.tipo_post = 'ejercicio'; onTipoPostChange()">
             <ion-icon name="barbell-outline"></ion-icon>
             <span>Ejercicio</span>
           </button>
           <button 
             class="btn-tipo-post-moderno" 
             [class.activo]="nuevoPost.tipo_post === 'rutina'"
-            (click)="nuevoPost.tipo_post = 'rutina'">
+            (click)="nuevoPost.tipo_post = 'rutina'; onTipoPostChange()">
             <ion-icon name="fitness-outline"></ion-icon>
             <span>Rutina</span>
           </button>
+        </div>
+
+        <!-- Selector de ejercicio (si tipo es ejercicio) -->
+        <div *ngIf="nuevoPost.tipo_post === 'ejercicio'" class="selector-ejercicio-rutina">
+          <label>Selecciona un ejercicio:</label>
+          <ion-item class="select-item-moderno">
+            <ion-select 
+              [(ngModel)]="ejercicioSeleccionado" 
+              placeholder="Buscar ejercicio..."
+              interface="popover"
+              class="select-moderno-post">
+              <ion-select-option *ngFor="let ejercicio of ejerciciosDisponibles" [value]="ejercicio">
+                {{ ejercicio.nombre_ejercicio }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+          <div *ngIf="ejercicioSeleccionado" class="item-seleccionado">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <span>{{ ejercicioSeleccionado.nombre_ejercicio }}</span>
+          </div>
+        </div>
+
+        <!-- Selector de rutina (si tipo es rutina) -->
+        <div *ngIf="nuevoPost.tipo_post === 'rutina'" class="selector-ejercicio-rutina">
+          <label>Selecciona una rutina:</label>
+          <ion-item class="select-item-moderno">
+            <ion-select 
+              [(ngModel)]="rutinaSeleccionada" 
+              placeholder="Buscar rutina..."
+              interface="popover"
+              class="select-moderno-post">
+              <ion-select-option *ngFor="let rutina of rutinasDisponibles" [value]="rutina">
+                {{ rutina.nombre_rutina }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+          <div *ngIf="rutinaSeleccionada" class="item-seleccionado">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <span>{{ rutinaSeleccionada.nombre_rutina }}</span>
+          </div>
         </div>
 
         <!-- Textarea para contenido -->
         <div class="form-group-moderno">
           <ion-textarea
             [(ngModel)]="nuevoPost.contenido"
-            placeholder="¿Qué quieres compartir?"
+            [placeholder]="nuevoPost.tipo_post === 'logro' ? 'Comparte tu logro...' : nuevoPost.tipo_post === 'ejercicio' ? 'Comparte tu experiencia con este ejercicio...' : nuevoPost.tipo_post === 'rutina' ? 'Comparte tu experiencia con esta rutina...' : '¿Qué quieres compartir?'"
             rows="6"
             class="textarea-moderno-post"
-            [autoGrow]="true">
+            [autoGrow]="true"
+            maxlength="1000">
           </ion-textarea>
-          <div class="contador-caracteres-moderno">
-            {{ nuevoPost.contenido.length }} / 500
+          <div class="contador-caracteres-moderno" [class.warning]="nuevoPost.contenido.length > 900">
+            {{ nuevoPost.contenido.length }} / 1000
           </div>
         </div>
 
@@ -404,10 +454,11 @@
           <ion-button 
             expand="block" 
             (click)="crearPost()" 
-            [disabled]="!nuevoPost.contenido.trim() || nuevoPost.contenido.length > 500"
+            [disabled]="creandoPost || !nuevoPost.contenido.trim() || nuevoPost.contenido.length > 1000 || nuevoPost.contenido.length < 3 || (nuevoPost.tipo_post === 'ejercicio' && !ejercicioSeleccionado) || (nuevoPost.tipo_post === 'rutina' && !rutinaSeleccionada)"
             class="btn-publicar-moderno">
-            <ion-icon name="send-outline" slot="start"></ion-icon>
-            Publicar
+            <ion-spinner *ngIf="creandoPost" name="crescent" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!creandoPost" name="send-outline" slot="start"></ion-icon>
+            {{ creandoPost ? 'Publicando...' : 'Publicar' }}
           </ion-button>
         </div>
       </div>

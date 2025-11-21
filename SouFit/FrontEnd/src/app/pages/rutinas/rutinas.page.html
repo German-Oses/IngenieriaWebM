@@ -76,10 +76,13 @@
                   </div>
                 </div>
                 <div class="rutina-acciones">
-                  <button class="btn-accion-rutina" (click)="compartirRutina(rutina.id_rutina!); $event.stopPropagation()">
+                  <button class="btn-accion-rutina" (click)="abrirModalEditarRutina(rutina); $event.stopPropagation()" title="Editar rutina">
+                    <ion-icon name="create-outline"></ion-icon>
+                  </button>
+                  <button class="btn-accion-rutina" (click)="compartirRutina(rutina.id_rutina!); $event.stopPropagation()" title="Compartir rutina">
                     <ion-icon name="share-outline"></ion-icon>
                   </button>
-                  <button class="btn-accion-rutina" (click)="eliminarRutina(rutina.id_rutina!); $event.stopPropagation()">
+                  <button class="btn-accion-rutina" (click)="eliminarRutina(rutina.id_rutina!); $event.stopPropagation()" title="Eliminar rutina">
                     <ion-icon name="trash-outline"></ion-icon>
                   </button>
                 </div>
@@ -97,28 +100,51 @@
                       </ion-item>
                       
                       <div slot="content" class="ion-padding">
-                        <div *ngIf="dia.ejercicios && dia.ejercicios.length > 0">
-                          <ion-item *ngFor="let ejercicio of dia.ejercicios" class="ejercicio-item">
-                            <ion-label>
+                        <div class="dia-acciones">
+                          <button class="btn-agregar-ejercicio-dia" (click)="abrirModalAgregarEjercicio(dia)">
+                            <ion-icon name="add-outline"></ion-icon>
+                            Agregar Ejercicio
+                          </button>
+                        </div>
+                        <div *ngIf="dia.ejercicios && dia.ejercicios.length > 0" class="ejercicios-lista">
+                          <div *ngFor="let ejercicio of dia.ejercicios" class="ejercicio-item-moderno">
+                            <div class="ejercicio-header-item">
+                              <ion-icon name="barbell-outline"></ion-icon>
                               <h3>{{ ejercicio.nombre_ejercicio }}</h3>
-                              <p *ngIf="ejercicio.series && ejercicio.repeticiones">
-                                {{ ejercicio.series }} series x {{ ejercicio.repeticiones }}
-                              </p>
-                              <p *ngIf="ejercicio.peso_recomendado">Peso: {{ ejercicio.peso_recomendado }} kg</p>
-                              <p *ngIf="ejercicio.descanso_segundos">Descanso: {{ ejercicio.descanso_segundos }}s</p>
-                              <p *ngIf="ejercicio.notas">{{ ejercicio.notas }}</p>
-                            </ion-label>
-                          </ion-item>
+                            </div>
+                            <div class="ejercicio-detalles">
+                              <div class="detalle-item" *ngIf="ejercicio.series && ejercicio.repeticiones">
+                                <ion-icon name="repeat-outline"></ion-icon>
+                                <span>{{ ejercicio.series }} series x {{ ejercicio.repeticiones }}</span>
+                              </div>
+                              <div class="detalle-item" *ngIf="ejercicio.peso_recomendado">
+                                <ion-icon name="fitness-outline"></ion-icon>
+                                <span>{{ ejercicio.peso_recomendado }} kg</span>
+                              </div>
+                              <div class="detalle-item" *ngIf="ejercicio.descanso_segundos">
+                                <ion-icon name="time-outline"></ion-icon>
+                                <span>{{ ejercicio.descanso_segundos }}s descanso</span>
+                              </div>
+                            </div>
+                            <p *ngIf="ejercicio.notas" class="ejercicio-notas">{{ ejercicio.notas }}</p>
+                          </div>
                         </div>
                         <div *ngIf="!dia.ejercicios || dia.ejercicios.length === 0" class="sin-ejercicios">
+                          <ion-icon name="barbell-outline"></ion-icon>
                           <p>No hay ejercicios en este día</p>
+                          <small>Haz clic en "Agregar Ejercicio" para comenzar</small>
                         </div>
                       </div>
                     </ion-accordion>
                   </ion-accordion-group>
                 </div>
                 <div *ngIf="!rutina.dias || rutina.dias.length === 0" class="sin-dias">
+                  <ion-icon name="calendar-outline"></ion-icon>
                   <p>Esta rutina no tiene días configurados</p>
+                  <button class="btn-agregar-dia" (click)="abrirModalAgregarDia(rutina)">
+                    <ion-icon name="add-outline"></ion-icon>
+                    Agregar Día
+                  </button>
                 </div>
               </div>
             </ion-accordion>
@@ -130,57 +156,352 @@
 
   <!-- Modal Crear Rutina -->
   <ion-modal [isOpen]="mostrarModalCrearRutina" (didDismiss)="cerrarModalCrearRutina()">
-    <ng-template>
-      <ion-content class="ion-padding">
-        <div class="modal-header">
-          <h2>Crear Nueva Rutina</h2>
-          <button class="btn-cerrar-modal" (click)="cerrarModalCrearRutina()">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Crear Nueva Rutina</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cerrarModalCrearRutina()" fill="clear">
             <ion-icon name="close-outline"></ion-icon>
-          </button>
-        </div>
-        
-        <div class="modal-body">
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div class="modal-crear-rutina">
+        <div class="form-group-moderno">
+          <label>Nombre de la rutina *</label>
           <ion-input
             [(ngModel)]="nuevaRutina.nombre_rutina"
-            placeholder="Nombre de la rutina *"
-            required>
+            placeholder="Ej: Rutina de Fuerza Semanal"
+            class="input-moderno-rutina"
+            maxlength="100">
           </ion-input>
+        </div>
 
+        <div class="form-group-moderno">
+          <label>Descripción</label>
           <ion-textarea
             [(ngModel)]="nuevaRutina.descripcion"
-            placeholder="Descripción (opcional)"
-            rows="3">
+            placeholder="Describe tu rutina..."
+            rows="3"
+            class="textarea-moderno-rutina"
+            maxlength="500">
           </ion-textarea>
+        </div>
 
+        <div class="form-group-moderno">
+          <label>Tipo de rutina</label>
+          <ion-item class="select-item-moderno">
           <ion-select
             [(ngModel)]="nuevaRutina.tipo_rutina"
-            placeholder="Tipo de rutina">
-            <ion-select-option value="Fuerza">Fuerza</ion-select-option>
-            <ion-select-option value="Cardio">Cardio</ion-select-option>
-            <ion-select-option value="Flexibilidad">Flexibilidad</ion-select-option>
-            <ion-select-option value="Mixta">Mixta</ion-select-option>
+              class="select-moderno-rutina">
+              <ion-select-option value="Fuerza">💪 Fuerza</ion-select-option>
+              <ion-select-option value="Cardio">❤️ Cardio</ion-select-option>
+              <ion-select-option value="Flexibilidad">🧘 Flexibilidad</ion-select-option>
+              <ion-select-option value="Mixta">⚡ Mixta</ion-select-option>
           </ion-select>
+          </ion-item>
+        </div>
 
+        <div class="form-group-moderno">
+          <label>Nivel de dificultad</label>
+          <ion-item class="select-item-moderno">
           <ion-select
             [(ngModel)]="nuevaRutina.nivel_dificultad"
-            placeholder="Nivel de dificultad">
-            <ion-select-option value="Principiante">Principiante</ion-select-option>
-            <ion-select-option value="Intermedio">Intermedio</ion-select-option>
-            <ion-select-option value="Avanzado">Avanzado</ion-select-option>
+              class="select-moderno-rutina">
+              <ion-select-option value="Principiante">🟢 Principiante</ion-select-option>
+              <ion-select-option value="Intermedio">🟡 Intermedio</ion-select-option>
+              <ion-select-option value="Avanzado">🔴 Avanzado</ion-select-option>
           </ion-select>
+          </ion-item>
+        </div>
 
+        <div class="form-group-moderno">
+          <label>Duración (semanas)</label>
           <ion-input
             [(ngModel)]="nuevaRutina.duracion_semanas"
             type="number"
-            placeholder="Duración en semanas"
-            min="1">
+            placeholder="4"
+            min="1"
+            max="52"
+            class="input-moderno-rutina">
           </ion-input>
+        </div>
 
-          <ion-button expand="block" (click)="crearRutina()" [disabled]="!nuevaRutina.nombre_rutina?.trim()">
-            Crear Rutina
+        <div class="form-group-moderno">
+          <ion-item>
+            <ion-label>Rutina pública</ion-label>
+            <ion-toggle [(ngModel)]="nuevaRutina.es_publica"></ion-toggle>
+          </ion-item>
+        </div>
+
+        <div class="acciones-modal-rutina">
+          <ion-button 
+            expand="block" 
+            (click)="crearRutina()" 
+            [disabled]="creandoRutina || !nuevaRutina.nombre_rutina || nuevaRutina.nombre_rutina.trim().length < 3"
+            class="btn-crear-rutina-modal">
+            <ion-spinner *ngIf="creandoRutina" name="crescent" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!creandoRutina" name="checkmark-outline" slot="start"></ion-icon>
+            {{ creandoRutina ? 'Creando...' : 'Crear Rutina' }}
           </ion-button>
         </div>
+      </div>
+    </ion-content>
+  </ion-modal>
+
+  <!-- Modal Editar Rutina -->
+  <ion-modal [isOpen]="mostrarModalEditarRutina" (didDismiss)="cerrarModalEditarRutina()">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Editar Rutina</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cerrarModalEditarRutina()" fill="clear">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding" *ngIf="rutinaEditando">
+      <div class="modal-crear-rutina">
+        <div class="form-group-moderno">
+          <label>Nombre de la rutina *</label>
+          <ion-input
+            [(ngModel)]="rutinaEditando.nombre_rutina"
+            placeholder="Nombre de la rutina"
+            class="input-moderno-rutina"
+            maxlength="100">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Descripción</label>
+          <ion-textarea
+            [(ngModel)]="rutinaEditando.descripcion"
+            placeholder="Descripción"
+            rows="3"
+            class="textarea-moderno-rutina"
+            maxlength="500">
+          </ion-textarea>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Tipo de rutina</label>
+          <ion-item class="select-item-moderno">
+            <ion-select
+              [(ngModel)]="rutinaEditando.tipo_rutina"
+              class="select-moderno-rutina">
+              <ion-select-option value="Fuerza">💪 Fuerza</ion-select-option>
+              <ion-select-option value="Cardio">❤️ Cardio</ion-select-option>
+              <ion-select-option value="Flexibilidad">🧘 Flexibilidad</ion-select-option>
+              <ion-select-option value="Mixta">⚡ Mixta</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Nivel de dificultad</label>
+          <ion-item class="select-item-moderno">
+            <ion-select
+              [(ngModel)]="rutinaEditando.nivel_dificultad"
+              class="select-moderno-rutina">
+              <ion-select-option value="Principiante">🟢 Principiante</ion-select-option>
+              <ion-select-option value="Intermedio">🟡 Intermedio</ion-select-option>
+              <ion-select-option value="Avanzado">🔴 Avanzado</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Duración (semanas)</label>
+          <ion-input
+            [(ngModel)]="rutinaEditando.duracion_semanas"
+            type="number"
+            min="1"
+            max="52"
+            class="input-moderno-rutina">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <ion-item>
+            <ion-label>Rutina pública</ion-label>
+            <ion-toggle [(ngModel)]="rutinaEditando.es_publica"></ion-toggle>
+          </ion-item>
+        </div>
+
+        <div class="acciones-modal-rutina">
+          <ion-button 
+            expand="block" 
+            (click)="actualizarRutina()" 
+            [disabled]="editandoRutina || !rutinaEditando.nombre_rutina?.trim()"
+            class="btn-actualizar-rutina-modal">
+            <ion-spinner *ngIf="editandoRutina" name="crescent" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!editandoRutina" name="checkmark-outline" slot="start"></ion-icon>
+            {{ editandoRutina ? 'Actualizando...' : 'Actualizar Rutina' }}
+          </ion-button>
+        </div>
+      </div>
+    </ion-content>
+  </ion-modal>
+
+  <!-- Modal Agregar Día -->
+  <ion-modal [isOpen]="mostrarModalAgregarDia" (didDismiss)="cerrarModalAgregarDia()">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Agregar Día a Rutina</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cerrarModalAgregarDia()" fill="clear">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding" *ngIf="rutinaParaAgregarDia">
+      <div class="modal-crear-rutina">
+        <div class="form-group-moderno">
+          <label>Número de día</label>
+          <ion-input
+            [(ngModel)]="nuevoDia.numero_dia"
+            type="number"
+            min="1"
+            class="input-moderno-rutina">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Nombre del día (opcional)</label>
+          <ion-input
+            [(ngModel)]="nuevoDia.nombre_dia"
+            placeholder="Ej: Día de Piernas"
+            class="input-moderno-rutina"
+            maxlength="50">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Descripción</label>
+          <ion-textarea
+            [(ngModel)]="nuevoDia.descripcion"
+            placeholder="Descripción del día..."
+            rows="3"
+            class="textarea-moderno-rutina"
+            maxlength="300">
+          </ion-textarea>
+        </div>
+
+        <div class="acciones-modal-rutina">
+          <ion-button 
+            expand="block" 
+            (click)="crearDia()" 
+            class="btn-crear-dia-modal">
+            <ion-icon name="add-outline" slot="start"></ion-icon>
+            Agregar Día
+          </ion-button>
+        </div>
+      </div>
+    </ion-content>
+  </ion-modal>
+
+  <!-- Modal Agregar Ejercicio a Día -->
+  <ion-modal [isOpen]="mostrarModalAgregarEjercicio" (didDismiss)="cerrarModalAgregarEjercicio()">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Agregar Ejercicio</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cerrarModalAgregarEjercicio()" fill="clear">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div class="modal-crear-rutina">
+        <div class="form-group-moderno">
+          <label>Selecciona un ejercicio *</label>
+          <ion-item class="select-item-moderno">
+            <ion-select
+              [(ngModel)]="ejercicioSeleccionado"
+              placeholder="Buscar ejercicio..."
+              interface="popover"
+              class="select-moderno-rutina">
+              <ion-select-option *ngFor="let ejercicio of ejerciciosDisponibles" [value]="ejercicio">
+                {{ ejercicio.nombre_ejercicio }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+          <div *ngIf="ejercicioSeleccionado" class="ejercicio-seleccionado-preview">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <span>{{ ejercicioSeleccionado.nombre_ejercicio }}</span>
+          </div>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Series *</label>
+          <ion-input
+            [(ngModel)]="configEjercicio.series"
+            type="number"
+            min="1"
+            max="20"
+            placeholder="3"
+            class="input-moderno-rutina">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Repeticiones *</label>
+          <ion-input
+            [(ngModel)]="configEjercicio.repeticiones"
+            placeholder="10-12"
+            class="input-moderno-rutina"
+            maxlength="20">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Peso recomendado (kg)</label>
+          <ion-input
+            [(ngModel)]="configEjercicio.peso_recomendado"
+            type="number"
+            min="0"
+            placeholder="0"
+            class="input-moderno-rutina">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Descanso (segundos)</label>
+          <ion-input
+            [(ngModel)]="configEjercicio.descanso_segundos"
+            type="number"
+            min="0"
+            placeholder="60"
+            class="input-moderno-rutina">
+          </ion-input>
+        </div>
+
+        <div class="form-group-moderno">
+          <label>Notas (opcional)</label>
+          <ion-textarea
+            [(ngModel)]="configEjercicio.notas"
+            placeholder="Notas adicionales..."
+            rows="2"
+            class="textarea-moderno-rutina"
+            maxlength="200">
+          </ion-textarea>
+        </div>
+
+        <div class="acciones-modal-rutina">
+          <ion-button 
+            expand="block" 
+            (click)="agregarEjercicioADia()" 
+            [disabled]="!ejercicioSeleccionado || !configEjercicio.series || !configEjercicio.repeticiones || !configEjercicio.repeticiones.trim()"
+            class="btn-agregar-ejercicio-modal">
+            <ion-icon name="add-outline" slot="start"></ion-icon>
+            Agregar Ejercicio
+          </ion-button>
+        </div>
+        </div>
       </ion-content>
-    </ng-template>
   </ion-modal>
 </ion-content>

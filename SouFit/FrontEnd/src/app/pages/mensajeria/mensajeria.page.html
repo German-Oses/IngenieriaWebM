@@ -67,25 +67,57 @@
           <!-- Lista de usuarios disponibles para nueva conversación -->
           <div *ngIf="mostrarUsuariosDisponibles" class="usuarios-disponibles">
             <div class="usuarios-header">
-              <h3>Usuarios disponibles</h3>
+              <h3>Nueva conversación</h3>
               <button class="btn-cerrar" (click)="cerrarUsuariosDisponibles()">
                 <ion-icon name="close-outline"></ion-icon>
               </button>
             </div>
-            <div 
-              *ngFor="let usuario of usuariosDisponibles" 
-              class="usuario-item"
-              (click)="iniciarConversacion(usuario)">
-              <ion-avatar>
-                <img [src]="usuario.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="usuario.nombre">
-              </ion-avatar>
-              <div class="usuario-info">
-                <h4>{{ usuario.nombre }}</h4>
-                <p>@{{ usuario.username }}</p>
+            
+            <!-- Búsqueda de usuarios -->
+            <div class="busqueda-usuarios">
+              <div class="input-busqueda-wrapper">
+                <ion-icon name="search-outline" class="icono-busqueda"></ion-icon>
+                <input 
+                  type="text" 
+                  [(ngModel)]="terminoBusquedaUsuario"
+                  (input)="buscarUsuarios()"
+                  placeholder="Buscar usuario..."
+                  class="input-busqueda-usuario">
+                <button 
+                  *ngIf="terminoBusquedaUsuario"
+                  class="btn-limpiar-busqueda"
+                  (click)="terminoBusquedaUsuario = ''; cargarUsuariosDisponibles()">
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
               </div>
             </div>
-            <div *ngIf="usuariosDisponibles.length === 0" class="no-usuarios">
-              <p>No hay usuarios disponibles</p>
+
+            <!-- Loading -->
+            <div *ngIf="buscandoUsuarios" class="loading-usuarios">
+              <ion-spinner></ion-spinner>
+              <p>Buscando usuarios...</p>
+            </div>
+
+            <!-- Lista de usuarios -->
+            <div *ngIf="!buscandoUsuarios" class="lista-usuarios-disponibles">
+              <div 
+                *ngFor="let usuario of usuariosDisponibles" 
+                class="usuario-item-moderno"
+                (click)="iniciarConversacion(usuario)">
+                <ion-avatar>
+                  <img [src]="usuario.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="usuario.nombre" (error)="$event.target.src='https://ionicframework.com/docs/img/demos/avatar.svg'">
+                </ion-avatar>
+                <div class="usuario-info-moderno">
+                  <h4>{{ usuario.nombre }}</h4>
+                  <p>@{{ usuario.username }}</p>
+                </div>
+                <ion-icon name="chevron-forward-outline" class="icono-flecha"></ion-icon>
+              </div>
+              <div *ngIf="usuariosDisponibles.length === 0 && !buscandoUsuarios" class="no-usuarios">
+                <ion-icon name="person-outline"></ion-icon>
+                <p>{{ terminoBusquedaUsuario ? 'No se encontraron usuarios' : 'No hay usuarios disponibles' }}</p>
+                <small *ngIf="terminoBusquedaUsuario">Intenta con otro término de búsqueda</small>
+              </div>
             </div>
           </div>
 
@@ -93,18 +125,23 @@
           <div *ngIf="!mostrarUsuariosDisponibles">
             <div 
               *ngFor="let chat of chats" 
-              class="chat-item" 
+              class="chat-item-moderno" 
               [class.activo]="chatActivo?.id_usuario === chat.id_usuario"
+              [class.no-leidos]="tieneMensajesNoLeidos(chat)"
               (click)="seleccionarChat(chat)">
               <ion-avatar>
-                <img [src]="chat.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="chat.nombre">
+                <img [src]="chat.avatar || 'https://ionicframework.com/docs/img/demos/avatar.svg'" [alt]="chat.nombre" (error)="$event.target.src='https://ionicframework.com/docs/img/demos/avatar.svg'">
+                <div *ngIf="chat.en_linea" class="indicador-online"></div>
               </ion-avatar>
-              <div class="chat-info">
-                <h3>{{ chat.nombre }}</h3>
-                <p>{{ chat.ultimo_mensaje || 'No hay mensajes' }}</p>
-              </div>
-              <div class="chat-hora">
-                <span>{{ chat.fecha_ultimo_mensaje ? formatearFechaUltimoMensaje(chat.fecha_ultimo_mensaje) : '' }}</span>
+              <div class="chat-info-moderno">
+                <div class="chat-header-info">
+                  <h3>{{ chat.nombre }}</h3>
+                  <span class="chat-hora-moderna">{{ chat.fecha_ultimo_mensaje ? formatearFechaUltimoMensaje(chat.fecha_ultimo_mensaje) : '' }}</span>
+                </div>
+                <div class="chat-mensaje-info">
+                  <p class="ultimo-mensaje">{{ chat.ultimo_mensaje || 'No hay mensajes' }}</p>
+                  <span *ngIf="tieneMensajesNoLeidos(chat)" class="badge-no-leidos">{{ mensajesNoLeidos[chat.id_usuario] }}</span>
+                </div>
               </div>
             </div>
 
@@ -159,7 +196,26 @@
               <!-- Contenido de texto -->
               <p *ngIf="mensaje.contenido">{{ mensaje.contenido }}</p>
               
-              <small class="mensaje-hora">{{ formatearHora(mensaje.fecha_envio!) }}</small>
+              <div class="mensaje-footer">
+                <small class="mensaje-hora">{{ formatearHora(mensaje.fecha_envio!) }}</small>
+                <div *ngIf="esMensajePropio(mensaje)" class="estado-mensaje">
+                  <ion-icon 
+                    *ngIf="obtenerEstadoLectura(mensaje) === 'enviado'"
+                    name="time-outline" 
+                    class="icono-estado enviado">
+                  </ion-icon>
+                  <ion-icon 
+                    *ngIf="obtenerEstadoLectura(mensaje) === 'entregado'"
+                    name="checkmark-outline" 
+                    class="icono-estado entregado">
+                  </ion-icon>
+                  <ion-icon 
+                    *ngIf="obtenerEstadoLectura(mensaje) === 'leido'"
+                    name="checkmark-done-outline" 
+                    class="icono-estado leido">
+                  </ion-icon>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -212,8 +268,13 @@
               [(ngModel)]="nuevoMensaje"
               (keydown)="onEnterPressed($event)"
               #inputMensaje />
-            <button class="btn-enviar" (click)="enviarMensaje()" [disabled]="!nuevoMensaje.trim() && !archivoSeleccionado">
-              <ion-icon name="send-outline"></ion-icon>
+            <button 
+              class="btn-enviar" 
+              (click)="enviarMensaje()" 
+              [disabled]="(!nuevoMensaje.trim() && !archivoSeleccionado) || enviandoMensaje"
+              [class.enviando]="enviandoMensaje">
+              <ion-spinner *ngIf="enviandoMensaje" name="crescent"></ion-spinner>
+              <ion-icon *ngIf="!enviandoMensaje" name="send-outline"></ion-icon>
             </button>
             <button class="btn-micro" title="Grabar audio">
               <ion-icon name="mic-outline"></ion-icon>

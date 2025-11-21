@@ -1,21 +1,34 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonAvatar, IonCol, IonContent, IonGrid, IonIcon, IonRow, AlertController, ToastController } from '@ionic/angular/standalone';
+import { IonAvatar, IonCol, IonContent, IonGrid, IonIcon, IonRow, IonSpinner, AlertController, ToastController } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { ChatService, Chat, Mensaje } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, addOutline, closeOutline } from 'ionicons/icons';
+import { 
+  arrowBackOutline, 
+  addOutline, 
+  closeOutline, 
+  sendOutline, 
+  imageOutline, 
+  micOutline,
+  searchOutline,
+  checkmarkDoneOutline,
+  checkmarkOutline,
+  timeOutline,
+  personOutline,
+  chevronForwardOutline
+} from 'ionicons/icons';
 
 @Component({
   selector: 'app-mensajeria',
   templateUrl: './mensajeria.page.html',
   styleUrls: ['./mensajeria.page.scss'],
   standalone: true,
-  imports: [IonContent, CommonModule, FormsModule, IonIcon, IonCol, IonRow, IonGrid, IonAvatar]
+  imports: [IonContent, CommonModule, FormsModule, IonIcon, IonCol, IonRow, IonGrid, IonAvatar, IonSpinner]
 })
 export class MensajeriaPage implements OnInit, OnDestroy {
   @ViewChild('mensajesContainer', { static: false }) mensajesContainer!: ElementRef;
@@ -29,11 +42,17 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   // Variables para nueva conversación
   mostrarUsuariosDisponibles: boolean = false;
   usuariosDisponibles: any[] = [];
+  buscandoUsuarios = false;
+  terminoBusquedaUsuario = '';
   
   // Variables para archivos
   archivoSeleccionado: File | null = null;
   previewArchivo: string | null = null;
   tipoArchivo: 'imagen' | 'audio' | null = null;
+  enviandoMensaje = false;
+  
+  // Indicadores
+  mensajesNoLeidos: { [key: number]: number } = {};
   
   private subscriptions: Subscription[] = [];
 
@@ -44,7 +63,20 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     private alertController: AlertController,
     private toastController: ToastController
   ) {
-    addIcons({ arrowBackOutline, addOutline, closeOutline });
+    addIcons({ 
+      arrowBackOutline, 
+      addOutline, 
+      closeOutline, 
+      sendOutline, 
+      imageOutline, 
+      micOutline,
+      searchOutline,
+      checkmarkDoneOutline,
+      checkmarkOutline,
+      timeOutline,
+      personOutline,
+      chevronForwardOutline
+    });
   }
 
   ngOnInit() {
@@ -209,6 +241,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   enviarMensaje() {
     if (!this.chatActivo) {
       console.warn('No hay chat activo');
+      this.presentErrorToast('No hay conversación seleccionada');
       return;
     }
 
@@ -223,8 +256,14 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.enviandoMensaje) {
+      return; // Evitar envíos duplicados
+    }
+
     const contenido = this.nuevoMensaje.trim();
     console.log('Enviando mensaje a:', this.chatActivo.id_usuario, 'Contenido:', contenido);
+    
+    this.enviandoMensaje = true;
     
     // Limpiar el input inmediatamente para mejor UX
     this.nuevoMensaje = '';
@@ -235,6 +274,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     // Scroll al final después de un breve delay para que el mensaje se agregue
     setTimeout(() => {
       this.scrollToBottom();
+      this.enviandoMensaje = false;
     }, 100);
   }
 
@@ -343,6 +383,44 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     });
   }
 
+  buscarUsuarios() {
+    if (!this.terminoBusquedaUsuario || this.terminoBusquedaUsuario.trim().length < 2) {
+      this.cargarUsuariosDisponibles();
+      return;
+    }
+
+    this.buscandoUsuarios = true;
+    this.chatService.buscarUsuarioPorUsername(this.terminoBusquedaUsuario.trim()).subscribe({
+      next: (usuarios) => {
+        this.usuariosDisponibles = usuarios;
+        this.buscandoUsuarios = false;
+      },
+      error: (error) => {
+        console.error('Error al buscar usuarios:', error);
+        this.buscandoUsuarios = false;
+        this.presentErrorToast('Error al buscar usuarios');
+      }
+    });
+  }
+
+  tieneMensajesNoLeidos(chat: Chat): boolean {
+    return (this.mensajesNoLeidos[chat.id_usuario] || 0) > 0;
+  }
+
+  obtenerEstadoLectura(mensaje: Mensaje): 'enviado' | 'entregado' | 'leido' {
+    if (!this.esMensajePropio(mensaje)) {
+      return 'enviado'; // Para mensajes recibidos, no mostramos estado
+    }
+
+    // Si el mensaje está marcado como leído
+    if (mensaje.leido) {
+      return 'leido';
+    }
+
+    // Por defecto, enviado (en el futuro se puede agregar fecha_entregado)
+    return 'enviado';
+  }
+
   formatearFechaUltimoMensaje(fecha: string): string {
     const hoy = new Date();
     const fechaMensaje = new Date(fecha);
@@ -419,12 +497,16 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
 
   cargarUsuariosDisponibles() {
+    this.buscandoUsuarios = true;
     this.chatService.cargarUsuariosDisponibles().subscribe({
       next: (usuarios) => {
         this.usuariosDisponibles = usuarios;
+        this.buscandoUsuarios = false;
       },
       error: (error) => {
         console.error('Error al cargar usuarios:', error);
+        this.presentErrorToast('No se pudieron cargar los usuarios');
+        this.buscandoUsuarios = false;
       }
     });
   }

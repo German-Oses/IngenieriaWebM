@@ -138,11 +138,21 @@
           </div>
           
           <div class="editar-acciones">
-            <ion-button expand="block" (click)="guardarPerfil()" class="btn-guardar-moderno">
-              <ion-icon name="checkmark-outline" slot="start"></ion-icon>
-              Guardar Cambios
+            <ion-button 
+              expand="block" 
+              (click)="guardarPerfil()" 
+              [disabled]="guardandoPerfil"
+              class="btn-guardar-moderno">
+              <ion-spinner *ngIf="guardandoPerfil" name="crescent" slot="start"></ion-spinner>
+              <ion-icon *ngIf="!guardandoPerfil" name="checkmark-outline" slot="start"></ion-icon>
+              {{ guardandoPerfil ? 'Guardando...' : 'Guardar Cambios' }}
             </ion-button>
-            <ion-button expand="block" fill="outline" (click)="cancelarEdicion()" class="btn-cancelar-moderno">
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              (click)="cancelarEdicion()" 
+              [disabled]="guardandoPerfil"
+              class="btn-cancelar-moderno">
               Cancelar
             </ion-button>
           </div>

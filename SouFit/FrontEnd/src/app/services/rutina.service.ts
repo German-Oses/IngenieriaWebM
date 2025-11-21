@@ -127,6 +127,15 @@ export class RutinaService {
     return this.http.post(`${this.apiUrl}/${id}/compartir`, {});
   }
 
+  // Crear un día para una rutina
+  createRutinaDia(idRutina: number, diaData: {
+    numero_dia: number;
+    nombre_dia?: string;
+    descripcion?: string;
+  }): Observable<RutinaDia> {
+    return this.http.post<RutinaDia>(`${this.apiUrl}/${idRutina}/dias`, diaData);
+  }
+
   // Agregar ejercicio a un día de rutina
   agregarEjercicioARutina(idRutina: number, ejercicioData: {
     id_dia: number;

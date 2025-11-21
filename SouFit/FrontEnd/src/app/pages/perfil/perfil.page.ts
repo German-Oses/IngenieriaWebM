@@ -14,9 +14,6 @@ import { ProgresoService } from '../../services/progreso.service';
 import { environment } from '../../../environments/environment';
 import { 
   IonContent,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonIcon,
   IonButton,
   IonInput,
@@ -66,9 +63,6 @@ import {
     CommonModule,
     FormsModule,
     IonContent,
-    IonGrid,
-    IonRow,
-    IonCol,
     IonIcon,
     IonButton,
     IonInput,
@@ -332,7 +326,31 @@ export class PerfilPage implements OnInit {
     this.perfilEditado = {};
   }
 
+  guardandoPerfil = false;
+
   guardarPerfil() {
+    // Validaciones mejoradas
+    if (!this.perfilEditado.nombre || !this.perfilEditado.nombre.trim()) {
+      this.presentErrorToast('El nombre es requerido');
+      return;
+    }
+
+    if (this.perfilEditado.nombre.trim().length < 2) {
+      this.presentErrorToast('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+
+    if (this.perfilEditado.username && this.perfilEditado.username.trim().length < 3) {
+      this.presentErrorToast('El username debe tener al menos 3 caracteres');
+      return;
+    }
+
+    if (this.perfilEditado.bio && this.perfilEditado.bio.length > 500) {
+      this.presentErrorToast('La biografía no puede exceder 500 caracteres');
+      return;
+    }
+
+    this.guardandoPerfil = true;
     const datosActualizar: any = {};
     
     if (this.perfilEditado.nombre && this.perfilEditado.nombre.trim()) {

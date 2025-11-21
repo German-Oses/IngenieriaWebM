@@ -7,99 +7,24 @@ ion-content {
   --padding-end: 0;
   --padding-top: 0;
   --padding-bottom: 0;
-  --background: #f5f5f5;
+  --background: var(--soufit-bg-light);
 }
 
 .dark ion-content {
-  --background: #121212;
+  --background: var(--soufit-bg-light);
 }
 
 /* ===============================
    HEADER MÓVIL
 ================================= */
 
-.header-movil {
-  display: none;
-  
-  @media (max-width: 768px) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: white;
-    border-bottom: 1px solid #e0e0e0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    
-    h1 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-      color: #262626;
-    }
-    
-    .btn-menu-hamburguesa {
-      background: none;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      transition: 0.2s;
-      
-      ion-icon {
-        font-size: 24px;
-        color: #262626;
-      }
-      
-      &:active {
-        background: #f0f0f0;
-      }
-    }
-  }
-}
-
-.dark .header-movil {
-  background: #1e1e1e;
-  border-bottom-color: #444;
-  
-  h1 {
-    color: #fff;
-  }
-  
-  .btn-menu-hamburguesa {
-    &:active {
-      background: #2a2a2a;
-    }
-    
-    ion-icon {
-      color: #fff;
-    }
-  }
-}
+/* Header móvil - estilos en global.scss */
 
 /* ===============================
    MENÚ LATERAL
 ================================= */
 
-.menu-lateral {
-  width: 80px !important;
-  max-width: 80px !important;
-  min-width: 80px !important;
-  background-color: white;
-  padding: 20px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-right: 1px solid #e6e6e6;
-  
-  @media (max-width: 768px) {
-    display: none !important;
-  }
-}
+/* Menú lateral - estilos en global.scss */
 
 .dark .menu-lateral {
   background-color: #1e1e1e;
@@ -194,22 +119,22 @@ ion-content {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--soufit-bg-light);
   width: 100%;
   overflow: hidden;
 }
 
 .dark .rutinas-centro {
-  background-color: #121212;
+  background-color: var(--soufit-bg-light);
 }
 
 .titulo-rutinas {
-  background-color: white;
+  background-color: var(--soufit-bg-white);
   padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--soufit-border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -218,7 +143,7 @@ ion-content {
     margin: 0;
     font-size: 24px;
     font-weight: 700;
-    color: #262626;
+    color: var(--soufit-text-primary);
   }
   
   @media (max-width: 768px) {
@@ -231,11 +156,11 @@ ion-content {
 }
 
 .dark .titulo-rutinas {
-  background-color: #1e1e1e;
-  border-bottom-color: #444;
+  background-color: var(--soufit-bg-white);
+  border-bottom-color: var(--soufit-border);
   
   h1 {
-    color: #fff;
+    color: var(--soufit-text-primary);
   }
 }
 
@@ -786,6 +711,377 @@ ion-item[slot="header"] {
     
     ion-button {
       width: 100%;
+    }
+  }
+}
+
+/* ===============================
+   MODAL MODERNO RUTINAS
+================================= */
+
+.modal-crear-rutina {
+  padding: 0;
+}
+
+.form-group-moderno {
+  margin-bottom: 20px;
+  
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--soufit-text-secondary);
+    margin-bottom: 8px;
+  }
+}
+
+.dark .form-group-moderno label {
+  color: var(--soufit-text-secondary);
+}
+
+.input-moderno-rutina,
+.textarea-moderno-rutina {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --color: var(--soufit-text-primary);
+  --placeholder-color: var(--soufit-text-tertiary);
+  border: 1px solid var(--soufit-border);
+  border-radius: 12px;
+  background: var(--soufit-bg-white);
+  
+  &::part(native) {
+    color: var(--soufit-text-primary) !important;
+  }
+  
+  input, textarea {
+    color: var(--soufit-text-primary) !important;
+    background: transparent !important;
+  }
+}
+
+.dark .input-moderno-rutina,
+.dark .textarea-moderno-rutina {
+  --color: var(--soufit-text-primary);
+  --placeholder-color: var(--soufit-text-tertiary);
+  border-color: var(--soufit-border);
+  background: var(--soufit-bg-white);
+  
+  &::part(native) {
+    color: var(--soufit-text-primary) !important;
+  }
+  
+  input, textarea {
+    color: var(--soufit-text-primary) !important;
+  }
+}
+
+.select-item-moderno {
+  --background: var(--soufit-bg-white);
+  --border-color: var(--soufit-border);
+  --border-radius: 12px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  margin-bottom: 12px;
+}
+
+.select-moderno-rutina {
+  --color: var(--soufit-text-primary);
+  width: 100%;
+}
+
+.dark .select-item-moderno {
+  --background: var(--soufit-bg-white);
+  --border-color: var(--soufit-border);
+}
+
+.ejercicio-seleccionado-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f0f4ff;
+  border-radius: 8px;
+  border: 1px solid #3880ff;
+  margin-top: 8px;
+  
+  ion-icon {
+    color: #3880ff;
+    font-size: 20px;
+  }
+  
+  span {
+    color: #3880ff;
+    font-weight: 500;
+    font-size: 14px;
+  }
+}
+
+.dark .ejercicio-seleccionado-preview {
+  background: #2a2a2a;
+  border-color: #3880ff;
+  
+  ion-icon, span {
+    color: #3880ff;
+  }
+}
+
+.acciones-modal-rutina {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--soufit-border);
+}
+
+.btn-crear-rutina-modal,
+.btn-actualizar-rutina-modal,
+.btn-crear-dia-modal,
+.btn-agregar-ejercicio-modal {
+  --background: #3880ff;
+  --color: white;
+  --border-radius: 12px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  font-weight: 600;
+  height: 52px;
+  
+  &[disabled] {
+    --background: #e0e0e0;
+    --color: #999;
+    opacity: 0.6;
+  }
+}
+
+.dark .btn-crear-rutina-modal[disabled],
+.dark .btn-actualizar-rutina-modal[disabled],
+.dark .btn-crear-dia-modal[disabled],
+.dark .btn-agregar-ejercicio-modal[disabled] {
+  --background: #444;
+  --color: #666;
+}
+
+/* ===============================
+   DÍA Y EJERCICIOS MEJORADOS
+================================= */
+
+.dia-acciones {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--soufit-border);
+}
+
+.btn-agregar-ejercicio-dia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #3880ff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+  
+  ion-icon {
+    font-size: 18px;
+  }
+  
+  &:hover {
+    background: #3171e0;
+    transform: translateY(-1px);
+  }
+}
+
+.dark .btn-agregar-ejercicio-dia {
+  background: #3880ff;
+  
+  &:hover {
+    background: #3171e0;
+  }
+}
+
+.ejercicios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ejercicio-item-moderno {
+  background: var(--soufit-bg-white);
+  border: 1px solid var(--soufit-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+  }
+  
+  .ejercicio-header-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    
+    ion-icon {
+      font-size: 24px;
+      color: #3880ff;
+    }
+    
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--soufit-text-primary);
+    }
+  }
+  
+  .ejercicio-detalles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 8px;
+    
+    .detalle-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--soufit-text-secondary);
+      
+      ion-icon {
+        font-size: 16px;
+        color: var(--soufit-text-tertiary);
+      }
+    }
+  }
+  
+  .ejercicio-notas {
+    margin: 8px 0 0 0;
+    font-size: 13px;
+    color: var(--soufit-text-secondary);
+    font-style: italic;
+    padding: 8px;
+    background: rgba(56, 128, 255, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid #3880ff;
+  }
+}
+
+.dark .ejercicio-item-moderno {
+  background: var(--soufit-bg-white);
+  border-color: var(--soufit-border);
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  
+  .ejercicio-header-item h3 {
+    color: var(--soufit-text-primary);
+  }
+  
+  .ejercicio-detalles .detalle-item {
+    color: var(--soufit-text-secondary);
+    
+    ion-icon {
+      color: var(--soufit-text-tertiary);
+    }
+  }
+  
+  .ejercicio-notas {
+    color: var(--soufit-text-secondary);
+    background: rgba(56, 128, 255, 0.1);
+  }
+}
+
+.sin-ejercicios {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--soufit-text-tertiary);
+  
+  ion-icon {
+    font-size: 48px;
+    color: var(--soufit-text-tertiary);
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+  
+  p {
+    margin: 8px 0 4px 0;
+    font-size: 14px;
+  }
+  
+  small {
+    font-size: 12px;
+    color: var(--soufit-text-tertiary);
+  }
+}
+
+.dark .sin-ejercicios {
+  color: var(--soufit-text-tertiary);
+  
+  ion-icon {
+    color: var(--soufit-text-tertiary);
+  }
+}
+
+.sin-dias {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--soufit-text-tertiary);
+  
+  ion-icon {
+    font-size: 48px;
+    color: var(--soufit-text-tertiary);
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+  
+  p {
+    margin: 8px 0 16px 0;
+    font-size: 14px;
+  }
+  
+  .btn-agregar-dia {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #3880ff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s;
+    
+    ion-icon {
+      font-size: 18px;
+      margin: 0;
+      opacity: 1;
+    }
+    
+    &:hover {
+      background: #3171e0;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+.dark .sin-dias {
+  color: var(--soufit-text-tertiary);
+  
+  ion-icon {
+    color: var(--soufit-text-tertiary);
+  }
+  
+  .btn-agregar-dia {
+    background: #3880ff;
+    
+    &:hover {
+      background: #3171e0;
     }
   }
 }

@@ -67,17 +67,55 @@
             </button>
           </div>
 
-          <!-- Campo de búsqueda -->
-          <div class="campo-busqueda">
-            <ion-input
-              [(ngModel)]="terminoBusqueda"
-              placeholder="Buscar {{ tipoBusqueda === 'usuarios' ? 'usuarios' : 'ejercicios' }}..."
-              (ionInput)="buscar()"
-              (keydown.enter)="buscar()">
-            </ion-input>
-            <ion-button (click)="buscar()" [disabled]="terminoBusqueda.length < 2">
-              <ion-icon name="search-outline"></ion-icon>
+          <!-- Campo de búsqueda mejorado -->
+          <div class="campo-busqueda-moderno">
+            <div class="input-busqueda-wrapper">
+              <ion-icon name="search-outline" class="icono-busqueda-input"></ion-icon>
+              <ion-input
+                [(ngModel)]="terminoBusqueda"
+                [placeholder]="'Buscar ' + (tipoBusqueda === 'usuarios' ? 'usuarios' : 'ejercicios') + '...'"
+                (ionInput)="onSearchInput($event)"
+                (keydown.enter)="buscarDirecto(terminoBusqueda)"
+                class="input-busqueda-mejorado">
+              </ion-input>
+              <button 
+                *ngIf="terminoBusqueda"
+                class="btn-limpiar-busqueda"
+                (click)="terminoBusqueda = ''; limpiarResultados()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </div>
+            <ion-button 
+              (click)="buscarDirecto(terminoBusqueda)" 
+              [disabled]="terminoBusqueda.length < 2 || cargando"
+              class="btn-buscar-mejorado">
+              <ion-spinner *ngIf="cargando" name="crescent"></ion-spinner>
+              <ion-icon *ngIf="!cargando" name="search-outline"></ion-icon>
             </ion-button>
+          </div>
+          
+          <!-- Historial de búsquedas -->
+          <div *ngIf="mostrarHistorial && historialBusquedas.length > 0 && terminoBusqueda.length < 2" class="historial-busquedas">
+            <div class="historial-header">
+              <h4>Búsquedas recientes</h4>
+              <button class="btn-limpiar-historial" (click)="limpiarHistorialCompleto()">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+            <div class="historial-items">
+              <div 
+                *ngFor="let termino of historialBusquedas" 
+                class="historial-item"
+                (click)="buscarDirecto(termino)">
+                <ion-icon name="time-outline"></ion-icon>
+                <span>{{ termino }}</span>
+                <button 
+                  class="btn-eliminar-historial"
+                  (click)="eliminarDelHistorial(termino); $event.stopPropagation()">
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
           </div>
           
           <!-- Filtros avanzados para ejercicios -->
