@@ -1,0 +1,288 @@
+/* ===============================
+   RESET Y VARIABLES
+================================= */
+
+ion-content {
+  --background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.dark ion-content {
+  --background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+}
+
+/* ===============================
+   CONTENEDOR PRINCIPAL
+================================= */
+
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.dark .login-card {
+  background: #1e1e1e;
+  border-color: #444;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+/* ===============================
+   HEADER
+================================= */
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+  
+  .logo-container {
+    margin-bottom: 24px;
+    
+    img {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+    }
+  }
+  
+  h1 {
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #262626;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 15px;
+    color: #8e8e8e;
+  }
+}
+
+.dark .login-header {
+  h1 {
+    color: #fff;
+  }
+  
+  p {
+    color: #999;
+  }
+}
+
+/* ===============================
+   FORMULARIO
+================================= */
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+  }
+  
+  ion-input {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --color: #262626;
+    --placeholder-color: #999;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    font-size: 15px;
+    height: 48px;
+    
+    &::part(native) {
+      color: #262626 !important;
+    }
+    
+    input {
+      color: #262626 !important;
+    }
+  }
+  
+  &.valid ion-input {
+    border-color: #10b981;
+  }
+  
+  &.invalid ion-input {
+    border-color: #ef4444;
+  }
+}
+
+.dark .form-group {
+  label {
+    color: #999;
+  }
+  
+  ion-input {
+    --color: #fff;
+    --placeholder-color: #666;
+    border-color: #444;
+    background: #2a2a2a;
+    
+    &::part(native) {
+      color: #fff !important;
+    }
+    
+    input {
+      color: #fff !important;
+    }
+  }
+  
+  &.valid ion-input {
+    border-color: #10b981;
+  }
+  
+  &.invalid ion-input {
+    border-color: #ef4444;
+  }
+}
+
+.error-message {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===============================
+   BOTONES
+================================= */
+
+.btn-login {
+  --background: #3880ff;
+  --color: white;
+  --border-radius: 12px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  height: 52px;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(56, 128, 255, 0.3);
+  
+  &[disabled] {
+    --background: #e0e0e0;
+    --color: #999;
+    box-shadow: none;
+  }
+  
+  &:not([disabled]):hover {
+    --background: #3171e0;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(56, 128, 255, 0.4);
+  }
+}
+
+.dark .btn-login[disabled] {
+  --background: #444;
+  --color: #666;
+}
+
+.btn-register-link {
+  --color: #3880ff;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 8px;
+  
+  &:hover {
+    --color: #3171e0;
+  }
+}
+
+/* ===============================
+   FOOTER
+================================= */
+
+.login-footer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+  
+  p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #8e8e8e;
+  }
+}
+
+.dark .login-footer {
+  border-top-color: #444;
+  
+  p {
+    color: #999;
+  }
+}
+
+/* ===============================
+   LOADING
+================================= */
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  
+  ion-spinner {
+    --color: #3880ff;
+  }
+}
+
+/* ===============================
+   RESPONSIVE
+================================= */
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 16px;
+  }
+  
+  .login-card {
+    padding: 24px;
+    border-radius: 20px;
+  }
+  
+  .login-header {
+    margin-bottom: 24px;
+    
+    h1 {
+      font-size: 24px;
+    }
+  }
+}
+

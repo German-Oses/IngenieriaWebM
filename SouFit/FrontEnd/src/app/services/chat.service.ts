@@ -354,6 +354,13 @@ export class ChatService {
 
   // Cargar historial de mensajes con un usuario específico
   cargarMensajes(idOtroUsuario: number): Observable<Mensaje[]> {
+    if (!idOtroUsuario || isNaN(idOtroUsuario)) {
+      console.error('❌ ID de usuario inválido para cargar mensajes:', idOtroUsuario);
+      return new Observable(observer => {
+        observer.error({ error: 'ID de usuario inválido' });
+        observer.complete();
+      });
+    }
     return this.http.get<Mensaje[]>(`${this.apiUrl}/mensajes/${idOtroUsuario}`);
   }
   

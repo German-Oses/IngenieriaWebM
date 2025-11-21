@@ -18,7 +18,7 @@ export class ThemeService {
     this.initTheme();
   }
 
-  private async initTheme() {
+  async initTheme() {
     await this.storageReady;
     const savedTheme = await this.storage.get('theme') || 'system';
     this.setTheme(savedTheme as Theme);

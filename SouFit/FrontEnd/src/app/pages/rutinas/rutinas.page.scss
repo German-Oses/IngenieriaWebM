@@ -1,25 +1,242 @@
-@use '../home/home.page.scss' as *;
+/* ===============================
+   RESET Y VARIABLES
+================================= */
+
+ion-content {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --background: #f5f5f5;
+}
+
+.dark ion-content {
+  --background: #121212;
+}
+
+/* ===============================
+   HEADER MÓVIL
+================================= */
+
+.header-movil {
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #262626;
+    }
+    
+    .btn-menu-hamburguesa {
+      background: none;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: 0.2s;
+      
+      ion-icon {
+        font-size: 24px;
+        color: #262626;
+      }
+      
+      &:active {
+        background: #f0f0f0;
+      }
+    }
+  }
+}
+
+.dark .header-movil {
+  background: #1e1e1e;
+  border-bottom-color: #444;
+  
+  h1 {
+    color: #fff;
+  }
+  
+  .btn-menu-hamburguesa {
+    &:active {
+      background: #2a2a2a;
+    }
+    
+    ion-icon {
+      color: #fff;
+    }
+  }
+}
+
+/* ===============================
+   MENÚ LATERAL
+================================= */
+
+.menu-lateral {
+  width: 80px !important;
+  max-width: 80px !important;
+  min-width: 80px !important;
+  background-color: white;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid #e6e6e6;
+  
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.dark .menu-lateral {
+  background-color: #1e1e1e;
+  border-right-color: #444;
+}
+
+.logo {
+  margin-bottom: 30px;
+  
+  img {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.boton-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  padding: 12px 0;
+  transition: 0.2s ease;
+  color: #444;
+  border: none;
+  background: none;
+  
+  ion-icon {
+    font-size: 22px;
+    color: #666;
+    margin-bottom: 5px;
+  }
+  
+  p {
+    font-size: 11px;
+    color: #666;
+    margin: 0;
+  }
+  
+  &:hover {
+    background: #f2f2f2;
+  }
+  
+  &.activo {
+    background: #000;
+    color: #fff;
+    border-radius: 10px;
+    
+    ion-icon {
+      color: #fff;
+    }
+    
+    p {
+      color: #fff;
+    }
+  }
+}
+
+.dark .boton-menu {
+  color: #999;
+  
+  ion-icon {
+    color: #999;
+  }
+  
+  p {
+    color: #999;
+  }
+  
+  &:hover {
+    background: #2a2a2a;
+  }
+  
+  &.activo {
+    background: #3880ff;
+    color: #fff;
+    
+    ion-icon,
+    p {
+      color: #fff;
+    }
+  }
+}
+
+/* ===============================
+   CONTENEDOR CENTRAL
+================================= */
 
 .rutinas-centro {
   display: flex;
   flex-direction: column;
   height: 100vh;
   background-color: #f5f5f5;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dark .rutinas-centro {
+  background-color: #121212;
 }
 
 .titulo-rutinas {
   background-color: white;
-  padding: 20px;
+  padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #262626;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    
+    h1 {
+      font-size: 20px;
+    }
+  }
 }
 
-.titulo-rutinas h1 {
-  margin: 0;
-  font-size: 24px;
-  color: #333;
+.dark .titulo-rutinas {
+  background-color: #1e1e1e;
+  border-bottom-color: #444;
+  
+  h1 {
+    color: #fff;
+  }
 }
 
 .btn-crear-rutina {
@@ -29,80 +246,179 @@
   background-color: #3880ff;
   color: white;
   border: none;
-  padding: 10px 16px;
-  border-radius: 20px;
+  padding: 10px 20px;
+  border-radius: 24px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-crear-rutina:hover {
-  background-color: #3171e0;
+  transition: all 0.2s;
+  
+  ion-icon {
+    font-size: 18px;
+  }
+  
+  &:hover {
+    background-color: #3171e0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(56, 128, 255, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    font-size: 13px;
+    
+    ion-icon {
+      font-size: 16px;
+    }
+  }
 }
 
 .rutinas-contenedor {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 24px;
+  scroll-behavior: smooth;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 }
+
+/* ===============================
+   LOADING Y ESTADOS VACÍOS
+================================= */
 
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  color: #666;
+  padding: 60px 20px;
+  gap: 16px;
+  
+  ion-spinner {
+    --color: #3880ff;
+  }
+  
+  p {
+    color: #8e8e8e;
+    font-size: 14px;
+  }
+}
+
+.dark .loading-container p {
+  color: #999;
 }
 
 .sin-rutinas {
   text-align: center;
-  padding: 40px;
-  color: #666;
+  padding: 80px 20px;
+  color: #8e8e8e;
+  font-size: 16px;
+  
+  p {
+    margin: 0;
+  }
+}
+
+.dark .sin-rutinas {
+  color: #999;
+}
+
+/* ===============================
+   ACORDEÓN DE RUTINAS
+================================= */
+
+ion-accordion-group {
+  margin-bottom: 20px;
+}
+
+ion-accordion {
+  margin-bottom: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border: 1px solid #e0e0e0;
+  background: white;
+}
+
+.dark ion-accordion {
+  background: #1e1e1e;
+  border-color: #444;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .rutina-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 15px;
+  align-items: flex-start;
+  padding: 20px;
+  --background: transparent;
+  --inner-padding-end: 0;
+}
+
+.dark .rutina-header {
+  --background: transparent;
 }
 
 .rutina-info {
   flex: 1;
+  min-width: 0;
 }
 
 .rutina-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 18px;
-  color: #333;
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.dark .rutina-info h3 {
+  color: #fff;
 }
 
 .rutina-info p {
-  margin: 5px 0;
+  margin: 8px 0;
   font-size: 14px;
   color: #666;
+  line-height: 1.5;
+}
+
+.dark .rutina-info p {
+  color: #999;
 }
 
 .rutina-tags {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 12px;
   flex-wrap: wrap;
 }
 
 .tag {
   background-color: #e3f2fd;
   color: #1976d2;
-  padding: 4px 10px;
-  border-radius: 12px;
+  padding: 6px 12px;
+  border-radius: 16px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dark .tag {
+  background-color: #1a237e;
+  color: #90caf9;
 }
 
 .rutina-acciones {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: 16px;
 }
 
 .btn-accion-rutina {
@@ -110,61 +426,191 @@
   border: none;
   color: #666;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: #f5f5f5;
+    color: #3880ff;
+    transform: scale(1.1);
+  }
+  
+  ion-icon {
+    font-size: 20px;
+  }
 }
 
-.btn-accion-rutina:hover {
-  background-color: #f5f5f5;
+.dark .btn-accion-rutina {
+  color: #999;
+  
+  &:hover {
+    background-color: #2a2a2a;
+    color: #3880ff;
+  }
 }
 
-.btn-accion-rutina ion-icon {
-  font-size: 20px;
-}
+/* ===============================
+   CONTENIDO DE RUTINA
+================================= */
 
 .rutina-contenido {
-  padding: 15px;
-  background-color: #f9f9f9;
+  padding: 20px;
+  background-color: #fafafa;
+}
+
+.dark .rutina-contenido {
+  background-color: #1a1a1a;
+}
+
+.sin-dias {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8e8e8e;
+  font-size: 14px;
+}
+
+.dark .sin-dias {
+  color: #999;
+}
+
+/* ===============================
+   DÍAS Y EJERCICIOS
+================================= */
+
+ion-accordion-group ion-accordion {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e0e0e0;
+}
+
+.dark ion-accordion-group ion-accordion {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+ion-item[slot="header"] {
+  --background: transparent;
+  --inner-padding-end: 0;
+  padding: 16px;
+  
+  ion-label {
+    h2 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #262626;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 13px;
+      color: #666;
+    }
+  }
+}
+
+.dark ion-item[slot="header"] ion-label {
+  h2 {
+    color: #fff;
+  }
+  
+  p {
+    color: #999;
+  }
 }
 
 .ejercicio-item {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   background-color: white;
-  border-radius: 8px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #262626;
+  }
+  
+  p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+  }
 }
 
-.ejercicio-item h3 {
-  margin: 0 0 5px 0;
-  font-size: 16px;
-  color: #333;
+.dark .ejercicio-item {
+  background-color: #1e1e1e;
+  border-color: #444;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  
+  h3 {
+    color: #fff;
+  }
+  
+  p {
+    color: #999;
+  }
 }
 
-.ejercicio-item p {
-  margin: 3px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.sin-ejercicios, .sin-dias {
+.sin-ejercicios {
   text-align: center;
-  padding: 20px;
-  color: #999;
+  padding: 30px 20px;
+  color: #8e8e8e;
   font-size: 14px;
 }
+
+.dark .sin-ejercicios {
+  color: #999;
+}
+
+/* ===============================
+   MODAL CREAR RUTINA
+================================= */
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid #e0e0e0;
+  background: white;
+  
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #262626;
+  }
 }
 
-.modal-header h2 {
-  margin: 0;
-  font-size: 20px;
+.dark .modal-header {
+  background: #1e1e1e;
+  border-bottom-color: #444;
+  
+  h2 {
+    color: #fff;
+  }
 }
 
 .btn-cerrar-modal {
@@ -173,21 +619,174 @@
   font-size: 24px;
   color: #666;
   cursor: pointer;
-  padding: 5px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #f5f5f5;
+    color: #333;
+  }
+}
+
+.dark .btn-cerrar-modal {
+  color: #999;
+  
+  &:hover {
+    background: #2a2a2a;
+    color: #fff;
+  }
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
+  background: white;
+}
+
+.dark .modal-body {
+  background: #1e1e1e;
 }
 
 .modal-body ion-input,
 .modal-body ion-textarea,
 .modal-body ion-select {
   width: 100%;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --color: #262626;
+  --placeholder-color: #999;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 12px;
+  background: white;
+  font-size: 15px;
+  
+  &::part(native) {
+    color: #262626 !important;
+  }
+  
+  input,
+  textarea {
+    color: #262626 !important;
+  }
 }
+
+.dark .modal-body ion-input,
+.dark .modal-body ion-textarea,
+.dark .modal-body ion-select {
+  --color: #fff;
+  --placeholder-color: #666;
+  border-color: #444;
+  background: #2a2a2a;
+  
+  &::part(native) {
+    color: #fff !important;
+  }
+  
+  input,
+  textarea {
+    color: #fff !important;
+  }
+}
+
+.modal-body ion-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.dark .modal-body ion-label {
+  color: #999;
+}
+
+/* ===============================
+   BOTONES MODAL
+================================= */
+
+.modal-acciones {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e0e0e0;
+  background: white;
+  justify-content: flex-end;
+}
+
+.dark .modal-acciones {
+  background: #1e1e1e;
+  border-top-color: #444;
+}
+
+.btn-guardar-rutina {
+  --background: #3880ff;
+  --color: white;
+  --border-radius: 12px;
+  --padding-start: 24px;
+  --padding-end: 24px;
+  font-weight: 600;
+  height: 44px;
+  
+  &[disabled] {
+    --background: #e0e0e0;
+    --color: #999;
+  }
+}
+
+.dark .btn-guardar-rutina[disabled] {
+  --background: #444;
+  --color: #666;
+}
+
+.btn-cancelar-rutina {
+  --background: transparent;
+  --color: #666;
+  --border: 1px solid #e0e0e0;
+  --border-radius: 12px;
+  --padding-start: 24px;
+  --padding-end: 24px;
+  height: 44px;
+}
+
+.dark .btn-cancelar-rutina {
+  --color: #999;
+  --border-color: #444;
+}
+
+/* ===============================
+   RESPONSIVE
+================================= */
+
+@media (max-width: 768px) {
+  .rutina-header {
+    flex-direction: column;
+    gap: 12px;
+    
+    .rutina-acciones {
+      margin-left: 0;
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+  
+  .modal-body {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .modal-acciones {
+    flex-direction: column-reverse;
+    padding: 16px;
+    
+    ion-button {
+      width: 100%;
+    }
+  }
+}
+

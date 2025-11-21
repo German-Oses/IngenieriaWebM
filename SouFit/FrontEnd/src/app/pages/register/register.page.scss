@@ -1,4 +1,220 @@
-// Estilos para el modal de verificación
+/* ===============================
+   RESET Y VARIABLES
+================================= */
+
+ion-content {
+  --background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.dark ion-content {
+  --background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+}
+
+/* ===============================
+   CONTENEDOR PRINCIPAL
+================================= */
+
+.register-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.dark .register-card {
+  background: #1e1e1e;
+  border-color: #444;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+/* ===============================
+   HEADER
+================================= */
+
+.register-header {
+  text-align: center;
+  margin-bottom: 32px;
+  
+  .logo-container {
+    margin-bottom: 24px;
+    
+    img {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+    }
+  }
+  
+  h1 {
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #262626;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 15px;
+    color: #8e8e8e;
+  }
+}
+
+.dark .register-header {
+  h1 {
+    color: #fff;
+  }
+  
+  p {
+    color: #999;
+  }
+}
+
+/* ===============================
+   FORMULARIO
+================================= */
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+  }
+  
+  ion-input,
+  ion-textarea {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --color: #262626;
+    --placeholder-color: #999;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    font-size: 15px;
+    
+    &::part(native) {
+      color: #262626 !important;
+    }
+    
+    input,
+    textarea {
+      color: #262626 !important;
+    }
+  }
+  
+  ion-input {
+    height: 48px;
+  }
+  
+  &.valid ion-input,
+  &.valid ion-textarea {
+    border-color: #10b981;
+  }
+  
+  &.invalid ion-input,
+  &.invalid ion-textarea {
+    border-color: #ef4444;
+  }
+}
+
+.dark .form-group {
+  label {
+    color: #999;
+  }
+  
+  ion-input,
+  ion-textarea {
+    --color: #fff;
+    --placeholder-color: #666;
+    border-color: #444;
+    background: #2a2a2a;
+    
+    &::part(native) {
+      color: #fff !important;
+    }
+    
+    input,
+    textarea {
+      color: #fff !important;
+    }
+  }
+  
+  &.valid ion-input,
+  &.valid ion-textarea {
+    border-color: #10b981;
+  }
+  
+  &.invalid ion-input,
+  &.invalid ion-textarea {
+    border-color: #ef4444;
+  }
+}
+
+.error-message {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.password-requirements {
+  font-size: 12px;
+  color: #8e8e8e;
+  margin-top: 4px;
+  padding-left: 16px;
+  
+  ul {
+    margin: 4px 0;
+    padding-left: 20px;
+  }
+  
+  li {
+    margin: 2px 0;
+    
+    &.valid {
+      color: #10b981;
+    }
+    
+    &.invalid {
+      color: #ef4444;
+    }
+  }
+}
+
+.dark .password-requirements {
+  color: #999;
+}
+
+/* ===============================
+   MODAL VERIFICACIÓN
+================================= */
+
 .modal-verificacion-container {
   display: flex;
   flex-direction: column;
@@ -11,12 +227,12 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3880ff 0%, #3171e0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 24px;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(56, 128, 255, 0.4);
   
   ion-icon {
     color: white;
@@ -25,75 +241,100 @@
 }
 
 .titulo-modal {
-  font-family: 'Inter', sans-serif;
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #262626;
   margin: 0 0 16px 0;
 }
 
+.dark .titulo-modal {
+  color: #fff;
+}
+
 .mensaje-modal {
-  font-family: 'Inter', sans-serif;
   font-size: 16px;
   color: #666;
   margin: 0 0 8px 0;
 }
 
+.dark .mensaje-modal {
+  color: #999;
+}
+
 .email-modal {
-  font-family: 'Inter', sans-serif;
   font-size: 16px;
   font-weight: 600;
-  color: #8B0000;
+  color: #3880ff;
   margin: 0 0 16px 0;
 }
 
 .instrucciones-modal {
-  font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: #888;
+  color: #8e8e8e;
   margin: 0 0 32px 0;
   line-height: 1.5;
+}
+
+.dark .instrucciones-modal {
+  color: #999;
 }
 
 .codigo-item-modal {
   --border-radius: 12px;
   --border-width: 2px;
-  --border-color: #E0E0E0;
+  --border-color: #e0e0e0;
   --background: #f8f9fa;
   margin-bottom: 24px;
   border-radius: 12px;
   
   ion-label {
-    font-family: 'Inter', sans-serif;
     font-weight: 600;
     color: #333;
   }
   
   .codigo-input {
-    font-family: 'Inter', sans-serif;
     font-size: 24px;
     font-weight: 700;
     letter-spacing: 8px;
     text-align: center;
-    color: #1a1a1a;
+    color: #262626;
+  }
+}
+
+.dark .codigo-item-modal {
+  --border-color: #444;
+  --background: #2a2a2a;
+  
+  ion-label {
+    color: #fff;
+  }
+  
+  .codigo-input {
+    color: #fff;
   }
 }
 
 .btn-verificar-modal {
-  --background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%);
-  --background-activated: #6B0000;
+  --background: #3880ff;
+  --background-activated: #3171e0;
   --border-radius: 12px;
+  --color: white;
   height: 50px;
-  font-family: 'Inter', sans-serif;
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 24px;
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(56, 128, 255, 0.3);
   
   &:disabled {
-    --background: #cccccc;
-    --opacity: 0.6;
+    --background: #e0e0e0;
+    --color: #999;
+    box-shadow: none;
   }
+}
+
+.dark .btn-verificar-modal[disabled] {
+  --background: #444;
+  --color: #666;
 }
 
 .reenviar-container-modal {
@@ -105,25 +346,100 @@
 }
 
 .no-recibiste-modal {
-  font-family: 'Inter', sans-serif;
   font-size: 14px;
   color: #666;
   margin: 0;
 }
 
+.dark .no-recibiste-modal {
+  color: #999;
+}
+
 .btn-reenviar-modal {
-  --color: #8B0000;
-  font-family: 'Inter', sans-serif;
+  --color: #3880ff;
   font-size: 14px;
   font-weight: 600;
   
   &:disabled {
-    --color: #cccccc;
-    --opacity: 0.6;
+    --color: #999;
+    opacity: 0.6;
   }
 }
 
-// Estilos para el modal en general
+/* ===============================
+   BOTONES
+================================= */
+
+.btn-register {
+  --background: #3880ff;
+  --color: white;
+  --border-radius: 12px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  height: 52px;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(56, 128, 255, 0.3);
+  
+  &[disabled] {
+    --background: #e0e0e0;
+    --color: #999;
+    box-shadow: none;
+  }
+  
+  &:not([disabled]):hover {
+    --background: #3171e0;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(56, 128, 255, 0.4);
+  }
+}
+
+.dark .btn-register[disabled] {
+  --background: #444;
+  --color: #666;
+}
+
+.btn-login-link {
+  --color: #3880ff;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 8px;
+  
+  &:hover {
+    --color: #3171e0;
+  }
+}
+
+/* ===============================
+   FOOTER
+================================= */
+
+.register-footer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+  
+  p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #8e8e8e;
+  }
+}
+
+.dark .register-footer {
+  border-top-color: #444;
+  
+  p {
+    color: #999;
+  }
+}
+
+/* ===============================
+   MODAL ESTILOS
+================================= */
+
 ion-modal {
   --width: 90%;
   --max-width: 500px;
@@ -131,12 +447,15 @@ ion-modal {
   --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
+.dark ion-modal {
+  --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
 ion-modal ion-header ion-toolbar {
-  --background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%);
+  --background: #3880ff;
   --color: white;
   
   ion-title {
-    font-family: 'Inter', sans-serif;
     font-weight: 700;
   }
   
@@ -145,11 +464,10 @@ ion-modal ion-header ion-toolbar {
   }
 }
 
-ion-modal ion-content {
-  --background: #ffffff;
-}
+/* ===============================
+   VALIDACIÓN
+================================= */
 
-// Estilos para validación en tiempo real
 ion-item.valid {
   --border-color: #10b981;
   --border-width: 2px;
@@ -164,7 +482,10 @@ ion-item.invalid {
   border-width: 2px !important;
 }
 
-// Animaciones suaves
+/* ===============================
+   ANIMACIONES
+================================= */
+
 ion-item {
   transition: all 0.3s ease;
   
@@ -173,7 +494,10 @@ ion-item {
   }
 }
 
-// Estilos para el botón de registro
+.dark ion-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 ion-button {
   transition: all 0.3s ease;
   
@@ -184,17 +508,32 @@ ion-button {
   
   &:not(:disabled):hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.4);
   }
 }
 
-// Responsive design
+/* ===============================
+   RESPONSIVE
+================================= */
+
 @media (max-width: 480px) {
-  ion-item {
-    margin-bottom: 12px !important;
+  .register-container {
+    padding: 16px;
   }
   
-  ion-text {
-    font-size: 11px !important;
+  .register-card {
+    padding: 24px;
+    border-radius: 20px;
+  }
+  
+  .register-header {
+    margin-bottom: 24px;
+    
+    h1 {
+      font-size: 24px;
+    }
+  }
+  
+  .form-group {
+    gap: 6px;
   }
 }

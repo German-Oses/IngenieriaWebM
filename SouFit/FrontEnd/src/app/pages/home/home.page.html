@@ -204,45 +204,51 @@
             </div>
             
             <div class="post-acciones">
-              <button class="btn-accion" (click)="reaccionarPost(post)" [class.activo]="post.me_gusta">
+              <button class="accion-item" (click)="reaccionarPost(post)" [class.activo]="post.me_gusta">
                 <ion-icon [name]="post.me_gusta ? 'heart' : 'heart-outline'"></ion-icon>
                 <span>{{ toNumber(post.total_likes) }}</span>
               </button>
-              <button class="btn-accion" (click)="toggleComentarios(post.id_post!)">
+              <button class="accion-item" (click)="toggleComentarios(post.id_post!)">
                 <ion-icon name="chatbubble-outline"></ion-icon>
                 <span>{{ toNumber(post.total_comentarios) }}</span>
               </button>
-              <button class="btn-accion" (click)="compartirPost(post)">
+              <button class="accion-item" (click)="compartirPost(post)">
                 <ion-icon name="share-outline"></ion-icon>
                 <span>{{ toNumber(post.total_compartidos) }}</span>
               </button>
             </div>
 
             <!-- Comentarios -->
-            <div *ngIf="mostrandoComentarios[post.id_post!]" class="comentarios-container">
-              <div *ngFor="let comentario of comentarios[post.id_post!]" class="comentario">
-                <ion-avatar class="avatar-comentario">
+            <div *ngIf="mostrandoComentarios[post.id_post!]" class="comentarios-section">
+              <div class="comentarios-header">
+                <h4>Comentarios ({{ comentarios[post.id_post!]?.length || 0 }})</h4>
+                <button (click)="toggleComentarios(post.id_post!)">Cerrar</button>
+              </div>
+              
+              <div *ngFor="let comentario of comentarios[post.id_post!]" class="comentario-item">
+                <ion-avatar>
                   <img [src]="getImageUrl(comentario.autor_avatar)" [alt]="comentario.autor_username" (error)="handleImageError($event)">
                 </ion-avatar>
                 <div class="comentario-contenido">
-                  <strong>{{ comentario.autor_nombre || comentario.autor_username }}</strong>
-                  <p>{{ comentario.contenido }}</p>
+                  <div class="comentario-autor">{{ comentario.autor_nombre || comentario.autor_username }}</div>
+                  <p class="comentario-texto">{{ comentario.contenido }}</p>
+                  <div class="comentario-fecha">{{ comentario.fecha_comentario ? formatearFecha(comentario.fecha_comentario) : '' }}</div>
                 </div>
               </div>
               
-              <div class="nuevo-comentario">
-                <ion-avatar class="avatar-comentario">
+              <div class="input-comentario">
+                <ion-avatar>
                   <img [src]="getImageUrl(usuarioActual?.avatar)" [alt]="usuarioActual?.username" (error)="handleImageError($event)">
                 </ion-avatar>
-                <input 
-                  type="text" 
-                  placeholder="Escribe un comentario..."
+                <ion-textarea
                   [(ngModel)]="nuevoComentario[post.id_post!]"
-                  (keydown.enter)="comentarPost(post.id_post!)"
-                  class="input-comentario">
-                <button class="btn-enviar-comentario" (click)="comentarPost(post.id_post!)" [disabled]="!nuevoComentario[post.id_post!]?.trim()">
-                  <ion-icon name="send-outline"></ion-icon>
-                </button>
+                  placeholder="Escribe un comentario..."
+                  rows="1"
+                  [autoGrow]="true">
+                </ion-textarea>
+                <ion-button (click)="comentarPost(post.id_post!)" [disabled]="!nuevoComentario[post.id_post!]?.trim()">
+                  <ion-icon name="send-outline" slot="icon-only"></ion-icon>
+                </ion-button>
               </div>
             </div>
           </div>
@@ -292,96 +298,119 @@
       <ion-toolbar>
         <ion-title>Crear Publicación</ion-title>
         <ion-buttons slot="end">
-          <ion-button (click)="cerrarModalCrearPost()">
+          <ion-button (click)="cerrarModalCrearPost()" fill="clear">
             <ion-icon name="close-outline"></ion-icon>
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-        <div class="modal-body">
-          <div class="tipo-post-selector">
-            <button 
-              class="btn-tipo-post" 
-              [class.activo]="nuevoPost.tipo_post === 'texto'"
-              (click)="nuevoPost.tipo_post = 'texto'">
-              Texto
-            </button>
-            <button 
-              class="btn-tipo-post" 
-              [class.activo]="nuevoPost.tipo_post === 'logro'"
-              (click)="nuevoPost.tipo_post = 'logro'">
-              Logro
-            </button>
-            <button 
-              class="btn-tipo-post" 
-              [class.activo]="nuevoPost.tipo_post === 'ejercicio'"
-              (click)="nuevoPost.tipo_post = 'ejercicio'">
-              Ejercicio
-            </button>
-            <button 
-              class="btn-tipo-post" 
-              [class.activo]="nuevoPost.tipo_post === 'rutina'"
-              (click)="nuevoPost.tipo_post = 'rutina'">
-              Rutina
-            </button>
-          </div>
+      <div class="modal-crear-post">
+        <!-- Selector de tipo de post -->
+        <div class="tipo-post-selector-moderno">
+          <button 
+            class="btn-tipo-post-moderno" 
+            [class.activo]="nuevoPost.tipo_post === 'texto'"
+            (click)="nuevoPost.tipo_post = 'texto'">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>Texto</span>
+          </button>
+          <button 
+            class="btn-tipo-post-moderno" 
+            [class.activo]="nuevoPost.tipo_post === 'logro'"
+            (click)="nuevoPost.tipo_post = 'logro'">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <span>Logro</span>
+          </button>
+          <button 
+            class="btn-tipo-post-moderno" 
+            [class.activo]="nuevoPost.tipo_post === 'ejercicio'"
+            (click)="nuevoPost.tipo_post = 'ejercicio'">
+            <ion-icon name="barbell-outline"></ion-icon>
+            <span>Ejercicio</span>
+          </button>
+          <button 
+            class="btn-tipo-post-moderno" 
+            [class.activo]="nuevoPost.tipo_post === 'rutina'"
+            (click)="nuevoPost.tipo_post = 'rutina'">
+            <ion-icon name="fitness-outline"></ion-icon>
+            <span>Rutina</span>
+          </button>
+        </div>
 
+        <!-- Textarea para contenido -->
+        <div class="form-group-moderno">
           <ion-textarea
             [(ngModel)]="nuevoPost.contenido"
             placeholder="¿Qué quieres compartir?"
             rows="6"
-            class="input-post">
+            class="textarea-moderno-post"
+            [autoGrow]="true">
           </ion-textarea>
-
-          <!-- Opción 1: Subir archivo -->
-          <div class="upload-section">
-            <label class="upload-label">
-              <input 
-                type="file" 
-                accept="image/*" 
-                (change)="onFileSelected($event)"
-                style="display: none;"
-                #fileInput>
-              <ion-button fill="outline" expand="block" (click)="fileInput.click()">
-                <ion-icon name="image-outline" slot="start"></ion-icon>
-                Seleccionar Imagen
-              </ion-button>
-            </label>
+          <div class="contador-caracteres-moderno">
+            {{ nuevoPost.contenido.length }} / 500
           </div>
+        </div>
 
-          <!-- Preview de imagen subida -->
-          <div *ngIf="previewImagen" class="preview-media">
-            <img [src]="previewImagen" alt="Preview" (error)="handleImageError($event)">
-            <button class="btn-remover-media" (click)="removerImagen()">
-              <ion-icon name="close-outline"></ion-icon>
+        <!-- Sección de imagen -->
+        <div class="imagen-section-moderno">
+          <label class="upload-label-moderno">
+            <input 
+              type="file" 
+              accept="image/*" 
+              (change)="onFileSelected($event)"
+              style="display: none;"
+              #fileInput>
+            <button type="button" class="btn-subir-imagen" (click)="fileInput.click()">
+              <ion-icon name="image-outline"></ion-icon>
+              <span>Agregar Imagen</span>
             </button>
+          </label>
+
+          <!-- Preview de imagen -->
+          <div *ngIf="previewImagen" class="preview-imagen-moderno">
+            <div class="preview-imagen-wrapper">
+              <img [src]="previewImagen" alt="Preview" (error)="handleImageError($event)">
+              <button class="btn-remover-imagen" (click)="removerImagen()" type="button">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </div>
           </div>
 
-          <!-- Opción 2: URL (alternativa) -->
-          <div class="divider">
-            <span>O</span>
+          <!-- URL alternativa (solo si no hay archivo) -->
+          <div *ngIf="!archivoSeleccionado" class="url-alternativa">
+            <div class="divider-moderno">
+              <span>O</span>
+            </div>
+            <ion-input
+              [(ngModel)]="nuevoPost.url_media"
+              placeholder="URL de imagen (opcional)"
+              type="url"
+              class="input-url-moderno">
+            </ion-input>
+            <div *ngIf="nuevoPost.url_media && !archivoSeleccionado" class="preview-imagen-moderno">
+              <div class="preview-imagen-wrapper">
+                <img [src]="getImageUrl(nuevoPost.url_media)" alt="Preview" (error)="handleImageError($event)">
+                <button class="btn-remover-imagen" (click)="nuevoPost.url_media = ''" type="button">
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <ion-input
-            [(ngModel)]="nuevoPost.url_media"
-            placeholder="URL de imagen (opcional)"
-            type="url"
-            class="input-url"
-            [disabled]="!!archivoSeleccionado">
-          </ion-input>
-
-          <div *ngIf="nuevoPost.url_media && !archivoSeleccionado" class="preview-media">
-            <img [src]="getImageUrl(nuevoPost.url_media)" alt="Preview" (error)="handleImageError($event)">
-            <button class="btn-remover-media" (click)="nuevoPost.url_media = ''">
-              <ion-icon name="close-outline"></ion-icon>
-            </button>
-          </div>
-
-          <ion-button expand="block" (click)="crearPost()" [disabled]="!nuevoPost.contenido.trim()">
+        <!-- Botón de publicar -->
+        <div class="acciones-modal">
+          <ion-button 
+            expand="block" 
+            (click)="crearPost()" 
+            [disabled]="!nuevoPost.contenido.trim() || nuevoPost.contenido.length > 500"
+            class="btn-publicar-moderno">
+            <ion-icon name="send-outline" slot="start"></ion-icon>
             Publicar
           </ion-button>
         </div>
-      </ion-content>
-    </ion-modal>
+      </div>
+    </ion-content>
+  </ion-modal>
 </ion-content>

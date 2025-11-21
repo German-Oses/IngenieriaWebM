@@ -9,7 +9,7 @@ import { EjercicioService } from '../../services/ejercicio.service';
 import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { addIcons } from 'ionicons';
-import { heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny, imageOutline } from 'ionicons/icons';
+import { heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny, imageOutline, trophyOutline, documentTextOutline } from 'ionicons/icons';
 import { ToastController, AlertController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { ThemeService } from '../../services/theme.service';
@@ -74,7 +74,7 @@ export class HomePage implements OnInit, OnDestroy {
     private cacheService: CacheService,
     private notificationService: NotificationService
   ) {
-    addIcons({ heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny, imageOutline });
+    addIcons({ heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny, imageOutline, trophyOutline, documentTextOutline });
   }
 
   async ngOnInit() {
@@ -401,53 +401,57 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   crearPost() {
-    if (!this.nuevoPost.contenido.trim()) {
+    // Validaciones
+    if (!this.nuevoPost.contenido || !this.nuevoPost.contenido.trim()) {
       this.presentErrorToast('El contenido del post es requerido');
       return;
     }
     
-    console.log('Creando post:', {
-      tipo: this.nuevoPost.tipo_post,
-      contenido: this.nuevoPost.contenido.substring(0, 50),
-      tieneArchivo: !!this.archivoSeleccionado,
-      urlMedia: this.nuevoPost.url_media
-    });
+    if (this.nuevoPost.contenido.length > 500) {
+      this.presentErrorToast('El contenido no puede exceder 500 caracteres');
+      return;
+    }
+    
+    // Preparar datos del post
+    const postData: any = {
+      tipo_post: this.nuevoPost.tipo_post || 'texto',
+      contenido: this.nuevoPost.contenido.trim()
+    };
     
     // Si hay archivo seleccionado, subirlo
     if (this.archivoSeleccionado) {
-      console.log('Subiendo post con archivo:', this.archivoSeleccionado.name);
-      this.postService.createPostConImagen(this.nuevoPost, this.archivoSeleccionado).subscribe({
+      console.log('📤 Subiendo post con imagen:', this.archivoSeleccionado.name);
+      this.postService.createPostConImagen(postData, this.archivoSeleccionado).subscribe({
         next: (post) => {
           console.log('✅ Post creado con imagen:', post);
-          console.log('URL media en respuesta:', post.url_media);
-          // Recargar el feed completo para obtener todos los datos actualizados
           this.cargarFeed(true);
           this.cerrarModalCrearPost();
           this.presentSuccessToast('Post creado exitosamente');
         },
         error: (error) => {
           console.error('❌ Error al crear post con imagen:', error);
-          this.presentErrorToast(error.error?.error || 'Error al crear el post. Por favor, intenta de nuevo.');
+          const errorMsg = error.error?.error || error.error?.message || 'Error al crear el post. Por favor, intenta de nuevo.';
+          this.presentErrorToast(errorMsg);
         }
       });
     } else {
-      // Validar URL de media si existe
-      if (this.nuevoPost.url_media && !this.nuevoPost.url_media.trim()) {
-        this.nuevoPost.url_media = '';
+      // Si hay URL de media, incluirla (solo si no hay archivo)
+      if (this.nuevoPost.url_media && this.nuevoPost.url_media.trim()) {
+        postData.url_media = this.nuevoPost.url_media.trim();
       }
       
-      console.log('Subiendo post sin archivo');
-      this.postService.createPost(this.nuevoPost).subscribe({
+      console.log('📤 Subiendo post sin archivo:', postData);
+      this.postService.createPost(postData).subscribe({
         next: (post) => {
           console.log('✅ Post creado:', post);
-          // Recargar el feed completo para obtener todos los datos actualizados
           this.cargarFeed(true);
           this.cerrarModalCrearPost();
           this.presentSuccessToast('Post creado exitosamente');
         },
         error: (error) => {
           console.error('❌ Error al crear post:', error);
-          this.presentErrorToast(error.error?.error || 'Error al crear el post. Por favor, intenta de nuevo.');
+          const errorMsg = error.error?.error || error.error?.message || 'Error al crear el post. Por favor, intenta de nuevo.';
+          this.presentErrorToast(errorMsg);
         }
       });
     }

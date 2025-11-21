@@ -151,6 +151,11 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
   
   cargarMensajesDelChat(otroUsuarioId: number) {
+    if (!otroUsuarioId || isNaN(otroUsuarioId)) {
+      console.error('❌ ID de usuario inválido para cargar mensajes:', otroUsuarioId);
+      return;
+    }
+    
     console.log('📥 Cargando mensajes del chat con usuario:', otroUsuarioId);
     // El servicio ya carga los mensajes automáticamente cuando se selecciona un chat
     // Este método es solo para asegurar que se carguen si no se han cargado aún
@@ -162,6 +167,9 @@ export class MensajeriaPage implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('❌ Error al cargar mensajes:', error);
+          if (error.error?.error === 'ID de usuario inválido') {
+            this.presentErrorToast('Error: ID de usuario inválido');
+          }
         }
       });
     }
@@ -184,6 +192,12 @@ export class MensajeriaPage implements OnInit, OnDestroy {
   }
 
   seleccionarChat(chat: Chat) {
+    if (!chat || !chat.id_usuario || isNaN(chat.id_usuario)) {
+      console.error('❌ Chat inválido:', chat);
+      this.presentErrorToast('Error al seleccionar el chat');
+      return;
+    }
+    
     console.log('💬 Seleccionando chat desde página:', chat.id_usuario);
     this.chatActivo = chat;
     // El servicio ya carga los mensajes automáticamente

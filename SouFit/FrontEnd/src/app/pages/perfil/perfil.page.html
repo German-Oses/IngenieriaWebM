@@ -5,345 +5,276 @@
     <button class="btn-menu-hamburguesa" (click)="volverHome()">
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
-    <h1>Perfil</h1>
-    <div style="width: 40px;"></div> <!-- Spacer para centrar -->
+    <h1>Mi Perfil</h1>
+    <button class="btn-editar-movil" (click)="toggleEdicion()" *ngIf="!editando && userProfile">
+      <ion-icon name="create-outline"></ion-icon>
+    </button>
   </div>
   
-  <ion-grid style="height: 100vh;">
-    <ion-row style="height: 100%;">
+  <div class="perfil-container" *ngIf="userProfile && !cargando">
+    
+    <!-- Header del perfil -->
+    <div class="perfil-header-section">
+      <div class="perfil-cover">
+        <div class="perfil-avatar-wrapper">
+          <ion-avatar class="perfil-avatar-large">
+            <img [src]="obtenerUrlArchivo(userProfile?.avatar)" alt="Avatar" (error)="handleImageError($event)">
+            <div class="avatar-overlay" *ngIf="editando" (click)="cambiarAvatar()">
+              <ion-icon name="camera-outline"></ion-icon>
+            </div>
+            <ion-spinner *ngIf="subiendoAvatar" class="avatar-spinner"></ion-spinner>
+          </ion-avatar>
+        </div>
+      </div>
+      
+      <div class="perfil-info-header">
+        <div class="perfil-nombre-section">
+          <h1 class="perfil-nombre-principal">{{ userProfile.nombre || userProfile.username }}</h1>
+          <p class="perfil-username">@{{ userProfile.username }}</p>
+        </div>
         
-        <!-- 🟦 MENÚ LATERAL -->
-        <ion-col size="auto" class="menu-lateral">
+        <div class="perfil-acciones-header">
+          <button class="btn-editar-perfil" (click)="toggleEdicion()" *ngIf="!editando">
+            <ion-icon name="create-outline"></ion-icon>
+            <span>Editar</span>
+          </button>
+          <button class="btn-cerrar-sesion" (click)="confirmarCerrarSesion()" *ngIf="!editando">
+            <ion-icon name="log-out-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+      
+      <div class="perfil-stats-section">
+        <div class="stat-box">
+          <strong class="stat-number">{{ totalPosts || 0 }}</strong>
+          <span class="stat-label">Publicaciones</span>
+        </div>
+        <div class="stat-box">
+          <strong class="stat-number">{{ totalSeguidores || 0 }}</strong>
+          <span class="stat-label">Seguidores</span>
+        </div>
+        <div class="stat-box">
+          <strong class="stat-number">{{ totalSiguiendo || 0 }}</strong>
+          <span class="stat-label">Siguiendo</span>
+        </div>
+      </div>
+      
+      <div class="perfil-bio-section" *ngIf="!editando">
+        <p class="perfil-bio" *ngIf="userProfile.bio">{{ userProfile.bio }}</p>
+        <div class="perfil-ubicacion" *ngIf="userProfile.nombre_region">
+          <ion-icon name="location-outline"></ion-icon>
+          <span>{{ userProfile.nombre_region }}{{ userProfile.nombre_comuna ? ', ' + userProfile.nombre_comuna : '' }}</span>
+        </div>
+      </div>
+    </div>
 
-          <div class="logo">
-            <img src="assets/icon/SouFitLogo.png" alt="Logo">
+    <!-- Formulario de edición -->
+    <div class="editar-perfil-section" *ngIf="editando">
+      <div class="editar-card">
+        <div class="editar-header">
+          <h2>Editar Perfil</h2>
+          <button class="btn-cerrar-edicion" (click)="cancelarEdicion()">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+        
+        <div class="editar-body">
+          <div class="avatar-editar-wrapper">
+            <ion-avatar class="avatar-editar">
+              <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar)" alt="Avatar" (error)="handleImageError($event)">
+            </ion-avatar>
+            <button class="btn-cambiar-avatar" (click)="cambiarAvatar()">
+              <ion-icon name="camera-outline"></ion-icon>
+              Cambiar foto
+            </button>
           </div>
-
-          <div class="boton-menu" (click)="volverHome()">
-            <ion-icon name="home-outline"></ion-icon>
-            <p>Inicio</p>
+          
+          <div class="form-group">
+            <label>Nombre</label>
+            <ion-input [(ngModel)]="perfilEditado.nombre" placeholder="Nombre" class="input-moderno"></ion-input>
           </div>
-
-          <div class="boton-menu" (click)="buscar()">
-            <ion-icon name="search-outline"></ion-icon>
-            <p>Buscar</p>
+          
+          <div class="form-group">
+            <label>Apellido</label>
+            <ion-input [(ngModel)]="perfilEditado.apellido" placeholder="Apellido" class="input-moderno"></ion-input>
           </div>
+          
+          <div class="form-group">
+            <label>Username</label>
+            <ion-input [(ngModel)]="perfilEditado.username" placeholder="Username" class="input-moderno"></ion-input>
+          </div>
+          
+          <div class="form-group">
+            <label>Biografía</label>
+            <ion-textarea [(ngModel)]="perfilEditado.bio" placeholder="Cuéntanos sobre ti..." rows="4" class="textarea-moderno"></ion-textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Fecha de nacimiento</label>
+            <ion-input type="date" [(ngModel)]="perfilEditado.fecha_nacimiento" class="input-moderno"></ion-input>
+          </div>
+          
+          <div class="form-group">
+            <label>Región</label>
+            <ion-item class="select-moderno">
+              <ion-select [(ngModel)]="perfilEditado.id_region" (ionChange)="onRegionChange()" [disabled]="cargandoRegiones" placeholder="Selecciona una región">
+                <ion-select-option *ngFor="let region of regiones" [value]="region.id_region">
+                  {{ region.nombre_region }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+          
+          <div class="form-group">
+            <label>Comuna</label>
+            <ion-item class="select-moderno">
+              <ion-select [(ngModel)]="perfilEditado.id_comuna" [disabled]="!perfilEditado.id_region" placeholder="Selecciona una comuna">
+                <ion-select-option *ngIf="!perfilEditado.id_region" disabled>Selecciona una región primero</ion-select-option>
+                <ion-select-option *ngFor="let comuna of comunas" [value]="comuna.id_comuna">
+                  {{ comuna.nombre_comuna }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+          
+          <div class="editar-acciones">
+            <ion-button expand="block" (click)="guardarPerfil()" class="btn-guardar-moderno">
+              <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+              Guardar Cambios
+            </ion-button>
+            <ion-button expand="block" fill="outline" (click)="cancelarEdicion()" class="btn-cancelar-moderno">
+              Cancelar
+            </ion-button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <div class="boton-menu" (click)="rutinas()">
+    <!-- Estadísticas avanzadas -->
+    <div class="estadisticas-section" *ngIf="!editando">
+      <button class="btn-toggle-estadisticas" (click)="toggleEstadisticas()">
+        <ion-icon name="stats-chart-outline"></ion-icon>
+        <span>{{ mostrarEstadisticas ? 'Ocultar' : 'Ver' }} Estadísticas</span>
+        <ion-icon [name]="mostrarEstadisticas ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+      </button>
+      
+      <div class="estadisticas-content" *ngIf="mostrarEstadisticas">
+        <div *ngIf="cargandoEstadisticas" class="cargando-estadisticas">
+          <ion-spinner></ion-spinner>
+          <p>Cargando estadísticas...</p>
+        </div>
+        
+        <div *ngIf="!cargandoEstadisticas && estadisticas" class="estadisticas-grid">
+          <div class="stat-card-moderno">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <div class="stat-info-moderno">
+              <strong>{{ estadisticas.total_posts || 0 }}</strong>
+              <span>Posts</span>
+            </div>
+          </div>
+          <div class="stat-card-moderno">
             <ion-icon name="barbell-outline"></ion-icon>
-            <p>Rutinas</p>
-          </div>
-                        
-          <div class="boton-menu" (click)="mensajeria()">
-            <ion-icon name="chatbubbles-outline"></ion-icon>
-            <p>Mensajeria</p>
-          </div>
-
-          <div class="boton-menu activo">
-            <ion-icon name="person-outline"></ion-icon>
-            <p>Perfil</p>
-          </div>
-
-        </ion-col>
-
-        <!-- 🟩 CONTENIDO CENTRAL -->
-        <ion-col class="feed-centro">
-
-          <!-- Header del perfil -->
-          <div class="titulo-feed" *ngIf="userProfile">
-            <h1>{{ userProfile.nombre || userProfile.username }}</h1>
-
-            <div class="botones-header">
-
-              <button class="btn-crear-post" (click)="toggleEdicion()" *ngIf="!editando">
-                <ion-icon name="create-outline"></ion-icon>
-                Editar perfil
-              </button>
-
-              <button class="btn-crear-post btn-cancelar" (click)="cancelarEdicion()" *ngIf="editando">
-                Cancelar
-              </button>
-
-              <button class="btn-crear-post btn-logout" (click)="confirmarCerrarSesion()" *ngIf="!editando">
-                <ion-icon name="log-out-outline"></ion-icon>
-                Cerrar sesión
-              </button>
-
+            <div class="stat-info-moderno">
+              <strong>{{ estadisticas.total_rutinas || 0 }}</strong>
+              <span>Rutinas</span>
             </div>
           </div>
-
-          <div class="posts-contenedor" *ngIf="userProfile">
-            <div class="posts-contenedor-inner">
-
-              <!-- 🟨 HEADER PERFIL (vista normal) -->
-              <div class="post perfil-header" *ngIf="!editando">
-                <div class="perfil-contenido">
-
-                  <ion-avatar class="perfil-avatar">
-                    <img [src]="obtenerUrlArchivo(userProfile?.avatar)" alt="Avatar" (error)="handleImageError($event)">
-                  </ion-avatar>
-
-                  <div class="perfil-info">
-
-                    <div class="perfil-nombre-header">
-                      <h2 class="perfil-nombre">{{ userProfile.nombre || userProfile.username }}</h2>
-
-                      <button class="btn-crear-post btn-editar-inline" (click)="toggleEdicion()">
-                        <ion-icon name="create-outline"></ion-icon>
-                        Editar perfil
-                      </button>
-                    </div>
-
-                    <div class="perfil-stats">
-                      <div class="stat-item">
-                        <strong>{{ totalPosts || 0 }}</strong>
-                        <span>publicaciones</span>
-                      </div>
-
-                      <div class="stat-item">
-                        <strong>{{ totalSeguidores || 0 }}</strong>
-                        <span>seguidores</span>
-                      </div>
-
-                      <div class="stat-item">
-                        <strong>{{ totalSiguiendo || 0 }}</strong>
-                        <span>siguiendo</span>
-                      </div>
-                    </div>
-
-                    <div class="perfil-acciones">
-                      <button class="btn-estadisticas" (click)="toggleEstadisticas()">
-                        <ion-icon name="stats-chart-outline"></ion-icon>
-                        {{ mostrarEstadisticas ? 'Ocultar' : 'Ver' }} Estadísticas
-                      </button>
-                    </div>
-
-                    <div class="perfil-descripcion">
-                      <h3 class="perfil-nombre-completo">{{ userProfile.nombre || userProfile.username }}</h3>
-
-                      <p class="bio-text" *ngIf="userProfile.bio">{{ userProfile.bio }}</p>
-
-                      <p class="ubicacion-text" *ngIf="userProfile.nombre_region">
-                        <ion-icon name="location-outline"></ion-icon>
-                        {{ userProfile.nombre_region }}{{ userProfile.nombre_comuna ? ', ' + userProfile.nombre_comuna : '' }}
-                      </p>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-              <!-- 🟧 FORMULARIO EDICIÓN -->
-              <div class="post editar-post" *ngIf="editando">
-
-                <div class="post-header">
-                  <h2>Editar Perfil</h2>
-                </div>
-
-                <div class="post-contenido">
-
-                  <!-- Avatar con botón de cambiar -->
-                  <div class="perfil-avatar-editar">
-                    <ion-avatar class="perfil-avatar">
-                      <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar)" alt="Avatar" (error)="handleImageError($event)">
-                    </ion-avatar>
-                    <button class="btn-cambiar-avatar" (click)="cambiarAvatar()">
-                      <ion-icon name="camera-outline"></ion-icon>
-                      Cambiar foto
-                    </button>
-                  </div>
-
-                  <ion-input [(ngModel)]="perfilEditado.nombre" placeholder="Nombre" class="input-editar"></ion-input>
-
-                  <ion-input [(ngModel)]="perfilEditado.apellido" placeholder="Apellido" class="input-editar"></ion-input>
-
-                  <ion-input [(ngModel)]="perfilEditado.username" placeholder="Username" class="input-editar"></ion-input>
-
-                  <ion-textarea [(ngModel)]="perfilEditado.bio" placeholder="Biografía" rows="3" class="input-editar textarea-editar"></ion-textarea>
-
-                  <ion-input type="date" [(ngModel)]="perfilEditado.fecha_nacimiento" placeholder="Fecha de nacimiento" class="input-editar"></ion-input>
-
-                  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-                    <ion-select label="Región" label-placement="floating" [(ngModel)]="perfilEditado.id_region" (ionChange)="onRegionChange()" [disabled]="cargandoRegiones">
-                      <ion-select-option *ngIf="cargandoRegiones" disabled>Cargando regiones...</ion-select-option>
-                      <ion-select-option *ngIf="!cargandoRegiones && regiones.length === 0" disabled>No hay regiones disponibles</ion-select-option>
-                      <ion-select-option *ngFor="let region of regiones" [value]="region.id_region">
-                        {{ region.nombre_region }}
-                      </ion-select-option>
-                    </ion-select>
-                  </ion-item>
-
-                  <ion-item style="border-radius: 10px; border: 1px solid #E0E0E0; margin-bottom: 16px;">
-                    <ion-select label="Comuna" label-placement="floating" [(ngModel)]="perfilEditado.id_comuna" [disabled]="!perfilEditado.id_region">
-                      <ion-select-option *ngIf="!perfilEditado.id_region" disabled>Selecciona una región primero</ion-select-option>
-                      <ion-select-option *ngFor="let comuna of comunas" [value]="comuna.id_comuna">
-                        {{ comuna.nombre_comuna }}
-                      </ion-select-option>
-                    </ion-select>
-                  </ion-item>
-
-                  <ion-button expand="block" (click)="guardarPerfil()" class="btn-guardar">Guardar Cambios</ion-button>
-
-                </div>
-
-              </div>
-
-              <!-- 🟦 ESTADÍSTICAS AVANZADAS -->
-              <div class="post estadisticas-card" *ngIf="!editando && mostrarEstadisticas">
-                <div class="post-header">
-                  <h2>
-                    <ion-icon name="stats-chart-outline"></ion-icon>
-                    Estadísticas Detalladas
-                  </h2>
-                </div>
-                <div class="post-contenido">
-                  <div *ngIf="cargandoEstadisticas" class="cargando-estadisticas">
-                    <p>Cargando estadísticas...</p>
-                  </div>
-                  
-                  <div *ngIf="!cargandoEstadisticas && estadisticas" class="estadisticas-grid">
-                    <div class="stat-card">
-                      <ion-icon name="document-text-outline"></ion-icon>
-                      <div class="stat-info">
-                        <strong>{{ estadisticas.total_posts || 0 }}</strong>
-                        <span>Posts</span>
-                      </div>
-                    </div>
-                    <div class="stat-card">
-                      <ion-icon name="barbell-outline"></ion-icon>
-                      <div class="stat-info">
-                        <strong>{{ estadisticas.total_rutinas || 0 }}</strong>
-                        <span>Rutinas</span>
-                      </div>
-                    </div>
-                    <div class="stat-card">
-                      <ion-icon name="heart-outline"></ion-icon>
-                      <div class="stat-info">
-                        <strong>{{ estadisticas.total_likes_posts || 0 }}</strong>
-                        <span>Likes</span>
-                      </div>
-                    </div>
-                    <div class="stat-card">
-                      <ion-icon name="chatbubble-outline"></ion-icon>
-                      <div class="stat-info">
-                        <strong>{{ estadisticas.total_comentarios_posts || 0 }}</strong>
-                        <span>Comentarios</span>
-                      </div>
-                    </div>
-                    <div class="stat-card">
-                      <ion-icon name="people-outline"></ion-icon>
-                      <div class="stat-info">
-                        <strong>{{ estadisticas.total_seguidores || 0 }}</strong>
-                        <span>Seguidores</span>
-                      </div>
-                    </div>
-                    <div class="stat-card">
-                      <ion-icon name="bookmark-outline"></ion-icon>
-                      <div class="stat-info">
-                        <strong>{{ estadisticas.total_rutinas_guardadas || 0 }}</strong>
-                        <span>Rutinas Guardadas</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Logros -->
-                  <div class="logros-section" *ngIf="logros.length > 0">
-                    <h3>
-                      <ion-icon name="trophy-outline"></ion-icon>
-                      Logros Obtenidos ({{ logros.length }})
-                    </h3>
-                    <div class="logros-grid">
-                      <div class="logro-item" *ngFor="let logro of logros">
-                        <ion-icon [name]="logro.icono || 'trophy-outline'"></ion-icon>
-                        <div class="logro-info">
-                          <strong>{{ logro.nombre_logro }}</strong>
-                          <span>{{ logro.descripcion }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Historial Reciente -->
-                  <div class="historial-section" *ngIf="historialReciente.length > 0">
-                    <h3>
-                      <ion-icon name="calendar-outline"></ion-icon>
-                      Entrenamientos Recientes
-                    </h3>
-                    <div class="historial-list">
-                      <div class="historial-item" *ngFor="let entrenamiento of historialReciente">
-                        <div class="historial-fecha">
-                          {{ entrenamiento.fecha_entrenamiento | date:'dd/MM/yyyy' }}
-                        </div>
-                        <div class="historial-info">
-                          <strong>{{ entrenamiento.nombre_rutina || entrenamiento.nombre_ejercicio || 'Entrenamiento' }}</strong>
-                          <span *ngIf="entrenamiento.duracion_minutos">{{ entrenamiento.duracion_minutos }} min</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Progreso Físico -->
-                  <div class="progreso-section" *ngIf="progresoFisico">
-                    <h3>
-                      <ion-icon name="trending-up-outline"></ion-icon>
-                      Progreso Físico (Últimos 90 días)
-                    </h3>
-                    <div class="progreso-stats">
-                      <div class="progreso-item" *ngIf="progresoFisico.peso_actual">
-                        <strong>Peso Actual:</strong>
-                        <span>{{ progresoFisico.peso_actual }} kg</span>
-                      </div>
-                      <div class="progreso-item" *ngIf="progresoFisico.peso_inicial">
-                        <strong>Peso Inicial:</strong>
-                        <span>{{ progresoFisico.peso_inicial }} kg</span>
-                      </div>
-                      <div class="progreso-item" *ngIf="progresoFisico.peso_actual && progresoFisico.peso_inicial">
-                        <strong>Diferencia:</strong>
-                        <span [class.positivo]="(progresoFisico.peso_actual - progresoFisico.peso_inicial) < 0"
-                              [class.negativo]="(progresoFisico.peso_actual - progresoFisico.peso_inicial) > 0">
-                          {{ (progresoFisico.peso_actual - progresoFisico.peso_inicial) > 0 ? '+' : '' }}{{ (progresoFisico.peso_actual - progresoFisico.peso_inicial).toFixed(1) }} kg
-                        </span>
-                      </div>
-                      <div class="progreso-item">
-                        <strong>Total Registros:</strong>
-                        <span>{{ progresoFisico.total_registros }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 🟥 GRID DE PUBLICACIONES -->
-              <div class="posts-grid" *ngIf="!editando">
-
-                <div *ngIf="posts.length === 0" class="sin-posts-grid">
-                  <ion-icon name="images-outline"></ion-icon>
-                  <p>No hay publicaciones aún</p>
-                </div>
-
-                <div class="post-grid-item" *ngFor="let post of posts" (click)="verPost(post)">
-
-                  <img *ngIf="post.url_media" [src]="obtenerUrlArchivo(post.url_media)" class="post-grid-image" (error)="handleImageError($event)">
-
-                  <div *ngIf="!post.url_media" class="post-grid-text">
-                    <ion-icon name="document-text-outline"></ion-icon>
-                    <p>{{ post.contenido?.substring(0, 50) || 'Sin contenido' }}...</p>
-                  </div>
-
-                  <div class="post-overlay-hover">
-                    <span><ion-icon name="heart-outline"></ion-icon> {{ post.total_likes || 0 }}</span>
-                    <span><ion-icon name="chatbubble-outline"></ion-icon> {{ post.total_comentarios || 0 }}</span>
-                  </div>
-                </div>
-
-              </div>
-
+          <div class="stat-card-moderno">
+            <ion-icon name="heart-outline"></ion-icon>
+            <div class="stat-info-moderno">
+              <strong>{{ estadisticas.total_likes_posts || 0 }}</strong>
+              <span>Likes</span>
             </div>
           </div>
+          <div class="stat-card-moderno">
+            <ion-icon name="chatbubble-outline"></ion-icon>
+            <div class="stat-info-moderno">
+              <strong>{{ estadisticas.total_comentarios_posts || 0 }}</strong>
+              <span>Comentarios</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="logros-section-moderno" *ngIf="logros.length > 0">
+          <h3>
+            <ion-icon name="trophy-outline"></ion-icon>
+            Logros ({{ logros.length }})
+          </h3>
+          <div class="logros-grid-moderno">
+            <div class="logro-card" *ngFor="let logro of logros">
+              <ion-icon [name]="logro.icono || 'trophy-outline'"></ion-icon>
+              <div class="logro-info-moderno">
+                <strong>{{ logro.nombre_logro }}</strong>
+                <span>{{ logro.descripcion }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        </ion-col>
+    <!-- Grid de publicaciones -->
+    <div class="posts-section" *ngIf="!editando">
+      <div class="posts-section-header">
+        <h2>Publicaciones</h2>
+      </div>
+      
+      <div class="posts-grid-moderno" *ngIf="posts.length > 0">
+        <div class="post-item-moderno" *ngFor="let post of posts" (click)="verPost(post)">
+          <div class="post-image-wrapper" *ngIf="post.url_media">
+            <img [src]="obtenerUrlArchivo(post.url_media)" alt="Post" (error)="handleImageError($event)">
+            <div class="post-overlay">
+              <div class="post-stats-overlay">
+                <span><ion-icon name="heart-outline"></ion-icon> {{ post.total_likes || 0 }}</span>
+                <span><ion-icon name="chatbubble-outline"></ion-icon> {{ post.total_comentarios || 0 }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="post-text-wrapper" *ngIf="!post.url_media">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <p>{{ post.contenido?.substring(0, 100) || 'Sin contenido' }}...</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="sin-posts-moderno" *ngIf="posts.length === 0">
+        <ion-icon name="images-outline"></ion-icon>
+        <h3>No hay publicaciones aún</h3>
+        <p>Comienza a compartir tus entrenamientos y logros</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading state -->
+  <div class="loading-container" *ngIf="cargando">
+    <ion-spinner></ion-spinner>
+    <p>Cargando perfil...</p>
+  </div>
 
-    </ion-row>
-  </ion-grid>
+  <!-- Menú lateral desktop -->
+  <div class="menu-lateral-desktop">
+    <div class="logo-desktop">
+      <img src="assets/icon/SouFitLogo.png" alt="Logo">
+    </div>
+    <div class="boton-menu-desktop" (click)="volverHome()">
+      <ion-icon name="home-outline"></ion-icon>
+      <span>Inicio</span>
+    </div>
+    <div class="boton-menu-desktop" (click)="buscar()">
+      <ion-icon name="search-outline"></ion-icon>
+      <span>Buscar</span>
+    </div>
+    <div class="boton-menu-desktop" (click)="rutinas()">
+      <ion-icon name="barbell-outline"></ion-icon>
+      <span>Rutinas</span>
+    </div>
+    <div class="boton-menu-desktop" (click)="mensajeria()">
+      <ion-icon name="chatbubbles-outline"></ion-icon>
+      <span>Mensajes</span>
+    </div>
+    <div class="boton-menu-desktop activo">
+      <ion-icon name="person-outline"></ion-icon>
+      <span>Perfil</span>
+    </div>
+  </div>
 </ion-content>
-

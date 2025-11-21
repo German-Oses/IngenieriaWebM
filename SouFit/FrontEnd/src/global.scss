@@ -40,31 +40,57 @@
    FIXES GLOBALES
    ============================================ */
 
-/* Fix: Color de texto en inputs para que sea visible */
+/* ============================================
+   VARIABLES GLOBALES DE COLORES
+   ============================================ */
+
+:root {
+  --ion-color-primary: #3880ff;
+  --ion-color-primary-rgb: 56, 128, 255;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #3171e0;
+  --ion-color-primary-tint: #4c8dff;
+  
+  --soufit-bg-light: #f5f5f5;
+  --soufit-bg-white: #ffffff;
+  --soufit-text-primary: #262626;
+  --soufit-text-secondary: #666;
+  --soufit-text-tertiary: #8e8e8e;
+  --soufit-border: #e0e0e0;
+}
+
+.dark,
+html.dark,
+body.dark,
+ion-app.dark {
+  --soufit-bg-light: #121212;
+  --soufit-bg-white: #1e1e1e;
+  --soufit-text-primary: #ffffff;
+  --soufit-text-secondary: #999;
+  --soufit-text-tertiary: #666;
+  --soufit-border: #444;
+}
+
+/* ============================================
+   FIXES GLOBALES PARA INPUTS
+   ============================================ */
+
 ion-input,
 ion-textarea,
 ion-select {
-  --color: #000000 !important;
-  color: #000000 !important;
+  --color: var(--soufit-text-primary) !important;
+  color: var(--soufit-text-primary) !important;
   
   input,
   textarea,
   select {
-    color: #000000 !important;
+    color: var(--soufit-text-primary) !important;
     background-color: transparent !important;
   }
   
-  /* En modo oscuro, usar color claro */
-  @media (prefers-color-scheme: dark) {
-    --color: #ffffff !important;
-    color: #ffffff !important;
-    
-    input,
-    textarea,
-    select {
-      color: #ffffff !important;
-      background-color: transparent !important;
-    }
+  &::part(native) {
+    color: var(--soufit-text-primary) !important;
   }
 }
 
@@ -76,24 +102,24 @@ ion-app.dark {
   ion-input,
   ion-textarea,
   ion-select {
-    --color: #ffffff !important;
-    color: #ffffff !important;
+    --color: var(--soufit-text-primary) !important;
+    color: var(--soufit-text-primary) !important;
     
     input,
     textarea,
     select {
-      color: #ffffff !important;
+      color: var(--soufit-text-primary) !important;
       background-color: transparent !important;
     }
     
     &::part(native) {
-      color: #ffffff !important;
+      color: var(--soufit-text-primary) !important;
     }
   }
   
   /* Asegurar que los inputs dentro de ion-item también tengan color */
   ion-item {
-    --color: #ffffff !important;
+    --color: var(--soufit-text-primary) !important;
     
     ion-input,
     ion-textarea,
@@ -113,13 +139,87 @@ ion-app.dark {
 /* Fix: Placeholder visible */
 ion-input input::placeholder,
 ion-textarea textarea::placeholder {
-  color: #999999 !important;
+  color: var(--soufit-text-tertiary) !important;
   opacity: 1 !important;
+}
+
+.dark ion-input input::placeholder,
+.dark ion-textarea textarea::placeholder {
+  color: var(--soufit-text-tertiary) !important;
 }
 
 /* Fix: Labels visibles */
 ion-label {
-  color: #555555 !important;
+  color: var(--soufit-text-secondary) !important;
+}
+
+.dark ion-label {
+  color: var(--soufit-text-secondary) !important;
+}
+
+/* ============================================
+   UTILIDADES GLOBALES
+   ============================================ */
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--soufit-bg-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #999;
+  }
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--soufit-bg-light);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #555;
+  
+  &:hover {
+    background: #777;
+  }
+}
+
+/* Selección de texto */
+::selection {
+  background: rgba(56, 128, 255, 0.3);
+  color: var(--soufit-text-primary);
+}
+
+.dark ::selection {
+  background: rgba(56, 128, 255, 0.5);
+}
+
+/* Focus visible para accesibilidad */
+*:focus-visible {
+  outline: 2px solid #3880ff;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Transiciones suaves globales */
+button, a, ion-button {
+  transition: all 0.2s ease;
+}
+
+/* Mejoras de accesibilidad */
+button, a {
+  &:focus-visible {
+    outline: 2px solid #3880ff;
+    outline-offset: 2px;
+  }
 }
 
 /* ============================================
@@ -335,4 +435,119 @@ ion-label {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  transition: 0.2s;
+  
+  &:active {
+    background: #f0f0f0;
+  }
+}
+
+.dark .btn-crear-post-movil {
+  color: #fff;
+  
+  &:active {
+    background: #2a2a2a;
+  }
+}
+
+/* ============================================
+   TOASTS PERSONALIZADOS
+   ============================================ */
+
+.error-toast {
+  --background: #dc3545;
+  --color: white;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.dark .error-toast {
+  --background: #c82333;
+}
+
+/* ============================================
+   MEJORAS DE RENDIMIENTO
+   ============================================ */
+
+/* Lazy loading de imágenes */
+img {
+  loading: lazy;
+  decoding: async;
+}
+
+/* Optimización de fuentes */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevenir layout shift */
+ion-avatar,
+ion-avatar img {
+  aspect-ratio: 1;
+}
+
+/* ============================================
+   ANIMACIONES GLOBALES
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ============================================
+   MEJORAS DE ACCESIBILIDAD
+   ============================================ */
+
+/* Mejorar contraste en modo oscuro */
+.dark {
+  a {
+    color: #5c9eff;
+    
+    &:hover {
+      color: #3880ff;
+    }
+  }
+}
+
+/* Skip to content para accesibilidad */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #3880ff;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  
+  &:focus {
+    top: 0;
+  }
 }

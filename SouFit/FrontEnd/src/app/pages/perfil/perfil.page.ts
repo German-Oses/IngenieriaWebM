@@ -1,9 +1,8 @@
-
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { PostService } from '../../services/post.service';
 import { ChatService } from '../../services/chat.service';
@@ -13,7 +12,6 @@ import { LogroService } from '../../services/logro.service';
 import { HistorialService } from '../../services/historial.service';
 import { ProgresoService } from '../../services/progreso.service';
 import { environment } from '../../../environments/environment';
-
 import { 
   IonContent,
   IonGrid,
@@ -28,14 +26,41 @@ import {
   IonSelect,
   IonSelectOption,
   AlertController,
-  ToastController
+  ToastController,
+  IonSpinner
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons'; 
-import { homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, createOutline, cameraOutline, imagesOutline, documentTextOutline, heartOutline, chatbubbleOutline as chatbubbleOutlineIcon, locationOutline, logOutOutline, arrowBackOutline, trophyOutline, statsChartOutline, calendarOutline, trendingUpOutline, peopleOutline, bookmarkOutline } from 'ionicons/icons';
+import { 
+  homeOutline, 
+  searchOutline, 
+  barbellOutline, 
+  chatbubblesOutline, 
+  personOutline, 
+  createOutline, 
+  cameraOutline, 
+  imagesOutline, 
+  documentTextOutline, 
+  heartOutline, 
+  chatbubbleOutline, 
+  locationOutline, 
+  logOutOutline, 
+  arrowBackOutline, 
+  trophyOutline, 
+  statsChartOutline, 
+  calendarOutline, 
+  trendingUpOutline, 
+  peopleOutline, 
+  bookmarkOutline,
+  checkmarkOutline,
+  closeOutline,
+  chevronDownOutline,
+  chevronUpOutline
+} from 'ionicons/icons';
 
 @Component({
   selector: 'app-perfil',
   templateUrl: './perfil.page.html',
+  styleUrls: ['./perfil.page.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -51,10 +76,11 @@ import { homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personO
     IonAvatar,
     IonItem,
     IonSelect,
-    IonSelectOption
+    IonSelectOption,
+    IonSpinner
   ]
 })
-export class PerfilPage {
+export class PerfilPage implements OnInit {
   userProfile: any = null;
   editando = false;
   perfilEditado: any = {};
@@ -62,6 +88,8 @@ export class PerfilPage {
   totalSeguidores = 0;
   totalSiguiendo = 0;
   posts: any[] = [];
+  cargando = false;
+  subiendoAvatar = false;
   
   // Para región y comuna
   regiones: any[] = [];
@@ -90,7 +118,17 @@ export class PerfilPage {
     private historialService: HistorialService,
     private progresoService: ProgresoService
   ) {
-    addIcons({ homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, createOutline, cameraOutline, imagesOutline, documentTextOutline, heartOutline, chatbubbleOutline: chatbubbleOutlineIcon, locationOutline, logOutOutline, arrowBackOutline, trophyOutline, statsChartOutline, calendarOutline, trendingUpOutline, peopleOutline, bookmarkOutline });
+    addIcons({ 
+      homeOutline, searchOutline, barbellOutline, chatbubblesOutline, personOutline, 
+      createOutline, cameraOutline, imagesOutline, documentTextOutline, heartOutline, 
+      chatbubbleOutline, locationOutline, logOutOutline, arrowBackOutline, trophyOutline, 
+      statsChartOutline, calendarOutline, trendingUpOutline, peopleOutline, bookmarkOutline,
+      checkmarkOutline, closeOutline, chevronDownOutline, chevronUpOutline
+    });
+  }
+
+  ngOnInit() {
+    this.cargarPerfil();
   }
 
   ionViewWillEnter() {
@@ -129,6 +167,7 @@ export class PerfilPage {
   }
 
   cargarPerfil() {
+    this.cargando = true;
     this.authService.getUserProfile().subscribe({
       next: (data) => {
         this.userProfile = data;
@@ -147,27 +186,28 @@ export class PerfilPage {
         if (this.perfilEditado.id_region) {
           this.onRegionChange();
         }
+        
+        this.cargando = false;
       },
       error: (err) => {
         console.error('Error al cargar el perfil:', err);
+        this.cargando = false;
         if (err.status === 401) {
           this.presentAlert('Sesión Expirada', 'Por favor, inicia sesión de nuevo.');
           this.authService.logout();
         } else {
-          this.presentAlert('Error', 'No se pudieron cargar los datos del perfil.');
+          this.presentErrorToast('No se pudieron cargar los datos del perfil.');
         }
       }
     });
   }
 
   cargarEstadisticas() {
-    // Cargar posts del usuario
     this.authService.getCurrentUser().then(user => {
       if (user && user.id) {
-        console.log('Cargando posts para usuario:', user.id);
+        // Cargar posts del usuario
         this.postService.getPostsByUser(user.id).subscribe({
           next: (posts) => {
-            console.log('Posts cargados:', posts);
             this.posts = posts || [];
             this.totalPosts = posts?.length || 0;
           },
@@ -212,7 +252,7 @@ export class PerfilPage {
     // Cargar estadísticas generales
     this.estadisticasService.getEstadisticas().subscribe({
       next: (data) => {
-        this.estadisticas = data.estadisticas;
+        this.estadisticas = data?.estadisticas || null;
         this.cargandoEstadisticas = false;
       },
       error: (err) => {
@@ -232,7 +272,7 @@ export class PerfilPage {
       }
     });
 
-    // Cargar historial reciente (últimos 5 entrenamientos)
+    // Cargar historial reciente
     this.historialService.getHistorial({ limit: 5 }).subscribe({
       next: (historial) => {
         this.historialReciente = historial || [];
@@ -263,7 +303,6 @@ export class PerfilPage {
   }
 
   verPost(post: any) {
-    // Por ahora solo navega al home, pero se puede crear una vista de detalle
     this.router.navigate(['/home']);
   }
 
@@ -280,6 +319,11 @@ export class PerfilPage {
         id_region: this.userProfile.id_region || null,
         id_comuna: this.userProfile.id_comuna || null
       };
+      
+      // Cargar comunas si hay región
+      if (this.perfilEditado.id_region) {
+        this.onRegionChange();
+      }
     }
   }
 
@@ -289,8 +333,6 @@ export class PerfilPage {
   }
 
   guardarPerfil() {
-    // Solo enviar campos que realmente tienen valores (no vacíos)
-    // NO se permite cambiar el email
     const datosActualizar: any = {};
     
     if (this.perfilEditado.nombre && this.perfilEditado.nombre.trim()) {
@@ -302,12 +344,8 @@ export class PerfilPage {
     if (this.perfilEditado.username && this.perfilEditado.username.trim()) {
       datosActualizar.username = this.perfilEditado.username.trim();
     }
-    // Bio puede ser vacío (para borrarlo)
     if (this.perfilEditado.bio !== undefined) {
       datosActualizar.bio = this.perfilEditado.bio || null;
-    }
-    if (this.perfilEditado.avatar && this.perfilEditado.avatar.trim()) {
-      datosActualizar.avatar = this.perfilEditado.avatar.trim();
     }
     if (this.perfilEditado.fecha_nacimiento && this.perfilEditado.fecha_nacimiento.trim()) {
       datosActualizar.fecha_nacimiento = this.perfilEditado.fecha_nacimiento.trim();
@@ -322,20 +360,18 @@ export class PerfilPage {
     this.http.put(`${environment.apiUrl}/profile`, datosActualizar).subscribe({
       next: (data) => {
         this.editando = false;
-        this.presentToast('Perfil actualizado correctamente');
-        // Recargar el perfil y las estadísticas después de guardar
+        this.presentSuccessToast('Perfil actualizado correctamente');
         this.cargarPerfil();
         this.cargarEstadisticas();
       },
       error: (err) => {
         console.error('Error al actualizar perfil:', err);
-        this.presentAlert('Error', 'No se pudo actualizar el perfil. ' + (err.error?.msg || err.error?.error || ''));
+        this.presentErrorToast('No se pudo actualizar el perfil. ' + (err.error?.msg || err.error?.error || ''));
       }
     });
   }
 
   cambiarAvatar() {
-    // Crear input de archivo oculto
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -351,38 +387,45 @@ export class PerfilPage {
   subirAvatar(file: File) {
     // Validar tamaño (5MB máximo)
     if (file.size > 5 * 1024 * 1024) {
-      this.presentAlert('Error', 'La imagen no puede ser mayor a 5MB');
+      this.presentErrorToast('La imagen no puede ser mayor a 5MB');
       return;
     }
     
     // Validar tipo
     if (!file.type.startsWith('image/')) {
-      this.presentAlert('Error', 'Solo se permiten archivos de imagen');
+      this.presentErrorToast('Solo se permiten archivos de imagen');
       return;
     }
     
+    this.subiendoAvatar = true;
     const formData = new FormData();
     formData.append('avatar', file);
     
     this.http.post(`${environment.apiUrl}/profile/avatar`, formData).subscribe({
       next: (response: any) => {
-        this.presentToast('Avatar actualizado correctamente');
-        // Actualizar el avatar en el perfil inmediatamente
+        this.subiendoAvatar = false;
+        this.presentSuccessToast('Avatar actualizado correctamente');
+        
+        // Actualizar el avatar en el perfil
         if (response.avatar) {
-          // Construir URL completa si es relativa
+          const baseUrl = environment.apiUrl.replace('/api', '');
           const avatarUrl = response.avatar.startsWith('http') 
             ? response.avatar 
-            : `${environment.apiUrl.replace('/api', '')}${response.avatar}`;
+            : `${baseUrl}${response.avatar.startsWith('/') ? response.avatar : '/' + response.avatar}`;
           
-          this.userProfile.avatar = avatarUrl;
+          if (this.userProfile) {
+            this.userProfile.avatar = avatarUrl;
+          }
           this.perfilEditado.avatar = avatarUrl;
         }
-        // Recargar el perfil completo para obtener todos los datos actualizados
+        
+        // Recargar el perfil completo
         this.cargarPerfil();
       },
       error: (err) => {
+        this.subiendoAvatar = false;
         console.error('Error al subir avatar:', err);
-        this.presentAlert('Error', 'No se pudo actualizar el avatar. ' + (err.error?.error || err.error?.msg || ''));
+        this.presentErrorToast('No se pudo actualizar el avatar. ' + (err.error?.error || err.error?.msg || ''));
       }
     });
   }
@@ -392,15 +435,18 @@ export class PerfilPage {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    // Si la URL ya empieza con /uploads, solo agregar el baseUrl
-    if (url.startsWith('/uploads')) {
-      const baseUrl = environment.socketUrl || environment.apiUrl.replace('/api', '');
-      return `${baseUrl}${url}`;
-    }
-    // Si no empieza con /, agregarlo
+    
+    const baseUrl = environment.apiUrl.replace('/api', '');
     const urlNormalizada = url.startsWith('/') ? url : `/${url}`;
-    const baseUrl = environment.socketUrl || environment.apiUrl.replace('/api', '');
     return `${baseUrl}${urlNormalizada}`;
+  }
+
+  handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.src = 'assets/icon/SouFitLogo.png';
+      img.onerror = null;
+    }
   }
 
   async presentAlert(header: string, message: string) {
@@ -412,17 +458,24 @@ export class PerfilPage {
     await alert.present();
   }
 
-  async presentToast(message: string) {
+  async presentSuccessToast(message: string) {
     const toast = await this.toastController.create({
       message,
       duration: 2000,
-      position: 'bottom'
+      position: 'bottom',
+      color: 'success'
     });
     await toast.present();
   }
 
-  handleImageError(event: any) {
-    event.target.src = 'assets/icon/SouFitLogo.png';
+  async presentErrorToast(message: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      position: 'bottom',
+      color: 'danger'
+    });
+    await toast.present();
   }
 
   async confirmarCerrarSesion() {
