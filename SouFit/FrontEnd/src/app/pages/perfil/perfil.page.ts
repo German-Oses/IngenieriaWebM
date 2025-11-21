@@ -388,12 +388,19 @@ export class PerfilPage {
   }
   
   obtenerUrlArchivo(url: string | undefined): string {
-    if (!url) return '';
+    if (!url) return 'assets/icon/SouFitLogo.png';
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    const baseUrl = environment.apiUrl.replace('/api', '');
-    return `${baseUrl}${url}`;
+    // Si la URL ya empieza con /uploads, solo agregar el baseUrl
+    if (url.startsWith('/uploads')) {
+      const baseUrl = environment.socketUrl || environment.apiUrl.replace('/api', '');
+      return `${baseUrl}${url}`;
+    }
+    // Si no empieza con /, agregarlo
+    const urlNormalizada = url.startsWith('/') ? url : `/${url}`;
+    const baseUrl = environment.socketUrl || environment.apiUrl.replace('/api', '');
+    return `${baseUrl}${urlNormalizada}`;
   }
 
   async presentAlert(header: string, message: string) {
@@ -412,6 +419,10 @@ export class PerfilPage {
       position: 'bottom'
     });
     await toast.present();
+  }
+
+  handleImageError(event: any) {
+    event.target.src = 'assets/icon/SouFitLogo.png';
   }
 
   async confirmarCerrarSesion() {

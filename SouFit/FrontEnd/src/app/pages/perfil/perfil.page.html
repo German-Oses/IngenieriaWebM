@@ -80,7 +80,7 @@
                 <div class="perfil-contenido">
 
                   <ion-avatar class="perfil-avatar">
-                    <img [src]="obtenerUrlArchivo(userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+                    <img [src]="obtenerUrlArchivo(userProfile?.avatar)" alt="Avatar" (error)="handleImageError($event)">
                   </ion-avatar>
 
                   <div class="perfil-info">
@@ -145,7 +145,7 @@
                   <!-- Avatar con botón de cambiar -->
                   <div class="perfil-avatar-editar">
                     <ion-avatar class="perfil-avatar">
-                      <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar) || 'assets/icon/SouFitLogo.png'" alt="Avatar" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+                      <img [src]="obtenerUrlArchivo(perfilEditado.avatar || userProfile?.avatar)" alt="Avatar" (error)="handleImageError($event)">
                     </ion-avatar>
                     <button class="btn-cambiar-avatar" (click)="cambiarAvatar()">
                       <ion-icon name="camera-outline"></ion-icon>
@@ -323,7 +323,7 @@
 
                 <div class="post-grid-item" *ngFor="let post of posts" (click)="verPost(post)">
 
-                  <img *ngIf="post.url_media" [src]="post.url_media" class="post-grid-image">
+                  <img *ngIf="post.url_media" [src]="obtenerUrlArchivo(post.url_media)" class="post-grid-image" (error)="handleImageError($event)">
 
                   <div *ngIf="!post.url_media" class="post-grid-text">
                     <ion-icon name="document-text-outline"></ion-icon>

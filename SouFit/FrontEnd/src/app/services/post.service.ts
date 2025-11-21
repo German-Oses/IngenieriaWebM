@@ -61,6 +61,23 @@ export class PostService {
     return this.http.post<Post>(`${this.apiUrl}`, post);
   }
 
+  // Crear un post con imagen
+  createPostConImagen(post: Partial<Post>, imagen: File): Observable<Post> {
+    const formData = new FormData();
+    formData.append('imagen', imagen);
+    formData.append('tipo_post', post.tipo_post || 'texto');
+    formData.append('contenido', post.contenido || '');
+    // No enviar url_media cuando se sube un archivo
+    if (post.id_ejercicio) {
+      formData.append('id_ejercicio', post.id_ejercicio.toString());
+    }
+    if (post.id_rutina) {
+      formData.append('id_rutina', post.id_rutina.toString());
+    }
+    
+    return this.http.post<Post>(`${this.apiUrl}`, formData);
+  }
+
   // Actualizar un post
   updatePost(id: number, post: Partial<Post>): Observable<Post> {
     return this.http.put<Post>(`${this.apiUrl}/${id}`, post);

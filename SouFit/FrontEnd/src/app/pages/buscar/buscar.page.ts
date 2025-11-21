@@ -2,11 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent, IonGrid, IonRow, IonCol, IonIcon, IonInput, IonButton, IonSpinner, IonChip, IonLabel, IonAvatar, IonItem, IonList } from '@ionic/angular/standalone';
+import { IonContent, IonGrid, IonRow, IonCol, IonIcon, IonInput, IonButton, IonSpinner, IonChip, IonLabel, IonAvatar, IonItem, IonList, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonText } from '@ionic/angular/standalone';
 import { EjercicioService, Ejercicio } from '../../services/ejercicio.service';
 import { ChatService } from '../../services/chat.service';
+import { RutinaService, RutinaCompleta } from '../../services/rutina.service';
+import { AuthService } from '../../services/auth.service';
+import { AlertController, ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline, arrowBackOutline } from 'ionicons/icons';
+import { searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline, arrowBackOutline, addOutline, closeOutline, checkmarkOutline } from 'ionicons/icons';
 
 export interface UsuarioBusqueda {
   id_usuario: number;
@@ -23,8 +26,10 @@ export interface UsuarioBusqueda {
   standalone: true,
   imports: [
     CommonModule, FormsModule, IonContent, IonGrid, IonRow, IonCol, 
-    IonIcon, IonInput, IonButton, IonSpinner, IonChip, IonLabel, IonAvatar, IonItem, IonList
-  ]
+    IonIcon, IonInput, IonButton, IonSpinner, IonChip, IonLabel, IonAvatar, IonItem, IonList,
+    IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonText
+  ],
+  providers: [AlertController, ToastController]
 })
 export class BuscarPage implements OnInit {
   terminoBusqueda: string = '';
@@ -38,13 +43,24 @@ export class BuscarPage implements OnInit {
   filtroGrupoMuscular: string = '';
   filtroDuracion: string = '';
   ordenarPor: 'relevancia' | 'nombre' | 'duracion' = 'relevancia';
+  
+  // Modal agregar a rutina
+  mostrarModalAgregarRutina = false;
+  ejercicioSeleccionado: Ejercicio | null = null;
+  rutinasUsuario: RutinaCompleta[] = [];
+  rutinaSeleccionada: RutinaCompleta | null = null;
+  diaSeleccionado: any = null;
 
   constructor(
     private router: Router,
     private chatService: ChatService,
-    private ejercicioService: EjercicioService
+    private ejercicioService: EjercicioService,
+    private rutinaService: RutinaService,
+    private authService: AuthService,
+    private alertController: AlertController,
+    private toastController: ToastController
   ) {
-    addIcons({ searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline, arrowBackOutline });
+    addIcons({ searchOutline, personOutline, barbellOutline, homeOutline, chatbubblesOutline, arrowBackOutline, addOutline, closeOutline, checkmarkOutline });
   }
 
   ngOnInit() {
@@ -178,6 +194,100 @@ export class BuscarPage implements OnInit {
 
   perfil() {
     this.router.navigate(['/perfil']);
+  }
+
+  async agregarARutina(ejercicio: Ejercicio) {
+    this.ejercicioSeleccionado = ejercicio;
+    
+    // Cargar rutinas del usuario
+    this.rutinaService.getMisRutinas().subscribe({
+      next: (rutinas) => {
+        this.rutinasUsuario = rutinas;
+        if (rutinas.length === 0) {
+          this.presentToast('No tienes rutinas creadas. Crea una rutina primero.');
+          return;
+        }
+        this.mostrarModalAgregarRutina = true;
+      },
+      error: (error) => {
+        console.error('Error al cargar rutinas:', error);
+        this.presentToast('Error al cargar tus rutinas');
+      }
+    });
+  }
+
+  cerrarModalAgregarRutina() {
+    this.mostrarModalAgregarRutina = false;
+    this.ejercicioSeleccionado = null;
+    this.rutinaSeleccionada = null;
+    this.diaSeleccionado = null;
+  }
+
+  seleccionarRutina(rutina: RutinaCompleta) {
+    this.rutinaSeleccionada = rutina;
+    this.diaSeleccionado = null; // Reset día al cambiar rutina
+  }
+
+  async confirmarAgregarEjercicio() {
+    if (!this.rutinaSeleccionada || !this.ejercicioSeleccionado) {
+      return;
+    }
+
+    // Si la rutina no tiene días, crear uno por defecto
+    if (!this.rutinaSeleccionada.dias || this.rutinaSeleccionada.dias.length === 0) {
+      const alert = await this.alertController.create({
+        header: 'Rutina sin días',
+        message: 'Esta rutina no tiene días configurados. ¿Deseas agregar el ejercicio al día 1?',
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Agregar',
+            handler: async () => {
+              // Primero necesitaríamos crear un día, pero por ahora solo informamos
+              this.presentToast('Por favor, edita la rutina y agrega días primero');
+            }
+          }
+        ]
+      });
+      await alert.present();
+      return;
+    }
+
+    // Si no se seleccionó un día, usar el primero
+    if (!this.diaSeleccionado) {
+      this.diaSeleccionado = this.rutinaSeleccionada.dias[0];
+    }
+
+    const ejercicioData = {
+      id_dia: this.diaSeleccionado.id_dia!,
+      id_ejercicio: this.ejercicioSeleccionado.id_ejercicio!,
+      series: 3,
+      repeticiones: '10-12',
+      orden: this.diaSeleccionado.ejercicios?.length || 0
+    };
+
+    this.rutinaService.agregarEjercicioARutina(this.rutinaSeleccionada.id_rutina!, ejercicioData).subscribe({
+      next: () => {
+        this.presentToast(`Ejercicio "${this.ejercicioSeleccionado?.nombre_ejercicio}" agregado a la rutina`);
+        this.cerrarModalAgregarRutina();
+      },
+      error: (error) => {
+        console.error('Error al agregar ejercicio:', error);
+        this.presentToast('Error al agregar el ejercicio a la rutina');
+      }
+    });
+  }
+
+  async presentToast(message: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      position: 'bottom'
+    });
+    await toast.present();
   }
 }
 

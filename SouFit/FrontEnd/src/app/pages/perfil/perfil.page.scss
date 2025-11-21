@@ -36,6 +36,14 @@ ion-content {
   align-items: center;
   border-right: 1px solid #e6e6e6;
   
+  /* Modo oscuro */
+  .dark &,
+  html.dark &,
+  body.dark & {
+    background-color: #1e1e1e;
+    border-right-color: #444;
+  }
+  
   @media (max-width: 768px) {
     display: none !important;
   }
@@ -145,6 +153,13 @@ ion-content {
   align-items: center;
   overflow-y: auto;
   padding: 0;
+  
+  /* Modo oscuro */
+  .dark &,
+  html.dark &,
+  body.dark & {
+    background-color: #121212;
+  }
 }
 
 .titulo-feed {
@@ -274,6 +289,15 @@ ion-content {
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   border: 1px solid #e0e0e0;
+  
+  /* Modo oscuro */
+  .dark &,
+  html.dark &,
+  body.dark & {
+    background-color: #1e1e1e;
+    border-color: #444;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
 }
 
 .post-header {
@@ -531,13 +555,36 @@ ion-content {
   --padding-end: 12px;
   --color: #333;
   --placeholder-color: #999;
+  background-color: white !important;
   
   &::part(native) {
     color: #333 !important;
+    background-color: white !important;
   }
   
   input {
     color: #333 !important;
+    background-color: white !important;
+  }
+  
+  /* Modo oscuro */
+  .dark &,
+  html.dark &,
+  body.dark & {
+    --color: #ffffff !important;
+    color: #ffffff !important;
+    background-color: #1e1e1e !important;
+    border-color: #444 !important;
+    
+    &::part(native) {
+      color: #ffffff !important;
+      background-color: #1e1e1e !important;
+    }
+    
+    input {
+      color: #ffffff !important;
+      background-color: #1e1e1e !important;
+    }
   }
 }
 
@@ -548,13 +595,36 @@ ion-content {
   padding: 8px 12px;
   --color: #333;
   --placeholder-color: #999;
+  background-color: white !important;
   
   &::part(native) {
     color: #333 !important;
+    background-color: white !important;
   }
   
   textarea {
     color: #333 !important;
+    background-color: white !important;
+  }
+  
+  /* Modo oscuro */
+  .dark &,
+  html.dark &,
+  body.dark & {
+    --color: #ffffff !important;
+    color: #ffffff !important;
+    background-color: #1e1e1e !important;
+    border-color: #444 !important;
+    
+    &::part(native) {
+      color: #ffffff !important;
+      background-color: #1e1e1e !important;
+    }
+    
+    textarea {
+      color: #ffffff !important;
+      background-color: #1e1e1e !important;
+    }
   }
 }
 
@@ -562,6 +632,7 @@ ion-content {
 ion-item {
   --color: #333;
   --placeholder-color: #999;
+  background-color: white !important;
   
   ion-select {
     --color: #333;
@@ -578,6 +649,29 @@ ion-item {
   
   &::part(native) {
     color: #333 !important;
+    background-color: white !important;
+  }
+  
+  /* Modo oscuro */
+  .dark &,
+  html.dark &,
+  body.dark & {
+    --color: #ffffff !important;
+    background-color: #1e1e1e !important;
+    border-color: #444 !important;
+    
+    ion-select {
+      --color: #ffffff !important;
+      
+      &::part(text) {
+        color: #ffffff !important;
+      }
+    }
+    
+    &::part(native) {
+      color: #ffffff !important;
+      background-color: #1e1e1e !important;
+    }
   }
 }
 

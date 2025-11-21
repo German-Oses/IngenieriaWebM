@@ -54,12 +54,20 @@ export class MensajeriaPage implements OnInit, OnDestroy {
     this.usuarioActual = await this.authService.getCurrentUser();
     
     if (this.usuarioActual) {
+      console.log('Inicializando chat para usuario:', this.usuarioActual.id);
+      
       // Inicializar el servicio de chat
       this.chatService.inicializarChat(this.usuarioActual);
+      
+      // Esperar un momento para que el socket se conecte
+      setTimeout(() => {
+        console.log('Socket conectado:', this.chatService.getSocket()?.connected);
+      }, 1000);
       
       // Suscribirse a los observables
       this.subscriptions.push(
         this.chatService.chats$.subscribe(chats => {
+          console.log('Chats actualizados:', chats.length);
           this.chats = chats;
           // Si no hay chat activo y hay chats, seleccionar el primero
           if (!this.chatActivo && chats.length > 0) {
@@ -70,6 +78,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       
       this.subscriptions.push(
         this.chatService.mensajes$.subscribe(mensajes => {
+          console.log('Mensajes actualizados:', mensajes.length);
           this.mensajes = mensajes;
           setTimeout(() => this.scrollToBottom(), 100);
         })
@@ -149,6 +158,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
 
   enviarMensaje() {
     if (!this.chatActivo) {
+      console.warn('No hay chat activo');
       return;
     }
 
@@ -163,6 +173,7 @@ export class MensajeriaPage implements OnInit, OnDestroy {
       return;
     }
 
+    console.log('Enviando mensaje a:', this.chatActivo.id_usuario, 'Contenido:', this.nuevoMensaje.trim());
     this.chatService.enviarMensaje(this.chatActivo.id_usuario, this.nuevoMensaje.trim());
     this.nuevoMensaje = '';
   }

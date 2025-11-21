@@ -464,6 +464,69 @@ exports.reaccionarRutina = async (req, res) => {
 };
 
 // Compartir una rutina
+// Agregar ejercicio a un día de rutina
+exports.agregarEjercicioARutina = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id_rutina } = req.params;
+        const { id_dia, id_ejercicio, series, repeticiones, peso_recomendado, descanso_segundos, orden, notas } = req.body;
+        
+        // Verificar que la rutina pertenece al usuario
+        const rutina = await db.query('SELECT id_usuario FROM rutina WHERE id_rutina = $1', [id_rutina]);
+        
+        if (rutina.rows.length === 0) {
+            return res.status(404).json({ error: 'Rutina no encontrada' });
+        }
+        
+        if (rutina.rows[0].id_usuario !== userId) {
+            return res.status(403).json({ error: 'No tienes permiso para modificar esta rutina' });
+        }
+        
+        // Verificar que el día pertenece a la rutina
+        const dia = await db.query('SELECT id_dia FROM rutina_dia WHERE id_dia = $1 AND id_rutina = $2', [id_dia, id_rutina]);
+        
+        if (dia.rows.length === 0) {
+            return res.status(404).json({ error: 'Día de rutina no encontrado' });
+        }
+        
+        // Verificar que el ejercicio existe
+        const ejercicio = await db.query('SELECT id_ejercicio FROM ejercicio WHERE id_ejercicio = $1', [id_ejercicio]);
+        
+        if (ejercicio.rows.length === 0) {
+            return res.status(404).json({ error: 'Ejercicio no encontrado' });
+        }
+        
+        // Obtener el siguiente orden si no se proporciona
+        let ejercicioOrden = orden;
+        if (ejercicioOrden === undefined || ejercicioOrden === null) {
+            const ordenResult = await db.query(
+                'SELECT COALESCE(MAX(orden), 0) + 1 as siguiente_orden FROM rutina_ejercicio WHERE id_dia = $1',
+                [id_dia]
+            );
+            ejercicioOrden = ordenResult.rows[0].siguiente_orden;
+        }
+        
+        // Insertar el ejercicio en el día
+        const query = `
+            INSERT INTO rutina_ejercicio (
+                id_dia, id_ejercicio, series, repeticiones, 
+                peso_recomendado, descanso_segundos, orden, notas
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING *
+        `;
+        
+        const result = await db.query(query, [
+            id_dia, id_ejercicio, series || null, repeticiones || null,
+            peso_recomendado || null, descanso_segundos || null, ejercicioOrden, notas || null
+        ]);
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error al agregar ejercicio a rutina:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
 exports.compartirRutina = async (req, res) => {
     try {
         const userId = req.user.id;

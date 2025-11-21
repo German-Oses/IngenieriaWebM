@@ -97,11 +97,56 @@ exports.getPostsByUser = async (req, res) => {
 exports.createPost = async (req, res) => {
     try {
         const userId = req.user.id;
+        
+        // Log para debugging
+        console.log('=== CREAR POST ===');
+        console.log('Body:', req.body);
+        console.log('File:', req.file ? {
+            filename: req.file.filename,
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            path: req.file.path
+        } : 'No hay archivo');
+        
         const { tipo_post, contenido, url_media, id_ejercicio, id_rutina } = req.body;
         
-        if (!tipo_post || !contenido) {
+        // Validar campos requeridos
+        if (!tipo_post || !contenido || !contenido.trim()) {
+            // Si se subió un archivo pero hay error, eliminarlo
+            if (req.file) {
+                const fs = require('fs');
+                try {
+                    fs.unlinkSync(req.file.path);
+                    console.log('Archivo eliminado por error de validación');
+                } catch (err) {
+                    console.error('Error al eliminar archivo:', err);
+                }
+            }
             return res.status(400).json({ error: 'Tipo de post y contenido son requeridos' });
         }
+        
+        // Si se subió un archivo, usar su URL en lugar de url_media del body
+        let mediaUrl = null;
+        if (req.file) {
+            // Construir URL del archivo subido
+            mediaUrl = `/uploads/posts/${req.file.filename}`;
+            console.log('✅ Archivo subido correctamente:', {
+                filename: req.file.filename,
+                url: mediaUrl,
+                path: req.file.path
+            });
+        } else if (url_media && url_media.trim()) {
+            // Si no hay archivo pero hay URL en el body, usarla
+            mediaUrl = url_media.trim();
+            console.log('📎 Usando URL de media del body:', mediaUrl);
+        } else {
+            console.log('ℹ️ No hay media para este post');
+        }
+        
+        // Convertir id_ejercicio e id_rutina a números o null
+        const ejercicioId = id_ejercicio ? parseInt(id_ejercicio) : null;
+        const rutinaId = id_rutina ? parseInt(id_rutina) : null;
         
         const query = `
             INSERT INTO post (id_usuario, tipo_post, contenido, url_media, id_ejercicio, id_rutina)
@@ -109,21 +154,59 @@ exports.createPost = async (req, res) => {
             RETURNING *
         `;
         
-        const result = await db.query(query, [userId, tipo_post, contenido, url_media, id_ejercicio, id_rutina]);
+        console.log('💾 Insertando post en BD:', {
+            userId,
+            tipo_post,
+            contenido: contenido.substring(0, 50) + '...',
+            mediaUrl: mediaUrl || 'null',
+            ejercicioId: ejercicioId || 'null',
+            rutinaId: rutinaId || 'null'
+        });
         
-        // Obtener el post completo con información del autor
+        const result = await db.query(query, [
+            userId, 
+            tipo_post, 
+            contenido.trim(), 
+            mediaUrl, 
+            ejercicioId, 
+            rutinaId
+        ]);
+        
+        console.log('✅ Post insertado en BD:', {
+            id: result.rows[0].id_post,
+            url_media_en_bd: result.rows[0].url_media,
+            tiene_url: !!result.rows[0].url_media
+        });
+        
+        // Obtener el post completo con información del autor y estadísticas
         const postQuery = `
             SELECT 
                 p.*,
                 u.username as autor_username,
                 u.nombre || ' ' || u.apellido as autor_nombre,
-                u.avatar as autor_avatar
+                u.avatar as autor_avatar,
+                u.id_usuario as autor_id,
+                CAST(COUNT(DISTINCT re.id_reaccion) AS INTEGER) as total_likes,
+                CAST(COUNT(DISTINCT c.id_comentario) AS INTEGER) as total_comentarios,
+                CAST(COUNT(DISTINCT co.id_compartido) AS INTEGER) as total_compartidos,
+                CASE WHEN re2.id_reaccion IS NOT NULL THEN true ELSE false END as me_gusta
             FROM post p
             JOIN usuario u ON p.id_usuario = u.id_usuario
-            WHERE p.id_post = $1
+            LEFT JOIN reaccion re ON re.id_post = p.id_post
+            LEFT JOIN comentario c ON c.id_post = p.id_post
+            LEFT JOIN compartido co ON co.id_post = p.id_post
+            LEFT JOIN reaccion re2 ON re2.id_post = p.id_post AND re2.id_usuario = $1
+            WHERE p.id_post = $2
+            GROUP BY p.id_post, u.id_usuario, u.username, u.nombre, u.apellido, u.avatar, re2.id_reaccion
         `;
         
-        const postResult = await db.query(postQuery, [result.rows[0].id_post]);
+        const postResult = await db.query(postQuery, [userId, result.rows[0].id_post]);
+        
+        console.log('Post completo obtenido:', {
+            id: postResult.rows[0].id_post,
+            url_media: postResult.rows[0].url_media,
+            tiene_media: !!postResult.rows[0].url_media
+        });
         
         // Verificar logros después de crear un post
         if (notificationHelper) {

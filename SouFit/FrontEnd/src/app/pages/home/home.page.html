@@ -154,7 +154,7 @@
             <div class="post-header">
               <div class="post-usuario" (click)="verPerfil(post.autor_id || post.id_usuario)">
                 <ion-avatar>
-                  <img [src]="post.autor_avatar || 'assets/icon/SouFitLogo.png'" [alt]="post.autor_username" loading="lazy" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+                  <img [src]="getImageUrl(post.autor_avatar)" [alt]="post.autor_username" loading="lazy" (error)="handleImageError($event)">
                 </ion-avatar>
                 <div>
                   <h3>{{ post.autor_nombre || post.autor_username }}</h3>
@@ -187,7 +187,7 @@
               
               <p *ngIf="post.contenido" class="post-texto">{{ post.contenido }}</p>
               <div *ngIf="post.url_media" class="post-media">
-                <img [src]="post.url_media" alt="Media del post" loading="lazy" (error)="$event.target.src='assets/icon/SouFitLogo.png'">
+                <img [src]="getImageUrl(post.url_media)" alt="Media del post" loading="lazy" (error)="handleImageError($event)">
               </div>
               <div *ngIf="post.nombre_ejercicio" class="post-ejercicio">
                 <ion-chip color="primary">
@@ -222,7 +222,7 @@
             <div *ngIf="mostrandoComentarios[post.id_post!]" class="comentarios-container">
               <div *ngFor="let comentario of comentarios[post.id_post!]" class="comentario">
                 <ion-avatar class="avatar-comentario">
-                  <img [src]="comentario.autor_avatar || 'assets/icon/SouFitLogo.png'" [alt]="comentario.autor_username">
+                  <img [src]="getImageUrl(comentario.autor_avatar)" [alt]="comentario.autor_username" (error)="handleImageError($event)">
                 </ion-avatar>
                 <div class="comentario-contenido">
                   <strong>{{ comentario.autor_nombre || comentario.autor_username }}</strong>
@@ -232,7 +232,7 @@
               
               <div class="nuevo-comentario">
                 <ion-avatar class="avatar-comentario">
-                  <img [src]="usuarioActual?.avatar || 'assets/icon/SouFitLogo.png'" [alt]="usuarioActual?.username">
+                  <img [src]="getImageUrl(usuarioActual?.avatar)" [alt]="usuarioActual?.username" (error)="handleImageError($event)">
                 </ion-avatar>
                 <input 
                   type="text" 
@@ -288,15 +288,17 @@
 
   <!-- Modal Crear Post -->
   <ion-modal [isOpen]="mostrarModalCrearPost" (didDismiss)="cerrarModalCrearPost()">
-    <ng-template>
-      <ion-content class="ion-padding">
-        <div class="modal-header">
-          <h2>Crear Publicación</h2>
-          <button class="btn-cerrar-modal" (click)="cerrarModalCrearPost()">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Crear Publicación</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cerrarModalCrearPost()">
             <ion-icon name="close-outline"></ion-icon>
-          </button>
-        </div>
-        
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
         <div class="modal-body">
           <div class="tipo-post-selector">
             <button 
@@ -332,15 +334,48 @@
             class="input-post">
           </ion-textarea>
 
+          <!-- Opción 1: Subir archivo -->
+          <div class="upload-section">
+            <label class="upload-label">
+              <input 
+                type="file" 
+                accept="image/*" 
+                (change)="onFileSelected($event)"
+                style="display: none;"
+                #fileInput>
+              <ion-button fill="outline" expand="block" (click)="fileInput.click()">
+                <ion-icon name="image-outline" slot="start"></ion-icon>
+                Seleccionar Imagen
+              </ion-button>
+            </label>
+          </div>
+
+          <!-- Preview de imagen subida -->
+          <div *ngIf="previewImagen" class="preview-media">
+            <img [src]="previewImagen" alt="Preview" (error)="handleImageError($event)">
+            <button class="btn-remover-media" (click)="removerImagen()">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </div>
+
+          <!-- Opción 2: URL (alternativa) -->
+          <div class="divider">
+            <span>O</span>
+          </div>
+
           <ion-input
             [(ngModel)]="nuevoPost.url_media"
-            placeholder="URL de imagen o video (opcional)"
+            placeholder="URL de imagen (opcional)"
             type="url"
-            class="input-url">
+            class="input-url"
+            [disabled]="!!archivoSeleccionado">
           </ion-input>
 
-          <div *ngIf="nuevoPost.url_media" class="preview-media">
-            <img [src]="nuevoPost.url_media" alt="Preview" (error)="$event.target.style.display='none'">
+          <div *ngIf="nuevoPost.url_media && !archivoSeleccionado" class="preview-media">
+            <img [src]="getImageUrl(nuevoPost.url_media)" alt="Preview" (error)="handleImageError($event)">
+            <button class="btn-remover-media" (click)="nuevoPost.url_media = ''">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
           </div>
 
           <ion-button expand="block" (click)="crearPost()" [disabled]="!nuevoPost.contenido.trim()">
@@ -348,6 +383,5 @@
           </ion-button>
         </div>
       </ion-content>
-    </ng-template>
-  </ion-modal>
+    </ion-modal>
 </ion-content>

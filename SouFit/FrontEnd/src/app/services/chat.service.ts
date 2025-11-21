@@ -143,10 +143,16 @@ export class ChatService {
 
     // Manejar conexión
     this.socket.on('connect', () => {
-      console.log('Conectado al servidor de chat');
+      console.log('✅ Conectado al servidor de chat - Socket ID:', this.socket.id);
       if (this.usuarioActual) {
+        console.log('Usuario actual detectado, entrando al chat...');
         this.entrarChat(this.usuarioActual.id);
       }
+    });
+    
+    // Manejar errores de conexión
+    this.socket.on('connect_error', (error) => {
+      console.error('❌ Error de conexión al servidor de chat:', error);
     });
 
     this.socket.on('disconnect', () => {
@@ -205,12 +211,39 @@ export class ChatService {
 
   // Entrar al chat del usuario
   entrarChat(idUsuario: number) {
-    this.socket.emit('entrar_chat', idUsuario);
+    if (this.socket && this.socket.connected) {
+      console.log('Entrando al chat para usuario:', idUsuario);
+      this.socket.emit('entrar_chat', idUsuario);
+    } else {
+      console.warn('Socket no conectado, esperando conexión...');
+      if (this.socket) {
+        this.socket.once('connect', () => {
+          console.log('Socket conectado, entrando al chat...');
+          this.socket.emit('entrar_chat', idUsuario);
+        });
+      }
+    }
   }
 
   // Enviar mensaje
   enviarMensaje(idDestinatario: number, contenido: string) {
-    if (!this.usuarioActual) return;
+    if (!this.usuarioActual) {
+      console.error('No hay usuario actual para enviar mensaje');
+      return;
+    }
+
+    if (!this.socket || !this.socket.connected) {
+      console.error('Socket no conectado, no se puede enviar mensaje');
+      // Intentar reconectar
+      if (this.socket) {
+        this.socket.connect();
+        this.socket.once('connect', () => {
+          console.log('Socket reconectado, enviando mensaje...');
+          this.enviarMensaje(idDestinatario, contenido);
+        });
+      }
+      return;
+    }
 
     const mensaje = {
       id_remitente: this.usuarioActual.id,
@@ -218,6 +251,7 @@ export class ChatService {
       contenido: contenido
     };
 
+    console.log('Enviando mensaje via socket:', mensaje);
     this.socket.emit('enviar_mensaje', mensaje);
     
     // Agregar el mensaje enviado a la lista local

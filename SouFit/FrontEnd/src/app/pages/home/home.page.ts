@@ -9,12 +9,13 @@ import { EjercicioService } from '../../services/ejercicio.service';
 import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { addIcons } from 'ionicons';
-import { heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny } from 'ionicons/icons';
+import { heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny, imageOutline } from 'ionicons/icons';
 import { ToastController, AlertController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { ThemeService } from '../../services/theme.service';
 import { CacheService } from '../../services/cache.service';
 import { NotificationService } from '../../services/notification.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -22,7 +23,7 @@ import { NotificationService } from '../../services/notification.service';
   styleUrls: ['./home.page.scss'],
   standalone: true,
   imports: [IonContent, CommonModule, FormsModule, IonGrid, IonRow, IonCol, IonIcon, IonButton,
-  IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner]
+  IonChip, IonAvatar, IonLabel, IonModal, IonInput, IonTextarea, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons]
 })
 export class HomePage implements OnInit, OnDestroy {
   @ViewChild('postsContainer', { static: false }) postsContainer!: ElementRef;
@@ -43,6 +44,8 @@ export class HomePage implements OnInit, OnDestroy {
     contenido: '',
     url_media: ''
   };
+  archivoSeleccionado: File | null = null;
+  previewImagen: string | null = null;
   
   // Comentarios
   postComentariosAbierto: number | null = null;
@@ -71,7 +74,7 @@ export class HomePage implements OnInit, OnDestroy {
     private cacheService: CacheService,
     private notificationService: NotificationService
   ) {
-    addIcons({ heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny });
+    addIcons({ heartOutline, heart, chatbubbleOutline, shareOutline, sendOutline, addOutline, closeOutline, personAddOutline, checkmarkOutline, barbellOutline, fitnessOutline, menuOutline, trashOutline, moon, sunny, imageOutline });
   }
 
   async ngOnInit() {
@@ -178,14 +181,15 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   cargarFeed(resetear: boolean = false) {
-    if (resetear) {
-      this.offset = 0;
-      this.posts = [];
-      this.hayMasPosts = true;
-      this.cargando = true;
-    } else {
-      this.cargandoMas = true;
-    }
+    try {
+      if (resetear) {
+        this.offset = 0;
+        this.posts = [];
+        this.hayMasPosts = true;
+        this.cargando = true;
+      } else {
+        this.cargandoMas = true;
+      }
     
     const cacheKey = `feed_${this.filtroTipo}_${this.filtroOrden}_${this.offset}`;
     
@@ -246,6 +250,12 @@ export class HomePage implements OnInit, OnDestroy {
         this.presentErrorToast('Error al cargar el feed. Por favor, intenta de nuevo.');
       }
     });
+    } catch (error) {
+      console.error('Error en cargarFeed:', error);
+      this.cargando = false;
+      this.cargandoMas = false;
+      this.presentErrorToast('Error al cargar el feed');
+    }
   }
   
   aplicarFiltros() {
@@ -386,20 +396,96 @@ export class HomePage implements OnInit, OnDestroy {
   cerrarModalCrearPost() {
     this.mostrarModalCrearPost = false;
     this.nuevoPost = { tipo_post: 'texto', contenido: '', url_media: '' };
+    this.archivoSeleccionado = null;
+    this.previewImagen = null;
   }
 
   crearPost() {
-    if (!this.nuevoPost.contenido.trim()) return;
+    if (!this.nuevoPost.contenido.trim()) {
+      this.presentErrorToast('El contenido del post es requerido');
+      return;
+    }
     
-    this.postService.createPost(this.nuevoPost).subscribe({
-      next: (post) => {
-        this.posts.unshift(post);
-        this.cerrarModalCrearPost();
-      },
-      error: (error) => {
-        console.error('Error al crear post:', error);
-      }
+    console.log('Creando post:', {
+      tipo: this.nuevoPost.tipo_post,
+      contenido: this.nuevoPost.contenido.substring(0, 50),
+      tieneArchivo: !!this.archivoSeleccionado,
+      urlMedia: this.nuevoPost.url_media
     });
+    
+    // Si hay archivo seleccionado, subirlo
+    if (this.archivoSeleccionado) {
+      console.log('Subiendo post con archivo:', this.archivoSeleccionado.name);
+      this.postService.createPostConImagen(this.nuevoPost, this.archivoSeleccionado).subscribe({
+        next: (post) => {
+          console.log('✅ Post creado con imagen:', post);
+          console.log('URL media en respuesta:', post.url_media);
+          // Recargar el feed completo para obtener todos los datos actualizados
+          this.cargarFeed(true);
+          this.cerrarModalCrearPost();
+          this.presentSuccessToast('Post creado exitosamente');
+        },
+        error: (error) => {
+          console.error('❌ Error al crear post con imagen:', error);
+          this.presentErrorToast(error.error?.error || 'Error al crear el post. Por favor, intenta de nuevo.');
+        }
+      });
+    } else {
+      // Validar URL de media si existe
+      if (this.nuevoPost.url_media && !this.nuevoPost.url_media.trim()) {
+        this.nuevoPost.url_media = undefined;
+      }
+      
+      console.log('Subiendo post sin archivo');
+      this.postService.createPost(this.nuevoPost).subscribe({
+        next: (post) => {
+          console.log('✅ Post creado:', post);
+          // Recargar el feed completo para obtener todos los datos actualizados
+          this.cargarFeed(true);
+          this.cerrarModalCrearPost();
+          this.presentSuccessToast('Post creado exitosamente');
+        },
+        error: (error) => {
+          console.error('❌ Error al crear post:', error);
+          this.presentErrorToast(error.error?.error || 'Error al crear el post. Por favor, intenta de nuevo.');
+        }
+      });
+    }
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        this.presentErrorToast('Solo se permiten archivos de imagen');
+        return;
+      }
+      
+      // Validar tamaño (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        this.presentErrorToast('La imagen no puede ser mayor a 10MB');
+        return;
+      }
+      
+      this.archivoSeleccionado = file;
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.previewImagen = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      
+      // Limpiar URL de media si había una
+      this.nuevoPost.url_media = '';
+    }
+  }
+
+  removerImagen() {
+    this.archivoSeleccionado = null;
+    this.previewImagen = null;
+    this.nuevoPost.url_media = '';
   }
 
   reaccionarPost(post: Post) {
@@ -532,5 +618,37 @@ export class HomePage implements OnInit, OnDestroy {
   verEjercicio(ejercicioId: number) {
     // Por ahora solo muestra un alert, pero se puede crear una página de detalle
     console.log('Ver ejercicio:', ejercicioId);
+  }
+
+  // Convertir URL relativa a absoluta
+  getImageUrl(url: string | undefined): string {
+    if (!url) return 'assets/icon/SouFitLogo.png';
+    
+    // Si ya es una URL absoluta (http/https), devolverla tal cual
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Si es una URL relativa que empieza con /uploads, agregar el dominio del backend
+    if (url.startsWith('/uploads')) {
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      return `${baseUrl}${url}`;
+    }
+    
+    // Si es una ruta de assets, devolverla tal cual
+    if (url.startsWith('assets/')) {
+      return url;
+    }
+    
+    // Por defecto, intentar con el backend
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    return `${baseUrl}${url.startsWith('/') ? url : '/' + url}`;
+  }
+
+  // Manejar errores de carga de imágenes
+  handleImageError(event: any) {
+    const img = event.target;
+    img.src = 'assets/icon/SouFitLogo.png';
+    img.onerror = null; // Prevenir loops infinitos
   }
 }

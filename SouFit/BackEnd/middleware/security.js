@@ -41,15 +41,15 @@ const rateLimit = (windowMs, max) => {
 // Rate limiting para autenticación (más permisivo para permitir múltiples intentos de login)
 const authLimiter =
     process.env.NODE_ENV === "production"
-        ? rateLimit(15 * 60 * 1000, 200)  // 200 requests cada 15 minutos (más permisivo para login)
-        : rateLimit(60 * 1000, 1000);     // desarrollo: 1000 requests por minuto  
+        ? rateLimit(15 * 60 * 1000, 500)  // 500 requests cada 15 minutos (muy permisivo para login)
+        : rateLimit(60 * 1000, 2000);     // desarrollo: 2000 requests por minuto  
 
 
 // Rate limiting general (más permisivo en desarrollo)
 const generalLimiter = 
     process.env.NODE_ENV === "production"
-        ? rateLimit(15 * 60 * 1000, 100)  // producción: 100 requests cada 15 minutos
-        : rateLimit(60 * 1000, 1000);    // desarrollo: 1000 requests por minuto
+        ? rateLimit(15 * 60 * 1000, 500)  // producción: 500 requests cada 15 minutos (muy permisivo)
+        : rateLimit(60 * 1000, 2000);    // desarrollo: 2000 requests por minuto
 
 // Sanitización de entrada (protección XSS)
 const sanitizeInput = (req, res, next) => {

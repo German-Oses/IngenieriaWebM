@@ -147,13 +147,13 @@
             </div>
             
             <div *ngIf="ejerciciosEncontrados.length > 0" class="ejercicios-grid">
-              <div *ngFor="let ejercicio of ejerciciosEncontrados" class="ejercicio-card" (click)="verEjercicio(ejercicio.id_ejercicio!)">
-                <div class="ejercicio-header">
+              <div *ngFor="let ejercicio of ejerciciosEncontrados" class="ejercicio-card">
+                <div class="ejercicio-header" (click)="verEjercicio(ejercicio.id_ejercicio!)">
                   <ion-icon name="barbell-outline"></ion-icon>
                   <h3>{{ ejercicio.nombre_ejercicio }}</h3>
                 </div>
-                <p class="ejercicio-descripcion">{{ ejercicio.descripcion || 'Sin descripción' }}</p>
-                <div class="ejercicio-tags">
+                <p class="ejercicio-descripcion" (click)="verEjercicio(ejercicio.id_ejercicio!)">{{ ejercicio.descripcion || 'Sin descripción' }}</p>
+                <div class="ejercicio-tags" (click)="verEjercicio(ejercicio.id_ejercicio!)">
                   <ion-chip *ngIf="ejercicio.tipo" color="primary" size="small">
                     <ion-label>{{ ejercicio.tipo }}</ion-label>
                   </ion-chip>
@@ -164,9 +164,15 @@
                     <ion-label>{{ ejercicio.dificultad }}</ion-label>
                   </ion-chip>
                 </div>
-                <div class="ejercicio-stats">
+                <div class="ejercicio-stats" (click)="verEjercicio(ejercicio.id_ejercicio!)">
                   <span *ngIf="ejercicio.duracion_minutos">⏱️ {{ ejercicio.duracion_minutos }} min</span>
                   <span *ngIf="ejercicio.total_likes">❤️ {{ ejercicio.total_likes }}</span>
+                </div>
+                <div class="ejercicio-actions">
+                  <ion-button fill="outline" size="small" (click)="agregarARutina(ejercicio); $event.stopPropagation()">
+                    <ion-icon name="add-outline" slot="start"></ion-icon>
+                    Agregar a Rutina
+                  </ion-button>
                 </div>
               </div>
             </div>
@@ -175,5 +181,77 @@
       </ion-col>
     </ion-row>
   </ion-grid>
-</ion-content>
+
+  <!-- Modal Agregar a Rutina -->
+  <ion-modal [isOpen]="mostrarModalAgregarRutina" (didDismiss)="cerrarModalAgregarRutina()">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Agregar a Rutina</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cerrarModalAgregarRutina()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+        <div *ngIf="ejercicioSeleccionado">
+          <h3>{{ ejercicioSeleccionado.nombre_ejercicio }}</h3>
+          <p>{{ ejercicioSeleccionado.descripcion || 'Sin descripción' }}</p>
+        </div>
+
+        <div class="ion-margin-top">
+          <h4>Selecciona una rutina:</h4>
+          <ion-list>
+            <ion-item 
+              *ngFor="let rutina of rutinasUsuario" 
+              button 
+              (click)="seleccionarRutina(rutina)"
+              [class.selected]="rutinaSeleccionada?.id_rutina === rutina.id_rutina">
+              <ion-label>
+                <h2>{{ rutina.nombre_rutina }}</h2>
+                <p *ngIf="rutina.descripcion">{{ rutina.descripcion }}</p>
+                <p *ngIf="rutina.dias && rutina.dias.length > 0">
+                  {{ rutina.dias.length }} día(s) configurado(s)
+                </p>
+              </ion-label>
+              <ion-icon *ngIf="rutinaSeleccionada?.id_rutina === rutina.id_rutina" name="checkmark-outline" slot="end"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </div>
+
+        <div *ngIf="rutinaSeleccionada && rutinaSeleccionada.dias && rutinaSeleccionada.dias.length > 0" class="ion-margin-top">
+          <h4>Selecciona un día:</h4>
+          <ion-list>
+            <ion-item 
+              *ngFor="let dia of rutinaSeleccionada.dias" 
+              button 
+              (click)="diaSeleccionado = dia"
+              [class.selected]="diaSeleccionado?.id_dia === dia.id_dia">
+              <ion-label>
+                <h2>{{ dia.nombre_dia || 'Día ' + dia.numero_dia }}</h2>
+                <p *ngIf="dia.descripcion">{{ dia.descripcion }}</p>
+                <p *ngIf="dia.ejercicios">{{ dia.ejercicios.length }} ejercicio(s)</p>
+              </ion-label>
+              <ion-icon *ngIf="diaSeleccionado?.id_dia === dia.id_dia" name="checkmark-outline" slot="end"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </div>
+
+        <div *ngIf="rutinaSeleccionada && (!rutinaSeleccionada.dias || rutinaSeleccionada.dias.length === 0)" class="ion-margin-top">
+          <ion-text color="warning">
+            <p>Esta rutina no tiene días configurados. Por favor, edita la rutina primero.</p>
+          </ion-text>
+        </div>
+
+        <div class="ion-margin-top">
+          <ion-button 
+            expand="block" 
+            (click)="confirmarAgregarEjercicio()"
+            [disabled]="!rutinaSeleccionada || (rutinaSeleccionada.dias && rutinaSeleccionada.dias.length > 0 && !diaSeleccionado)">
+            Agregar Ejercicio
+          </ion-button>
+        </div>
+      </ion-content>
+    </ion-modal>
 

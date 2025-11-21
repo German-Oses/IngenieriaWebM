@@ -126,5 +126,19 @@ export class RutinaService {
   compartirRutina(id: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/${id}/compartir`, {});
   }
+
+  // Agregar ejercicio a un día de rutina
+  agregarEjercicioARutina(idRutina: number, ejercicioData: {
+    id_dia: number;
+    id_ejercicio: number;
+    series?: number;
+    repeticiones?: string;
+    peso_recomendado?: number;
+    descanso_segundos?: number;
+    orden?: number;
+    notas?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${idRutina}/ejercicios`, ejercicioData);
+  }
 }
 

@@ -48,8 +48,10 @@ ion-select {
   color: #000000 !important;
   
   input,
-  textarea {
+  textarea,
+  select {
     color: #000000 !important;
+    background-color: transparent !important;
   }
   
   /* En modo oscuro, usar color claro */
@@ -58,14 +60,19 @@ ion-select {
     color: #ffffff !important;
     
     input,
-    textarea {
+    textarea,
+    select {
       color: #ffffff !important;
+      background-color: transparent !important;
     }
   }
 }
 
 /* Modo oscuro con clase .dark */
-.dark {
+.dark,
+html.dark,
+body.dark,
+ion-app.dark {
   ion-input,
   ion-textarea,
   ion-select {
@@ -73,8 +80,32 @@ ion-select {
     color: #ffffff !important;
     
     input,
-    textarea {
+    textarea,
+    select {
       color: #ffffff !important;
+      background-color: transparent !important;
+    }
+    
+    &::part(native) {
+      color: #ffffff !important;
+    }
+  }
+  
+  /* Asegurar que los inputs dentro de ion-item también tengan color */
+  ion-item {
+    --color: #ffffff !important;
+    
+    ion-input,
+    ion-textarea,
+    ion-select {
+      --color: #ffffff !important;
+      color: #ffffff !important;
+      
+      input,
+      textarea,
+      select {
+        color: #ffffff !important;
+      }
     }
   }
 }
