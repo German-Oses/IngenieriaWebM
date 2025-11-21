@@ -1,7 +1,7 @@
 # 📚 Documentación Técnica - SouFit
 
-**Versión:** 1.1.0  
-**Última actualización:** 2025-01-16  
+**Versión:** 1.2.0  
+**Última actualización:** 2025-01-27  
 **Proyecto:** SouFit - Plataforma Fitness Social
 
 ## 🌐 Aplicación en Producción
@@ -851,6 +851,70 @@ Comparte una rutina.
 
 **Acceso:** Privado
 
+#### `POST /api/rutinas/:id_rutina/dias`
+Crea un nuevo día para una rutina existente.
+
+**Acceso:** Privado
+
+**Request Body:**
+```json
+{
+  "numero_dia": 1,
+  "nombre_dia": "Día de Piernas",
+  "descripcion": "Enfoque en ejercicios de piernas",
+  "orden": 1
+}
+```
+
+**Validaciones:**
+- La rutina debe existir y pertenecer al usuario autenticado
+- El número de día debe ser mayor a 0
+- Si no se proporciona `nombre_dia`, se genera automáticamente como "Día {numero_dia}"
+- Si no se proporciona `orden`, se calcula automáticamente
+
+**Response 201:**
+```json
+{
+  "id_dia": 1,
+  "id_rutina": 1,
+  "numero_dia": 1,
+  "nombre_dia": "Día de Piernas",
+  "descripcion": "Enfoque en ejercicios de piernas",
+  "orden": 1
+}
+```
+
+**Errores:**
+- `404`: Rutina no encontrada
+- `403`: No tienes permiso para modificar esta rutina
+- `400`: El número de día debe ser mayor a 0
+- `409`: Ya existe un día con este número en esta rutina
+
+#### `POST /api/rutinas/:id_rutina/ejercicios`
+Agrega un ejercicio a un día específico de una rutina.
+
+**Acceso:** Privado
+
+**Request Body:**
+```json
+{
+  "id_dia": 1,
+  "id_ejercicio": 5,
+  "series": 3,
+  "repeticiones": "10-12",
+  "peso_recomendado": 50,
+  "descanso_segundos": 60,
+  "orden": 1,
+  "notas": "Mantener forma correcta"
+}
+```
+
+**Validaciones:**
+- La rutina debe existir y pertenecer al usuario
+- El día debe existir y pertenecer a la rutina
+- El ejercicio debe existir
+- Si no se proporciona `orden`, se calcula automáticamente
+
 ### Endpoints de Mensajería
 
 #### `GET /api/chats`
@@ -956,6 +1020,18 @@ Obtiene el contador de mensajes no leídos del usuario autenticado.
 }
 ```
 
+**Validaciones:**
+- El usuario debe estar autenticado
+- El userId debe ser válido (número mayor a 0)
+- Cuenta mensajes donde `id_destinatario` es el usuario actual y `leido = false` o `leido IS NULL`
+
+**Errores:**
+- `401`: Usuario no autenticado
+- `400`: ID de usuario inválido
+- `500`: Error interno del servidor
+
+**Nota:** Este endpoint se llama automáticamente después de enviar o recibir mensajes para actualizar el contador en tiempo real. Incluye un delay de 500ms para evitar llamadas muy rápidas.
+
 #### `GET /api/siguiendo`
 Obtiene la lista de usuarios que sigue el usuario autenticado.
 
@@ -1039,9 +1115,27 @@ Crea un nuevo post.
   "tipo_post": "ejercicio",
   "contenido": "Acabo de completar...",
   "url_media": "https://...",
-  "id_ejercicio": 1
+  "id_ejercicio": 1,
+  "id_rutina": 1
 }
 ```
+
+**Validaciones:**
+- `tipo_post` es requerido
+- El post debe tener **contenido O imagen** (al menos uno)
+  - Si hay `url_media` o se sube un archivo, el contenido puede ser opcional
+  - Si no hay media, el contenido es requerido
+- Si el contenido está presente, debe tener entre 3 y 1000 caracteres
+- Si `tipo_post` es "ejercicio", `id_ejercicio` es requerido
+- Si `tipo_post` es "rutina", `id_rutina` es requerido
+
+**Tipos de post:**
+- `"texto"`: Post de texto simple
+- `"ejercicio"`: Post asociado a un ejercicio
+- `"rutina"`: Post asociado a una rutina
+- `"logro"`: Post de logro/conquista
+
+**Nota:** El contenido puede ser una cadena vacía si se proporciona una imagen o URL de media.
 
 #### `PUT /api/posts/:id`
 Actualiza un post (solo el propietario).
@@ -1855,6 +1949,6 @@ CREATE TABLE IF NOT EXISTS password_reset_codes (
 
 ---
 
-**Documentación generada para SouFit v1.1.0**  
-**Última actualización:** 2025-01-16
+**Documentación generada para SouFit v1.2.0**  
+**Última actualización:** 2025-01-27
 

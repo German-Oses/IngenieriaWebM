@@ -307,6 +307,11 @@ export class RutinasPage implements OnInit {
   }
 
   abrirModalAgregarEjercicio(dia: any) {
+    if (!dia || !dia.id_dia) {
+      this.presentToast('Error: Día inválido', 'danger');
+      return;
+    }
+    
     this.diaParaAgregarEjercicio = dia;
     this.configEjercicio = {
       series: 3,
@@ -316,16 +321,25 @@ export class RutinasPage implements OnInit {
       notas: ''
     };
     this.ejercicioSeleccionado = null;
+    this.ejerciciosDisponibles = []; // Limpiar lista anterior
+    
+    // Abrir modal primero
+    this.mostrarModalAgregarEjercicio = true;
     
     // Cargar ejercicios disponibles
     this.ejercicioService.getEjercicios({ limit: 100 }).subscribe({
       next: (ejercicios) => {
-        this.ejerciciosDisponibles = ejercicios;
-        this.mostrarModalAgregarEjercicio = true;
+        console.log('Ejercicios cargados:', ejercicios.length);
+        this.ejerciciosDisponibles = ejercicios || [];
+        if (this.ejerciciosDisponibles.length === 0) {
+          this.presentToast('No hay ejercicios disponibles', 'warning');
+        }
       },
       error: (error) => {
         console.error('Error al cargar ejercicios:', error);
-        this.presentToast('Error al cargar ejercicios', 'danger');
+        this.presentToast('Error al cargar ejercicios. Por favor, intenta de nuevo.', 'danger');
+        // Cerrar modal si hay error
+        this.mostrarModalAgregarEjercicio = false;
       }
     });
   }

@@ -92,11 +92,13 @@ SouFit/
 - Banco de ejercicios (sistema y usuario)
 - Búsqueda y filtrado de ejercicios
 - Creación de rutinas personalizadas con días y ejercicios
+- **Agregar días a rutinas existentes** (nuevo endpoint)
 - Compartir rutinas y ejercicios
 - Guardar como favoritos
 
 ### 📱 Feed Comunitario
 - Publicar posts (ejercicios, rutinas, logros, texto)
+- **Publicar posts solo con imagen** (contenido opcional)
 - Reacciones (likes)
 - Comentarios
 - Feed de usuarios seguidos
@@ -375,8 +377,11 @@ Puedes usar herramientas como:
 
 **Contenido:**
 - `GET /api/posts/feed` - Obtener feed de posts
+- `POST /api/posts` - Crear post (contenido opcional si hay imagen)
 - `GET /api/ejercicios` - Listar ejercicios
 - `GET /api/rutinas` - Listar rutinas
+- `POST /api/rutinas/:id_rutina/dias` - Crear día en rutina (nuevo)
+- `POST /api/rutinas/:id_rutina/ejercicios` - Agregar ejercicio a día
 
 ### Ejemplo de registro
 
@@ -551,8 +556,8 @@ Este proyecto es parte de un proyecto universitario.
 
 ---
 
-**Versión**: 1.0.0  
-**Última actualización**: 2024
+**Versión**: 1.2.0  
+**Última actualización**: 2025-01-27
 
 ---
 

@@ -411,7 +411,14 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   abrirModalCrearPost() {
+    // Verificar que el usuario esté autenticado
+    if (!this.usuarioActual || !this.usuarioActual.id) {
+      this.presentErrorToast('Error: Usuario no autenticado');
+      return;
+    }
+    
     this.mostrarModalCrearPost = true;
+    // Cargar ejercicios y rutinas siempre (por si el usuario cambia el tipo)
     this.cargarEjerciciosParaPost();
     this.cargarRutinasParaPost();
   }
@@ -433,29 +440,31 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   cargarEjerciciosParaPost() {
-    if (this.nuevoPost.tipo_post === 'ejercicio') {
-      this.ejercicioService.getEjercicios({ limit: 50 }).subscribe({
-        next: (ejercicios) => {
-          this.ejerciciosDisponibles = ejercicios;
-        },
-        error: (error) => {
-          console.error('Error al cargar ejercicios:', error);
-        }
-      });
-    }
+    // Cargar ejercicios siempre para tenerlos disponibles
+    this.ejercicioService.getEjercicios({ limit: 100 }).subscribe({
+      next: (ejercicios) => {
+        this.ejerciciosDisponibles = ejercicios || [];
+        console.log('Ejercicios cargados para post:', this.ejerciciosDisponibles.length);
+      },
+      error: (error) => {
+        console.error('Error al cargar ejercicios:', error);
+        this.ejerciciosDisponibles = [];
+      }
+    });
   }
 
   cargarRutinasParaPost() {
-    if (this.nuevoPost.tipo_post === 'rutina') {
-      this.rutinaService.getMisRutinas().subscribe({
-        next: (rutinas: any[]) => {
-          this.rutinasDisponibles = rutinas;
-        },
-        error: (error) => {
-          console.error('Error al cargar rutinas:', error);
-        }
-      });
-    }
+    // Cargar rutinas siempre para tenerlas disponibles
+    this.rutinaService.getMisRutinas().subscribe({
+      next: (rutinas: any[]) => {
+        this.rutinasDisponibles = rutinas || [];
+        console.log('Rutinas cargadas para post:', this.rutinasDisponibles.length);
+      },
+      error: (error) => {
+        console.error('Error al cargar rutinas:', error);
+        this.rutinasDisponibles = [];
+      }
+    });
   }
 
   onTipoPostChange() {

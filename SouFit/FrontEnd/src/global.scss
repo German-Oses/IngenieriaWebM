@@ -670,6 +670,41 @@ ion-content {
   --background: var(--soufit-bg-light);
 }
 
+/* Estilos para modales */
+ion-modal {
+  --background: var(--soufit-bg-white);
+  
+  ion-header {
+    --background: var(--soufit-bg-white);
+    --color: var(--soufit-text-primary);
+  }
+  
+  ion-toolbar {
+    --background: var(--soufit-bg-white);
+    --color: var(--soufit-text-primary);
+  }
+  
+  ion-content {
+    --background: var(--soufit-bg-white);
+    --color: var(--soufit-text-primary);
+  }
+  
+  ion-title {
+    --color: var(--soufit-text-primary);
+  }
+}
+
+.dark ion-modal {
+  --background: var(--soufit-bg-white);
+  
+  ion-header,
+  ion-toolbar,
+  ion-content {
+    --background: var(--soufit-bg-white);
+    --color: var(--soufit-text-primary);
+  }
+}
+
 /* ============================================
    MEJORAS DE ACCESIBILIDAD
    ============================================ */

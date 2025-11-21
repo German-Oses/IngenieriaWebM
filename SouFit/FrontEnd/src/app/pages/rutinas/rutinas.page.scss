@@ -721,6 +721,16 @@ ion-item[slot="header"] {
 
 .modal-crear-rutina {
   padding: 0;
+  background: var(--soufit-bg-white);
+  min-height: 100%;
+  
+  * {
+    color: var(--soufit-text-primary);
+  }
+}
+
+.dark .modal-crear-rutina {
+  background: var(--soufit-bg-white);
 }
 
 .form-group-moderno {
@@ -823,6 +833,29 @@ ion-item[slot="header"] {
   ion-icon, span {
     color: #3880ff;
   }
+}
+
+.sin-ejercicios-disponibles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 16px;
+  color: var(--soufit-text-secondary);
+  
+  ion-spinner {
+    --color: #3880ff;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+.dark .sin-ejercicios-disponibles {
+  color: var(--soufit-text-secondary);
 }
 
 .acciones-modal-rutina {

@@ -419,7 +419,11 @@
       <div class="modal-crear-rutina">
         <div class="form-group-moderno">
           <label>Selecciona un ejercicio *</label>
-          <ion-item class="select-item-moderno">
+          <div *ngIf="ejerciciosDisponibles.length === 0" class="sin-ejercicios-disponibles">
+            <ion-spinner></ion-spinner>
+            <p>Cargando ejercicios...</p>
+          </div>
+          <ion-item *ngIf="ejerciciosDisponibles.length > 0" class="select-item-moderno">
             <ion-select
               [(ngModel)]="ejercicioSeleccionado"
               placeholder="Buscar ejercicio..."
@@ -501,7 +505,7 @@
             Agregar Ejercicio
           </ion-button>
         </div>
-        </div>
-      </ion-content>
+      </div>
+    </ion-content>
   </ion-modal>
 </ion-content>

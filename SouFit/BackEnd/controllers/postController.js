@@ -96,10 +96,39 @@ exports.getPostsByUser = async (req, res) => {
 // Crear un nuevo post
 exports.createPost = async (req, res) => {
     try {
+        // Validar que el usuario esté autenticado
+        if (!req.user || !req.user.id) {
+            // Si se subió un archivo pero hay error, eliminarlo
+            if (req.file) {
+                const fs = require('fs');
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (err) {
+                    console.error('Error al eliminar archivo:', err);
+                }
+            }
+            return res.status(401).json({ error: 'Usuario no autenticado' });
+        }
+        
         const userId = req.user.id;
+        
+        // Validar que userId sea válido
+        if (isNaN(userId) || userId <= 0) {
+            // Si se subió un archivo pero hay error, eliminarlo
+            if (req.file) {
+                const fs = require('fs');
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (err) {
+                    console.error('Error al eliminar archivo:', err);
+                }
+            }
+            return res.status(400).json({ error: 'ID de usuario inválido' });
+        }
         
         // Log para debugging
         console.log('=== CREAR POST ===');
+        console.log('User ID:', userId);
         console.log('Body:', req.body);
         console.log('File:', req.file ? {
             filename: req.file.filename,

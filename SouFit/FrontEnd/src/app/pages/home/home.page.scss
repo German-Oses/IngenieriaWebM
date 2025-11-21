@@ -1200,6 +1200,16 @@
 
 .modal-crear-post {
   padding: 0;
+  background: var(--soufit-bg-white);
+  min-height: 100%;
+  
+  * {
+    color: var(--soufit-text-primary);
+  }
+}
+
+.dark .modal-crear-post {
+  background: var(--soufit-bg-white);
 }
 
 .tipo-post-selector-moderno {

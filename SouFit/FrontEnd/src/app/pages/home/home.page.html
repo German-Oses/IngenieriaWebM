@@ -454,7 +454,7 @@
           <ion-button 
             expand="block" 
             (click)="crearPost()" 
-            [disabled]="creandoPost || !nuevoPost.contenido.trim() || nuevoPost.contenido.length > 1000 || nuevoPost.contenido.length < 3 || (nuevoPost.tipo_post === 'ejercicio' && !ejercicioSeleccionado) || (nuevoPost.tipo_post === 'rutina' && !rutinaSeleccionada)"
+            [disabled]="creandoPost || ((!nuevoPost.contenido || !nuevoPost.contenido.trim()) && !archivoSeleccionado && (!nuevoPost.url_media || !nuevoPost.url_media.trim())) || (nuevoPost.contenido && nuevoPost.contenido.length > 1000) || (nuevoPost.contenido && nuevoPost.contenido.trim().length < 3) || (nuevoPost.tipo_post === 'ejercicio' && !ejercicioSeleccionado) || (nuevoPost.tipo_post === 'rutina' && !rutinaSeleccionada)"
             class="btn-publicar-moderno">
             <ion-spinner *ngIf="creandoPost" name="crescent" slot="start"></ion-spinner>
             <ion-icon *ngIf="!creandoPost" name="send-outline" slot="start"></ion-icon>
