@@ -15,7 +15,7 @@ import { Subscription } from 'rxjs';
 import { ThemeService } from '../../services/theme.service';
 import { CacheService } from '../../services/cache.service';
 import { NotificationService } from '../../services/notification.service';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -433,7 +433,7 @@ export class HomePage implements OnInit, OnDestroy {
     } else {
       // Validar URL de media si existe
       if (this.nuevoPost.url_media && !this.nuevoPost.url_media.trim()) {
-        this.nuevoPost.url_media = undefined;
+        this.nuevoPost.url_media = '';
       }
       
       console.log('Subiendo post sin archivo');

@@ -357,6 +357,28 @@ export class ChatService {
     return this.http.get<Mensaje[]>(`${this.apiUrl}/mensajes/${idOtroUsuario}`);
   }
   
+  // Seleccionar un chat y cargar sus mensajes
+  seleccionarChat(chat: Chat) {
+    console.log('💬 Seleccionando chat:', chat.id_usuario);
+    this.chatActivoSubject.next(chat);
+    // Cargar mensajes del chat seleccionado
+    this.cargarMensajes(chat.id_usuario).subscribe({
+      next: (mensajes) => {
+        console.log('📥 Mensajes cargados para chat:', mensajes.length);
+        this.mensajesSubject.next(mensajes);
+        // Marcar como leídos
+        this.marcarMensajesLeidos(chat.id_usuario).subscribe({
+          next: () => console.log('✅ Mensajes marcados como leídos'),
+          error: (err) => console.error('Error al marcar como leído:', err)
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error al cargar mensajes:', error);
+        this.mensajesSubject.next([]);
+      }
+    });
+  }
+  
   // Cargar lista de chats del usuario
   cargarChats(): Observable<Chat[]> {
     return this.http.get<Chat[]>(`${this.apiUrl}/chats`);
